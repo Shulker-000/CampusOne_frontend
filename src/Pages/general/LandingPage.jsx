@@ -10,15 +10,14 @@ import {
     ArrowRight,
 } from "lucide-react";
 
-import University from "./../assets/landingPage/university.png";
-import Students from "./../assets/landingPage/students.png";
-import Faculties from "./../assets/landingPage/faculties.png";
-import Admin from "./../assets/landingPage/admin.png";
-import Hostel from "./../assets/landingPage/hostel.png";
-import Security from "./../assets/landingPage/security.png";
-import Certificates from "./../assets/landingPage/certificate.png";
+import University from "./../../assets/landingPage/university.png";
+import Students from "./../../assets/landingPage/students.png";
+import Faculties from "./../../assets/landingPage/faculties.png";
+import Admin from "./../../assets/landingPage/admin.png";
+import Hostel from "./../../assets/landingPage/hostel.png";
+import Security from "./../../assets/landingPage/security.png";
+import Certificates from "./../../assets/landingPage/certificate.png";
 
-/* ------------------ Motion ------------------ */
 const sectionVariants = {
     hidden: { opacity: 0, y: 40 },
     visible: {
@@ -27,6 +26,25 @@ const sectionVariants = {
         transition: { duration: 0.7, ease: "easeOut", staggerChildren: 0.2 },
     },
 };
+
+/* ------------------ Login Options ------------------ */
+const loginOptions = [
+    {
+        label: "Institution Admin",
+        description: "Register or manage an institution",
+        route: "/institution/login",
+    },
+    {
+        label: "Faculty / HOD",
+        description: "Academic approvals & governance",
+        route: "/faculty/login",
+    },
+    {
+        label: "Student",
+        description: "Requests, attendance & certificates",
+        route: "/student/login",
+    },
+];
 
 /* ------------------ Data ------------------ */
 const modules = [
@@ -93,8 +111,8 @@ const modules = [
 ];
 
 const LandingPage = () => {
-    const [active, setActive] = useState(0);        // desktop
-    const [mobileActive, setMobileActive] = useState(null); // mobile
+    const [active, setActive] = useState(0);
+    const [showLoginOptions, setShowLoginOptions] = useState(false);
 
     return (
         <div className="bg-white text-slate-900">
@@ -120,10 +138,42 @@ const LandingPage = () => {
                             and secure role-based access control.
                         </p>
 
-                        <button className="mt-12 inline-flex items-center gap-3 px-8 py-4 rounded-xl bg-indigo-600 text-white font-medium shadow hover:shadow-lg transition">
-                            Explore System Features
+                        {/* LOGIN CTA */}
+                        <button
+                            onClick={() => setShowLoginOptions((p) => !p)}
+                            className="mt-12 inline-flex items-center gap-3 px-8 py-4 rounded-xl bg-indigo-600 text-white font-medium shadow hover:shadow-lg transition"
+                        >
+                            Login to Platform
                             <ArrowRight className="w-5 h-5" />
                         </button>
+
+                        {/* ROLE OPTIONS */}
+                        <AnimatePresence>
+                            {showLoginOptions && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: 10 }}
+                                    transition={{ duration: 0.3 }}
+                                    className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-xl"
+                                >
+                                    {loginOptions.map((opt) => (
+                                        <a
+                                            key={opt.label}
+                                            href={opt.route}
+                                            className="p-4 rounded-xl bg-white border border-slate-200 shadow-sm hover:shadow-md transition text-left"
+                                        >
+                                            <p className="font-semibold text-slate-900">
+                                                {opt.label}
+                                            </p>
+                                            <p className="text-xs text-slate-500 mt-1">
+                                                {opt.description}
+                                            </p>
+                                        </a>
+                                    ))}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </motion.div>
 
                     <img
@@ -134,20 +184,20 @@ const LandingPage = () => {
                 </div>
             </section>
 
-            {/* ================= MODULES SECTION (100VH) ================= */}
+            {/* ================= MODULES ================= */}
             <section
                 id="modules"
                 className="min-h-screen md:h-screen bg-slate-50 flex flex-col overflow-hidden"
             >
-                {/* 1. Header Area */}
-                <div className="pt-12 pb-8 px-6 md:px-8 text-center shrink-0">
+                <div className="pt-12 pb-8 px-6 text-center shrink-0">
                     <motion.div
-                        initial={{ opacity: 0, y: -20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
+                        variants={sectionVariants}
+                        initial="hidden"
+                        whileInView="visible"
                         viewport={{ once: true }}
                         className="max-w-3xl mx-auto"
                     >
-                        <h2 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">
+                        <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
                             Workflow-Driven Modules
                         </h2>
                         <p className="text-slate-500 mt-2">
@@ -156,100 +206,38 @@ const LandingPage = () => {
                     </motion.div>
                 </div>
 
-                {/* 2. Main Content Area */}
-                <div className="flex-1 min-h-0 max-w-7xl mx-auto w-full px-4 md:px-6 pb-12 flex flex-col md:flex-row gap-6 md:gap-8">
-                    {/* LEFT: Sidebar Tabs */}
-                    <div className="md:w-1/3 lg:w-1/4 md:overflow-y-auto custom-scrollbar">
-                        <div className="flex flex-col gap-3">
-                            {modules.map((m, i) => (
-                                <button
-                                    key={m.title}
-                                    onClick={() => setActive(i)}
-                                    className={`group cursor-pointer relative p-4 rounded-xl flex items-center gap-4 transition-all duration-300 border ${active === i
-                                            ? "bg-white border-slate-200 shadow-sm ring-1 ring-slate-200"
-                                            : "bg-transparent border-transparent hover:bg-slate-200/50"
-                                        }`}
-                                >
-                                    <div
-                                        className={`shrink-0 p-2.5 rounded-lg transition-colors ${active === i ? m.bg : "bg-slate-200"
-                                            }`}
-                                    >
-                                        <m.icon
-                                            className={`w-5 h-5 ${active === i ? m.color : "text-slate-500"
-                                                }`}
-                                        />
-                                    </div>
-
-                                    <div className="text-left overflow-hidden">
-                                        <p
-                                            className={`font-bold text-sm truncate ${active === i ? "text-slate-900" : "text-slate-500"
-                                                }`}
-                                        >
-                                            {m.title}
-                                        </p>
-                                    </div>
-
-                                    {active === i && (
-                                        <motion.div
-                                            layoutId="activePill"
-                                            className="absolute right-3 w-1.5 h-1.5 rounded-full bg-indigo-600"
-                                        />
-                                    )}
-                                </button>
-                            ))}
-                        </div>
+                <div className="flex-1 max-w-7xl mx-auto w-full px-6 pb-12 flex gap-8">
+                    {/* LEFT */}
+                    <div className="w-1/4 hidden md:block">
+                        {modules.map((m, i) => (
+                            <button
+                                key={m.title}
+                                onClick={() => setActive(i)}
+                                className={`w-full mb-3 p-4 rounded-xl flex items-center gap-3 ${active === i
+                                    ? "bg-white shadow border"
+                                    : "hover:bg-slate-200/60"
+                                    }`}
+                            >
+                                <div className={`p-2 rounded-lg ${m.bg}`}>
+                                    <m.icon className={`w-5 h-5 ${m.color}`} />
+                                </div>
+                                <span className="font-medium">{m.title}</span>
+                            </button>
+                        ))}
                     </div>
 
-                    {/* RIGHT: Content Display */}
-                    <div className="md:w-2/3 lg:w-3/4 bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden flex flex-col">
-                        <AnimatePresence mode="wait">
-                            <motion.div
-                                key={active}
-                                initial={{ opacity: 0, x: 20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: -20 }}
-                                transition={{ duration: 0.3 }}
-                                className="flex flex-col h-full"
-                            >
-                                {/* Top Bar */}
-                                <div className="px-6 py-4 bg-slate-50/50 flex items-center justify-between shrink-0 border-b border-slate-100">
-                                    <div className="flex gap-1.5">
-                                        <div className="w-3 h-3 rounded-full bg-slate-200" />
-                                        <div className="w-3 h-3 rounded-full bg-slate-200" />
-                                        <div className="w-3 h-3 rounded-full bg-slate-200" />
-                                    </div>
-                                    <span className="text-xs font-mono text-slate-400 uppercase tracking-widest">
-                                        {modules[active].title} Specification
-                                    </span>
-                                </div>
-
-                                {/* IMAGE - DESKTOP ONLY */}
-                                <div className="hidden md:flex flex-1 relative overflow-hidden p-6 bg-slate-50">
-                                    <img
-                                        src={modules[active].image}
-                                        alt={modules[active].alt}
-                                        className="w-full h-full object-contain rounded-xl drop-shadow-2xl"
-                                    />
-                                </div>
-
-                                {/* Bottom Content */}
-                                <div className="p-5 md:p-8 bg-white border-t border-slate-100 shrink-0">
-                                    <div className="max-w-2xl">
-                                        <h4 className="text-xl font-bold text-slate-900 mb-3 flex items-center gap-2">
-                                            <span
-                                                className={`w-2 h-6 rounded-full ${modules[
-                                                    active
-                                                ].bg.replace("100", "500")}`}
-                                            />
-                                            Functional Overview
-                                        </h4>
-                                        <p className="text-slate-600 leading-relaxed">
-                                            {modules[active].description}
-                                        </p>
-                                    </div>
-                                </div>
-                            </motion.div>
-                        </AnimatePresence>
+                    {/* RIGHT */}
+                    <div className="flex-1 bg-white rounded-3xl shadow-xl border overflow-hidden">
+                        <img
+                            src={modules[active].image}
+                            alt={modules[active].alt}
+                            className="w-full h-80 object-contain bg-slate-50"
+                        />
+                        <div className="p-8">
+                            <p className="text-slate-600">
+                                {modules[active].description}
+                            </p>
+                        </div>
                     </div>
                 </div>
             </section>
