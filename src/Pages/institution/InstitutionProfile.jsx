@@ -327,12 +327,12 @@ export default function InstitutionProfile() {
 
             {/* ACTIONS */}
             <div className="mt-10 flex justify-end gap-3">
-                <button
+                {/* <button
                     onClick={() => setShowPasswordModal(true)}
                     className="px-6 py-2 rounded-full bg-blue-600 text-white"
                 >
                     Change Password
-                </button>
+                </button> */}
 
                 <button
                     onClick={handleLogout}

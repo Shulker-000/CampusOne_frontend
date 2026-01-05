@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import LandingPage from "./Pages/general/LandingPage";
 import ContactPage from "./Pages/general/ContactPage";
 import NotFound from "./Pages/general/NotFound";
+import AboutPage from "./Pages/general/AboutPage";
 import { loginSuccess, logout } from "./features/authSlice"; // Import the logout action from your authSlice
 
 // Institution Pages
@@ -15,6 +16,7 @@ import ResetPasswordInstitution from "./Pages/institution/ResetPasswordInstituti
 import InstitutionDashboard from "./Pages/institution/InstitutionDashboard";
 import InstitutionProfile from "./Pages/institution/InstitutionProfile";
 import Navbar from "./components/Navbar";
+import VerifyInstitutionEmail from "./Pages/institution/VerifyInstitutionEmail";
 
 /* ---------- Route Guards ---------- */
 
@@ -127,6 +129,8 @@ const App = () => {
 
         {/* ===== ALWAYS PUBLIC ===== */}
         <Route path="/contact" element={<ContactPage />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/institution/verify-email/:token" element={<VerifyInstitutionEmail />} />
 
         {/* ===== FALLBACK ===== */}
         <Route path="*" element={<NotFound />} />
