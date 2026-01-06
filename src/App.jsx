@@ -3,136 +3,82 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import { useDispatch, useSelector } from "react-redux";
 
 import LandingPage from "./Pages/general/LandingPage";
+import AboutPage from "./Pages/general/AboutPage";
 import ContactPage from "./Pages/general/ContactPage";
 import NotFound from "./Pages/general/NotFound";
-import AboutPage from "./Pages/general/AboutPage";
-import { loginSuccess, logout } from "./features/authSlice"; // Import the logout action from your authSlice
-
-// Institution Pages
-import RegisterInstitution from "./Pages/institution/RegisterInstitution";
-import LoginInstitution from "./Pages/institution/LoginInstitution";
-import ForgotPasswordInstitution from "./Pages/institution/ForgotPasswordInstitution";
-import ResetPasswordInstitution from "./Pages/institution/ResetPasswordInstitution";
-import InstitutionDashboard from "./Pages/institution/InstitutionDashboard";
-import InstitutionProfile from "./Pages/institution/InstitutionProfile";
 import Navbar from "./components/Navbar";
-import VerifyInstitutionEmail from "./Pages/institution/VerifyInstitutionEmail";
 
-/* ---------- Route Guards ---------- */
-
-const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, authChecked } = useSelector(state => state.auth);
-
-  if (!authChecked) {
-    return null; // or loading spinner
-  }
-
-  return isAuthenticated
-    ? children
-    : <Navigate to="/institution/login" replace />;
-};
-
-
-const PublicOnlyRoute = ({ children }) => {
-  const { isAuthenticated, authChecked } = useSelector(state => state.auth);
-
-  if (!authChecked) {
-    return null;
-  }
-
-  return isAuthenticated
-    ? <Navigate to="/dashboard" replace />
-    : children;
-};
-
-
-/* ---------- App ---------- */
+import InstitutionRoutes from "./routes/InstitutionRoutes";
+import {
+  institutionLoginSuccess,
+  institutionLogout,
+} from "./features/authSlice";
 
 const App = () => {
   const dispatch = useDispatch();
 
+  const { isAuthenticated, authChecked } = useSelector(
+    (state) => state.auth.institution
+  );
+
   useEffect(() => {
-    const checkAuth = async () => {
+    const checkInstitutionAuth = async () => {
       try {
         const res = await fetch(
           `${import.meta.env.VITE_BACKEND_URL}/api/institutions/current-institution`,
           { credentials: "include" }
         );
 
-        if (!res.ok) throw new Error();
+        if (!res.ok) {
+          dispatch(institutionLogout());
+          return;
+        }
 
         const data = await res.json();
-
         dispatch(
-          loginSuccess({
+          institutionLoginSuccess({
             institution: data.data,
+            token: null,
           })
         );
       } catch {
-        dispatch(logout());
+        dispatch(institutionLogout());
       }
     };
 
-    checkAuth();
+    checkInstitutionAuth();
   }, [dispatch]);
 
-
+  // ⛔ Block rendering until auth state is resolved
+  if (!authChecked) {
+    return null; // or global loader
+  }
 
   return (
     <Router>
       <Navbar />
 
       <Routes>
-        {/* ===== PUBLIC ONLY ===== */}
-        <Route path="/" element={
-          <PublicOnlyRoute>
-            <LandingPage />
-          </PublicOnlyRoute>
-        } />
+        {/* ROOT */}
+        <Route
+          path="/"
+          element={
+            isAuthenticated ? (
+              <Navigate to="/institution/dashboard" replace />
+            ) : (
+              <LandingPage />
+            )
+          }
+        />
 
-        <Route path="/institution/login" element={
-          <PublicOnlyRoute>
-            <LoginInstitution />
-          </PublicOnlyRoute>
-        } />
-
-        <Route path="/institution/register" element={
-          <PublicOnlyRoute>
-            <RegisterInstitution />
-          </PublicOnlyRoute>
-        } />
-
-        <Route path="/institution/forgot-password" element={
-          <PublicOnlyRoute>
-            <ForgotPasswordInstitution />
-          </PublicOnlyRoute>
-        } />
-
-        <Route path="/institution/reset-password/:token" element={
-          <PublicOnlyRoute>
-            <ResetPasswordInstitution />
-          </PublicOnlyRoute>
-        } />
-
-        {/* ===== PROTECTED ===== */}
-        <Route path="/dashboard" element={
-          <ProtectedRoute>
-            <InstitutionDashboard />
-          </ProtectedRoute>
-        } />
-
-        <Route path="/institution/profile" element={
-          <ProtectedRoute>
-            <InstitutionProfile />
-          </ProtectedRoute>
-        } />
-
-        {/* ===== ALWAYS PUBLIC ===== */}
-        <Route path="/contact" element={<ContactPage />} />
+        {/* GENERAL PUBLIC */}
         <Route path="/about" element={<AboutPage />} />
-        <Route path="/institution/verify-email/:token" element={<VerifyInstitutionEmail />} />
+        <Route path="/contact" element={<ContactPage />} />
 
-        {/* ===== FALLBACK ===== */}
+        {/* INSTITUTION */}
+        <Route path="/institution/*" element={<InstitutionRoutes />} />
+
+        {/* FALLBACK */}
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
