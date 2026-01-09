@@ -19,7 +19,7 @@ export default function VerifyInstitutionEmail() {
         toast.success("Email verified. Please login.");
         setTimeout(() => navigate("/institution/login"), 2500);
       } catch (err) {
-        toast.error("Verification failed or expired");
+        toast.error(err.message);
         setTimeout(() => navigate("/institution/login"), 3000);
       }
     };

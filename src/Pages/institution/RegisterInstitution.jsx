@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Building2,
@@ -19,6 +19,7 @@ import { toast } from "react-toastify";
 const RegisterInstitution = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [step, setStep] = useState(1);
 
   const [form, setForm] = useState({
     name: "",
@@ -31,20 +32,53 @@ const RegisterInstitution = () => {
     type: "",
   });
 
-  const handleChange = (e) => {
+  const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
+
+  const validateStep = () => {
+    if (step === 1) {
+      const { name, code, address, establishedYear, type } = form;
+      if (!name || !code || !address || !establishedYear || !type) {
+        toast.warn("Complete all institution details");
+        return false;
+      }
+    }
+
+    if (step === 2) {
+      const { contactEmail, contactPhone } = form;
+      if (!contactEmail || !contactPhone) {
+        toast.warn("Complete contact details");
+        return false;
+      }
+    }
+
+    if (step === 3) {
+      if (!form.password) {
+        toast.warn("Password is required");
+        return false;
+      }
+    }
+
+    return true;
   };
+
+const nextStep = (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+
+  if (!validateStep()) return;
+  setStep((s) => s + 1);
+};
+
+
+  const prevStep = () => setStep((s) => s - 1);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (Object.values(form).some((v) => !v)) {
-      toast.warn("All fields are required");
-      return;
-    }
+    if (step !== 3) return;
+    if (!validateStep()) return;
 
     setLoading(true);
-
     try {
       const res = await fetch(
         `${import.meta.env.VITE_BACKEND_URL}/api/institutions/register`,
@@ -57,7 +91,6 @@ const RegisterInstitution = () => {
       );
 
       const data = await res.json();
-
       if (!res.ok) {
         toast.error(data.message || "Registration failed");
         return;
@@ -78,6 +111,7 @@ const RegisterInstitution = () => {
       <div className="absolute -bottom-32 -right-32 w-md h-md bg-emerald-200/40 rounded-full blur-3xl" />
 
       <div className="relative z-10 w-full max-w-6xl mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center">
+        {/* LEFT */}
         <motion.div
           initial={{ opacity: 0, x: -40 }}
           animate={{ opacity: 1, x: 0 }}
@@ -91,146 +125,121 @@ const RegisterInstitution = () => {
           </h1>
 
           <p className="mt-6 text-lg text-slate-600 max-w-xl">
-            Join the ecosystem of modern educational governance. Unified
-            management for students, staff, and administrative operations.
+            Join the ecosystem of modern educational governance.
           </p>
 
           <div className="mt-10 space-y-6 text-slate-600">
-            <Feature
-              icon={ShieldCheck}
-              text="Secure data encryption & sovereignty"
-            />
-            <Feature
-              icon={Globe}
-              text="Global standard accreditation workflows"
-            />
-            <Feature
-              icon={Building2}
-              text="Centralized multi-campus support"
-            />
+            <Feature icon={ShieldCheck} text="Secure data encryption" />
+            <Feature icon={Globe} text="Global accreditation workflows" />
+            <Feature icon={Building2} text="Multi-campus support" />
           </div>
         </motion.div>
 
+        {/* FORM */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15, duration: 0.8 }}
+          transition={{ duration: 0.8 }}
           className="bg-white/80 backdrop-blur-xl border border-slate-200 rounded-2xl shadow-xl p-6 sm:p-8 w-full max-w-xl mx-auto"
         >
-          <div className="mb-8 text-center lg:text-left">
-            <img
-              src="/logo.png"
-              alt="CampusOne"
-              className="h-24 mb-4 mx-auto object-contain"
-            />
-            <h2 className="text-2xl font-bold text-slate-900">Get Started</h2>
-            <p className="text-slate-500 text-sm font-medium">
-              Create your institutional profile
-            </p>
+          <div className="mb-6 text-center">
+            <img src="/logo.png" alt="CampusOne" className="h-20 mx-auto mb-2" />
+            <h2 className="text-2xl font-bold">Step {step} of 3</h2>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <Section title="Institution Details">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Input
-                  label="Institution Name"
-                  icon={Building2}
-                  name="name"
-                  placeholder="Institution Name"
-                  onChange={handleChange}
-                />
-                <Input
-                  label="Institution Code"
-                  icon={Hash}
-                  name="code"
-                  placeholder="Code"
-                  onChange={handleChange}
-                />
-              </div>
-
-              <Input
-                label="Address"
-                icon={MapPin}
-                name="address"
-                placeholder="Address"
-                onChange={handleChange}
-              />
-
-              <div className="grid grid-cols-2 gap-4">
-                <Input
-                  label="Established"
-                  icon={Calendar}
-                  name="establishedYear"
-                  type="number"
-                  placeholder="YYYY"
-                  min="1800"
-                  max={new Date().getFullYear()}
-                  step="1"
-                  onChange={handleChange}
-                />
-
-                <Select
-                  label="Institution Type"
-                  name="type"
-                  onChange={handleChange}
-                  options={["University", "College", "School", "Institute"]}
-                />
-              </div>
-            </Section>
-
-            <Section title="Official Contact">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Input
-                  label="Contact Email"
-                  icon={Mail}
-                  name="contactEmail"
-                  placeholder="admin@univ.edu"
-                  onChange={handleChange}
-                />
-                <Input
-                  label="Contact Phone"
-                  icon={Phone}
-                  name="contactPhone"
-                  placeholder="Contact Number"
-                  onChange={handleChange}
-                />
-              </div>
-            </Section>
-
-            <Section title="Security">
-              <Input
-                label="Set Password"
-                icon={Lock}
-                name="password"
-                type="password"
-                placeholder="******"
-                minLength={6}
-                onChange={handleChange}
-              />
-            </Section>
-
-            <motion.button
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.99 }}
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-indigo-600 text-white py-3 font-semibold shadow-md hover:shadow-xl hover:bg-indigo-700 transition-all disabled:opacity-60"
-            >
-              {loading ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <>
-                  Complete Registration
-                  <ArrowRight className="w-4 h-4" />
-                </>
+          <form onSubmit={handleSubmit}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && step !== 3)
+                e.preventDefault();
+            }}
+            className="space-y-6">
+            <AnimatePresence mode="wait">
+              {step === 1 && (
+                <motion.div
+                  key="step1"
+                  initial={{ opacity: 0, x: 30 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -30 }}
+                >
+                  <Section title="Institution Details">
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <Input label="Institution Name" icon={Building2} value={form.name} name="name" onChange={handleChange} />
+                      <Input label="Institution Code" icon={Hash} value={form.code} name="code" onChange={handleChange} />
+                    </div>
+                    <Input label="Address" icon={MapPin} value={form.address} name="address" onChange={handleChange} />
+                    <div className="grid grid-cols-2 gap-4">
+                      <Input
+                        label="Established"
+                        icon={Calendar}
+                        value={form.establishedYear}
+                        name="establishedYear"
+                        type="number"
+                        onChange={handleChange}
+                      />
+                      <Select
+                        label="Institution Type"
+                        value={form.type}
+                        name="type"
+                        options={["University", "College", "School", "Institute"]}
+                        onChange={handleChange}
+                      />
+                    </div>
+                  </Section>
+                </motion.div>
               )}
-            </motion.button>
 
-            <p className="text-xs text-center text-slate-600">
+              {step === 2 && (
+                <motion.div key="step2" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }}>
+                  <Section title="Official Contact">
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <Input label="Contact Email" icon={Mail} name="contactEmail" value={form.contactEmail} onChange={handleChange} />
+                      <Input label="Contact Phone" icon={Phone} name="contactPhone" value={form.contactPhone} onChange={handleChange} />
+                    </div>
+                  </Section>
+                </motion.div>
+              )}
+
+              {step === 3 && (
+                <motion.div key="step3" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }}>
+                  <Section title="Security">
+                    <Input
+                      label="Set Password"
+                      icon={Lock}
+                      value={form.password}
+                      name="password"
+                      type="password"
+                      onChange={handleChange}
+                    />
+                  </Section>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <div className="flex gap-3">
+              {step > 1 && (
+                <button type="button" onClick={prevStep} className="w-full py-3 rounded-xl border font-semibold">
+                  Back
+                </button>
+              )}
+
+              {step < 3 ? (
+                <button type="button" onClick={nextStep} className="w-full py-3 rounded-xl bg-indigo-600 text-white font-semibold">
+                  Next
+                </button>
+              ) : (
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3 rounded-xl bg-indigo-600 text-white font-semibold"
+                >
+                  {loading ? <Loader2 className="animate-spin mx-auto" /> : "Complete Registration"}
+                </button>
+              )}
+            </div>
+
+            <p className="text-xs text-center">
               Already registered?{" "}
-              <Link
-                to="/institution/login"
-                className="text-indigo-600 font-semibold hover:underline"
-              >
+              <Link to="/institution/login" className="text-indigo-600 font-semibold">
                 Login here
               </Link>
             </p>
@@ -241,47 +250,48 @@ const RegisterInstitution = () => {
   );
 };
 
+/* ===== helpers unchanged ===== */
+
 const Feature = ({ icon: Icon, text }) => (
   <div className="flex items-center gap-3">
     <div className="p-2 bg-indigo-100 rounded-lg">
       <Icon className="w-5 h-5 text-indigo-600" />
     </div>
-    <span className="font-medium">{text}</span>
+    <span>{text}</span>
   </div>
 );
 
 const Section = ({ title, children }) => (
-  <div className="space-y-3">
-    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 ml-1">
-      {title}
-    </h3>
-    <div className="space-y-4">{children}</div>
+  <div className="space-y-4">
+    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">{title}</h3>
+    {children}
   </div>
 );
 
-const Input = ({ label, icon: Icon, ...props }) => (
+const Input = ({ label, icon: Icon, name, value, ...props }) => (
   <div className="space-y-1">
-    <label className="block text-xs font-semibold text-slate-700 ml-1">
-      {label}
-    </label>
-    <div className="relative group">
-      <Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
+    <label className="text-xs font-semibold">{label}</label>
+    <div className="relative">
+      <Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
       <input
+        name={name}
+        value={value}
         {...props}
-        className="w-full rounded-xl border border-slate-200 bg-white/50 pl-10 pr-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+        className="w-full pl-10 py-2.5 rounded-xl border"
       />
     </div>
   </div>
 );
 
-const Select = ({ label, options, ...props }) => (
+
+const Select = ({ label, name, value, options, ...props }) => (
   <div className="space-y-1">
-    <label className="block text-xs font-semibold text-slate-700 ml-1">
-      {label}
-    </label>
+    <label className="text-xs font-semibold">{label}</label>
     <select
+      name={name}
+      value={value}
       {...props}
-      className="w-full rounded-xl border border-slate-200 bg-white/50 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all appearance-none"
+      className="w-full py-2.5 rounded-xl border"
     >
       <option value="">Select Type</option>
       {options.map((o) => (
@@ -292,5 +302,6 @@ const Select = ({ label, options, ...props }) => (
     </select>
   </div>
 );
+
 
 export default RegisterInstitution;

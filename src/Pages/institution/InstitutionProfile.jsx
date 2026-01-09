@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { useDispatch } from "react-redux";
-import { logout } from "../../features/authSlice";
+import { institutionLogout } from "../../features/authSlice";
 import InstitutionChangePasswordModal from "./InstitutionChangePasswordModal";
 
 
@@ -194,7 +194,7 @@ export default function InstitutionProfile() {
             // no return here - still logout locally
         } finally {
             // 🔑 UPDATE REDUX FIRST
-            dispatch(logout());
+            dispatch(institutionLogout());
 
             // then clear persistence
             localStorage.removeItem("authToken");
@@ -327,12 +327,12 @@ export default function InstitutionProfile() {
 
             {/* ACTIONS */}
             <div className="mt-10 flex justify-end gap-3">
-                <button
+                {/* <button
                     onClick={() => setShowPasswordModal(true)}
                     className="px-6 py-2 rounded-full bg-blue-600 text-white"
                 >
                     Change Password
-                </button>
+                </button> */}
 
                 <button
                     onClick={handleLogout}

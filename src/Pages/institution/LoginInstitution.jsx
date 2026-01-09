@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { useDispatch } from "react-redux";
-import { loginSuccess } from "../../features/authSlice";
+import { institutionLoginSuccess } from "../../features/authSlice";
 
 const LoginInstitution = () => {
   const navigate = useNavigate();
@@ -71,14 +71,14 @@ const LoginInstitution = () => {
 
       // Redux
       dispatch(
-        loginSuccess({
+        institutionLoginSuccess({
           institution,
           token: accessToken,
         })
       );
 
       toast.success("Login successful");
-      navigate("/dashboard", { replace: true });
+      navigate("/institution/dashboard", { replace: true });
     } catch (err) {
       console.error(err);
       toast.error("Network error");
