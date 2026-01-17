@@ -1,96 +1,116 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import { useDispatch } from "react-redux";
+import {
+  institutionLoginSuccess,
+  institutionLogout,
+  userLoginSuccess,
+  userLogout,
+  setInstitutionAuthChecked,
+  setUserAuthChecked,
+} from "../redux/authSlice";
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-    const [institution, setInstitution] = useState(null);
-    const [user, setUser] = useState(null);
+  const dispatch = useDispatch();
 
-    const [tokens, setTokens] = useState(() => ({
-        institutionToken: localStorage.getItem("institutionToken") || null,
-        userToken: localStorage.getItem("userToken") || null,
-    }));
+  const [tokens, setTokens] = useState({
+    institutionToken: localStorage.getItem("institutionToken"),
+    userToken: localStorage.getItem("userToken"),
+  });
 
-    const loginInstitution = (token, payload) => {
-        localStorage.setItem("institutionToken", token);
-        setTokens((prev) => ({ ...prev, institutionToken: token }));
-        setInstitution(payload);
-    };
 
-    const loginUser = (token, payload) => {
-        localStorage.setItem("userToken", token);
-        setTokens((prev) => ({ ...prev, userToken: token }));
-        setUser(payload);
-    };
+  const loginInstitution = (token) => {
+    localStorage.setItem("institutionToken", token);
+    setTokens((prev) => ({ ...prev, institutionToken: token }));
+  };
 
-    const logoutInstitution = () => {
-        localStorage.removeItem("institutionToken");
-        setTokens((prev) => ({ ...prev, institutionToken: null }));
-        setInstitution(null);
-    };
+  const loginUser = (token) => {
+    localStorage.setItem("userToken", token);
+    setTokens((prev) => ({ ...prev, userToken: token }));
+  };
 
-    const logoutUser = () => {
-        localStorage.removeItem("userToken");
-        setTokens((prev) => ({ ...prev, userToken: null }));
-        setUser(null);
-    };
 
-    const verifyInstitution = async (token) => {
-        try {
-            const res = await fetch(
-                `${import.meta.env.VITE_BACKEND_URL}/api/institutions/current-institution`, {
-                headers: { Authorization: `Bearer ${token}` },
-            }
-            );
+  const logoutInstitution = () => {
+    localStorage.removeItem("institutionToken");
+    setTokens((prev) => ({ ...prev, institutionToken: null }));
+    dispatch(institutionLogout());
+  };
 
-            if (!res.ok) return logoutInstitution();
+  const logoutUser = () => {
+    localStorage.removeItem("userToken");
+    setTokens((prev) => ({ ...prev, userToken: null }));
+    dispatch(userLogout());
+  };
 
-            const data = await res.json();
-            setInstitution(data);
-        } catch (err) {
-            logoutInstitution();
-            console.log(err)
-        }
-    };
+  const verifyInstitution = async (token) => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/institutions/current-institution`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-    const verifyUser = async (token) => {
-        try {
+      if (!res.ok) return logoutInstitution();
 
-            const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/users/current-user`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+      const data = await res.json();
 
-            if (!res.ok) return logoutUser();
+      dispatch(
+        institutionLoginSuccess({
+          institution: data,
+          token,
+        })
+      );
+    } catch {
+      logoutInstitution();
+    } finally {
+      dispatch(setInstitutionAuthChecked());
+    }
+  };
 
-            const data = await res.json();
-            setUser(data);
-        } catch (err) {
-            logoutUser();
-            console.log(err)
-        }
-    };
+  const verifyUser = async (token) => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/users/current-user`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-    useEffect(() => {
-        const run = async () => {
-            if (tokens.institutionToken) await verifyInstitution(tokens.institutionToken);
-            if (tokens.userToken) await verifyUser(tokens.userToken);
-        };
-        run();
-    }, [tokens.institutionToken, tokens.userToken]);
+      if (!res.ok) return logoutUser();
 
-    const value = {
-        institution,
-        user,
-        tokens,
+      const data = await res.json();
+
+      dispatch(
+        userLoginSuccess({
+          user: data,
+          token,
+        })
+      );
+    } catch {
+      logoutUser();
+    } finally {
+      dispatch(setUserAuthChecked());
+    }
+  };
+
+
+  useEffect(() => {
+    if (tokens.institutionToken) verifyInstitution(tokens.institutionToken);
+    else dispatch(setInstitutionAuthChecked());
+
+    if (tokens.userToken) verifyUser(tokens.userToken);
+    else dispatch(setUserAuthChecked());
+  }, [tokens.institutionToken, tokens.userToken]);
+
+  return (
+    <AuthContext.Provider
+      value={{
         loginInstitution,
         loginUser,
         logoutInstitution,
         logoutUser,
-        isInstitutionLoggedIn: !!institution,
-        isUserLoggedIn: !!user,
-    };
-
-    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+        tokens,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
 export const useAuth = () => useContext(AuthContext);
