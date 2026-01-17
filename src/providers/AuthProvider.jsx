@@ -20,14 +20,26 @@ export const AuthProvider = ({ children }) => {
   });
 
 
-  const loginInstitution = (token) => {
+  const loginInstitution = (token, data) => {
     localStorage.setItem("institutionToken", token);
     setTokens((prev) => ({ ...prev, institutionToken: token }));
+    dispatch(
+        institutionLoginSuccess({
+          institution: data,
+          token,
+        })
+      );
   };
 
-  const loginUser = (token) => {
+  const loginUser = (token, data) => {
     localStorage.setItem("userToken", token);
     setTokens((prev) => ({ ...prev, userToken: token }));
+    dispatch(
+        userLoginSuccess({
+          user: data,
+          token,
+        })
+      );
   };
 
 
