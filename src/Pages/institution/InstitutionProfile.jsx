@@ -12,11 +12,9 @@ import {
     Loader2,
 } from "lucide-react";
 import { toast } from "react-toastify";
-import { useDispatch } from "react-redux";
-import { institutionLogout } from "../../features/authSlice";
-import InstitutionChangePasswordModal from "./InstitutionChangePasswordModal";
 
-
+import { useAuth } from "../../providers/AuthProvider.jsx"; // ✅ ADDED
+import Loader from "../../components/Loader.jsx";
 
 /* ================= IMAGE HELPERS ================= */
 
@@ -60,11 +58,11 @@ export default function InstitutionProfile() {
     const navigate = useNavigate();
     const fileInputRef = useRef(null);
 
+    const { tokens, logoutInstitution } = useAuth(); // ✅ ADDED
+
     const [institution, setInstitution] = useState(null);
     const [loading, setLoading] = useState(true);
     const [currentTime, setCurrentTime] = useState(new Date());
-
-    const [showPasswordModal, setShowPasswordModal] = useState(false);
 
     const [isVerifying, setIsVerifying] = useState(false);
     const [isAvatarViewOpen, setIsAvatarViewOpen] = useState(false);
@@ -75,21 +73,31 @@ export default function InstitutionProfile() {
     const [zoom, setZoom] = useState(1);
     const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
 
-    const dispatch = useDispatch();
-
     /* ================= FETCH ================= */
 
     useEffect(() => {
         const fetchInstitution = async () => {
             try {
+                if (!tokens.institutionToken) {
+                    setLoading(false);
+                    toast.error("Not logged in");
+                    navigate("/institution/login", { replace: true });
+                    return;
+                }
+
                 const res = await fetch(
                     `${import.meta.env.VITE_BACKEND_URL}/api/institutions/current-institution`,
-                    { credentials: "include" }
+                    {
+                        headers: {
+                            Authorization: `Bearer ${tokens.institutionToken}`, // ✅ ADDED
+                        },
+                    }
                 );
 
                 if (res.status === 401) {
                     toast.error("Session expired");
-                    navigate("/institution/login");
+                    logoutInstitution(); // ✅ provider handles redux + localstorage
+                    navigate("/institution/login", { replace: true });
                     return;
                 }
 
@@ -105,7 +113,7 @@ export default function InstitutionProfile() {
         };
 
         fetchInstitution();
-    }, [navigate]);
+    }, [navigate, tokens.institutionToken, logoutInstitution]);
 
     /* ================= CLOCK ================= */
 
@@ -126,12 +134,24 @@ export default function InstitutionProfile() {
     const handleSendVerificationEmail = async () => {
         setIsVerifying(true);
         try {
+            if (!tokens.institutionToken) {
+                toast.error("Not logged in");
+                return;
+            }
+
             const res = await fetch(
                 `${import.meta.env.VITE_BACKEND_URL}/api/institutions/send-email-verification`,
-                { method: "POST", credentials: "include" }
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${tokens.institutionToken}`, // ✅ ADDED
+                    },
+                }
             );
+
             const data = await res.json();
             if (!res.ok) throw new Error(data.message);
+
             toast.success("Verification email sent");
         } catch (err) {
             toast.error(err.message);
@@ -156,6 +176,11 @@ export default function InstitutionProfile() {
 
     const onCropSave = async () => {
         try {
+            if (!tokens.institutionToken) {
+                toast.error("Not logged in");
+                return;
+            }
+
             setIsAvatarUpdating(true);
             const blob = await getCroppedImage(imageSrc, croppedAreaPixels);
             const fd = new FormData();
@@ -163,7 +188,13 @@ export default function InstitutionProfile() {
 
             const res = await fetch(
                 `${import.meta.env.VITE_BACKEND_URL}/api/institutions/update-avatar`,
-                { method: "POST", credentials: "include", body: fd }
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${tokens.institutionToken}`, // ✅ ADDED
+                    },
+                    body: fd,
+                }
             );
 
             const data = await res.json();
@@ -185,43 +216,33 @@ export default function InstitutionProfile() {
         try {
             const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
+            // ✅ optional backend call (fine to keep)
             await fetch(`${backendUrl}/api/institutions/logout`, {
                 method: "POST",
-                credentials: "include",
+                headers: {
+                    Authorization: `Bearer ${tokens.institutionToken}`, // ✅ ADDED
+                },
             });
         } catch (err) {
             console.error("Logout error:", err);
-            // no return here - still logout locally
         } finally {
-            // 🔑 UPDATE REDUX FIRST
-            dispatch(institutionLogout());
-
-            // then clear persistence
-            localStorage.removeItem("authToken");
-            localStorage.removeItem("authInstitution");
-            sessionStorage.clear();
-
-            // then navigate
-            toast.success("Logged Out")
+            logoutInstitution(); // ✅ provider does everything
+            toast.success("Logged Out");
             navigate("/institution/login", { replace: true });
         }
-
     };
-
 
     /* ================= UI ================= */
 
     if (loading)
         return (
-            <div className="min-h-screen flex items-center justify-center">
-                Loading profile...
-            </div>
+            <Loader/>
         );
 
     if (!institution) return null;
 
     return (
-        <div className="min-h-screen w-[90vw] md:w-[80vw] mx-auto pt-16 p-6 text-gray-800">
+        <div className="min-h-screen w-full md:w-[80vw] mx-auto pt-16 p-6 text-gray-800">
             {/* TOP */}
             <div className="mb-6">
                 <h1 className="text-2xl mt-2 font-bold">
@@ -327,13 +348,6 @@ export default function InstitutionProfile() {
 
             {/* ACTIONS */}
             <div className="mt-10 flex justify-end gap-3">
-                {/* <button
-                    onClick={() => setShowPasswordModal(true)}
-                    className="px-6 py-2 rounded-full bg-blue-600 text-white"
-                >
-                    Change Password
-                </button> */}
-
                 <button
                     onClick={handleLogout}
                     className="px-6 py-2 rounded-full bg-red-600 text-white flex items-center gap-2"
@@ -341,7 +355,6 @@ export default function InstitutionProfile() {
                     <LogOut size={16} /> Logout
                 </button>
             </div>
-
 
             {/* MODALS */}
             <AnimatePresence>
@@ -392,11 +405,13 @@ export default function InstitutionProfile() {
                                 <button
                                     onClick={() => setImageSrc(null)}
                                     className="btn-secondary flex items-center gap-2 px-6 py-2 rounded-full text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-300"
-
                                 >
                                     Cancel
                                 </button>
-                                <button onClick={onCropSave} className="btn-primary flex items-center gap-2 px-6 py-2 rounded-full text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-300">
+                                <button
+                                    onClick={onCropSave}
+                                    className="btn-primary flex items-center gap-2 px-6 py-2 rounded-full text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-300"
+                                >
                                     <Crop size={16} /> Crop & Save
                                 </button>
                             </div>
@@ -412,12 +427,6 @@ export default function InstitutionProfile() {
                 accept=".jpg,.jpeg,.png,.webp"
                 onChange={onSelectFile}
             />
-
-            <InstitutionChangePasswordModal
-                isVisible={showPasswordModal}
-                onClose={() => setShowPasswordModal(false)}
-            />
         </div>
     );
 }
-

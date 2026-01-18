@@ -1,9 +1,8 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import {
   Mail,
-  Hash,
   Lock,
   Loader2,
   ArrowRight,
@@ -12,13 +11,23 @@ import {
   Building2,
 } from "lucide-react";
 import { toast } from "react-toastify";
-import { useDispatch } from "react-redux";
-import { institutionLoginSuccess } from "../../features/authSlice";
+import { useSelector } from "react-redux";
+import { useAuth } from "./../../providers/AuthProvider.jsx";
+import Loader from "../../components/Loader.jsx";
 
 const LoginInstitution = () => {
   const navigate = useNavigate();
-  const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
+
+  const institutionAuth = useSelector((s) => s.auth.institution);
+  
+  if (!institutionAuth.authChecked) return <Loader />;
+
+  if (institutionAuth.isAuthenticated) {
+    return <Navigate to="/institution/dashboard" replace />;
+  }
+
+  const { loginInstitution } = useAuth();
 
   const [form, setForm] = useState({
     identifier: "",
@@ -49,7 +58,6 @@ const LoginInstitution = () => {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          credentials: "include",
           body: JSON.stringify(payload),
         }
       );
@@ -61,22 +69,11 @@ const LoginInstitution = () => {
         return;
       }
 
-      const { institution, accessToken } = data.data;
+      const { accessToken } = data.data;
 
-      // localStorage
-      localStorage.setItem("authToken", accessToken);
-      localStorage.setItem(
-        "authInstitution",
-        JSON.stringify(institution)
-      );
+      // Provider will store token + dispatch redux
+      loginInstitution(accessToken, data);
 
-      // Redux
-      dispatch(
-        institutionLoginSuccess({
-          institution,
-          token: accessToken,
-        })
-      );
 
       toast.success("Login successful");
       navigate("/institution/dashboard", { replace: true });

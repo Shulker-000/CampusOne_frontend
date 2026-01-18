@@ -7,7 +7,7 @@ import {
   userLogout,
   setInstitutionAuthChecked,
   setUserAuthChecked,
-} from "../redux/authSlice";
+} from "../features/authSlice";
 
 const AuthContext = createContext(null);
 
@@ -24,22 +24,22 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem("institutionToken", token);
     setTokens((prev) => ({ ...prev, institutionToken: token }));
     dispatch(
-        institutionLoginSuccess({
-          institution: data,
-          token,
-        })
-      );
+      institutionLoginSuccess({
+        institution: data.data,
+        token,
+      })
+    );
   };
 
   const loginUser = (token, data) => {
     localStorage.setItem("userToken", token);
     setTokens((prev) => ({ ...prev, userToken: token }));
     dispatch(
-        userLoginSuccess({
-          user: data,
-          token,
-        })
-      );
+      userLoginSuccess({
+        user: data.data,
+        token,
+      })
+    );
   };
 
 
@@ -64,10 +64,9 @@ export const AuthProvider = ({ children }) => {
       if (!res.ok) return logoutInstitution();
 
       const data = await res.json();
-
       dispatch(
         institutionLoginSuccess({
-          institution: data,
+          institution: data.data,
           token,
         })
       );
@@ -87,10 +86,9 @@ export const AuthProvider = ({ children }) => {
       if (!res.ok) return logoutUser();
 
       const data = await res.json();
-
       dispatch(
         userLoginSuccess({
-          user: data,
+          user: data.data,
           token,
         })
       );

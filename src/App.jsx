@@ -1,59 +1,23 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 
-import LandingPage from "./Pages/general/LandingPage";
-import AboutPage from "./Pages/general/AboutPage";
-import ContactPage from "./Pages/general/ContactPage";
-import NotFound from "./Pages/general/NotFound";
+import LandingPage from "./pages/LandingPage";
+import AboutPage from "./pages/AboutPage";
+import ContactPage from "./pages/ContactPage";
+import NotFound from "./pages/NotFound";
 import Navbar from "./components/Navbar";
+import Loader from "./components/Loader.jsx";
 
 import InstitutionRoutes from "./routes/InstitutionRoutes";
-import {
-  institutionLoginSuccess,
-  institutionLogout,
-} from "./features/authSlice";
+// import UserRoutes from "./routes/UserRoutes";
 
 const App = () => {
-  const dispatch = useDispatch();
+  const institutionAuth = useSelector((s) => s.auth.institution);
+  const userAuth = useSelector((s) => s.auth.user);
 
-  const { isAuthenticated, authChecked } = useSelector(
-    (state) => state.auth.institution
-  );
-
-  useEffect(() => {
-    const checkInstitutionAuth = async () => {
-
-      console.log("Auth Page:", import.meta.env.VITE_BACKEND_URL)
-      try {
-        const res = await fetch(
-          `${import.meta.env.VITE_BACKEND_URL}/api/institutions/current-institution`,
-          { credentials: "include" }
-        );
-
-        if (!res.ok) {
-          dispatch(institutionLogout());
-          return;
-        }
-
-        const data = await res.json();
-        dispatch(
-          institutionLoginSuccess({
-            institution: data.data,
-            token: null,
-          })
-        );
-      } catch {
-        dispatch(institutionLogout());
-      }
-    };
-
-    checkInstitutionAuth();
-  }, [dispatch]);
-
-  // ⛔ Block rendering until auth state is resolved
-  if (!authChecked) {
-    return null; // or global loader
+  if (!institutionAuth.authChecked || !userAuth.authChecked) {
+    return <Loader text="Checking session..." />;
   }
 
   return (
@@ -61,26 +25,29 @@ const App = () => {
       <Navbar />
 
       <Routes>
-        {/* ROOT */}
         <Route
           path="/"
           element={
-            isAuthenticated ? (
+            institutionAuth.isAuthenticated ? (
               <Navigate to="/institution/dashboard" replace />
+            ) : userAuth.isAuthenticated ? (
+              userAuth.data?.role ? (
+                <Navigate to={`/${userAuth.data.role.toLowerCase()}/dashboard`} replace />
+              ) : (
+                <Loader text="Loading user..." />
+              )
             ) : (
               <LandingPage />
             )
           }
         />
 
-        {/* GENERAL PUBLIC */}
         <Route path="/about" element={<AboutPage />} />
         <Route path="/contact" element={<ContactPage />} />
 
-        {/* INSTITUTION */}
         <Route path="/institution/*" element={<InstitutionRoutes />} />
+        {/* <Route path="/*" element={<UserRoutes />} /> */}
 
-        {/* FALLBACK */}
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>

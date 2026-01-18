@@ -3,13 +3,20 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 
 // Pages
-import LoginInstitution from "../Pages/institution/LoginInstitution";
-import RegisterInstitution from "../Pages/institution/RegisterInstitution";
-import ForgotPasswordInstitution from "../Pages/institution/ForgotPasswordInstitution";
-import ResetPasswordInstitution from "../Pages/institution/ResetPasswordInstitution";
-import VerifyInstitutionEmail from "../Pages/institution/VerifyInstitutionEmail";
-import InstitutionDashboard from "../Pages/institution/InstitutionDashboard";
-import InstitutionProfile from "../Pages/institution/InstitutionProfile";
+import LoginInstitution from "../pages/institution/LoginInstitution";
+import RegisterInstitution from "../pages/institution/RegisterInstitution";
+import ForgotPasswordInstitution from "../pages/institution/ForgotPasswordInstitution";
+import ResetPasswordInstitution from "../pages/institution/ResetPasswordInstitution";
+import VerifyInstitutionEmail from "../pages/institution/VerifyInstitutionEmail";
+import InstitutionDashboard from "../pages/institution/InstitutionDashboard";
+import InstitutionProfile from "../pages/institution/InstitutionProfile";
+import NotFound from "../pages/NotFound";
+
+import Loader from "../components/Loader";
+import DashboardLayout from "../layouts/DashboardLayout";
+import InstitutionDepartments from "../pages/institution/departments/InstitutionDepartments";
+import CreateDepartment from "../pages/institution/departments/CreateDepartment";
+import EditDepartment from "../pages/institution/departments/EditDepartment";
 
 /* ---------- Guards ---------- */
 
@@ -19,10 +26,10 @@ const InstitutionProtected = ({ children }) => {
     (s) => s.auth.institution
   );
 
-  if (!authChecked) return null;
+  if (!authChecked) return <Loader />;
 
   if (!isAuthenticated) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/institution/login" replace />;
   }
 
   return children;
@@ -34,7 +41,7 @@ const InstitutionAuthPublic = ({ children }) => {
     (s) => s.auth.institution
   );
 
-  if (!authChecked) return null;
+  if (!authChecked) return <Loader />;
 
   if (isAuthenticated) {
     return <Navigate to="/institution/dashboard" replace />;
@@ -86,28 +93,36 @@ const InstitutionRoutes = () => {
       />
 
       {/* PROTECTED */}
-      <Route
-        path="dashboard"
+      <Route    // For SideBar Outlet
         element={
           <InstitutionProtected>
-            <InstitutionDashboard />
+            <DashboardLayout />
           </InstitutionProtected>
         }
-      />
+      >
+        <Route path="dashboard" element={<InstitutionDashboard />} />
+        <Route path="profile" element={<InstitutionProfile />} />
 
-      <Route
-        path="profile"
-        element={
-          <InstitutionProtected>
-            <InstitutionProfile />
-          </InstitutionProtected>
-        }
-      />
+        <Route path="departments/create" element={<CreateDepartment />} />
+        <Route path="departments" element={<InstitutionDepartments />} />
+        <Route path="departments/edit/:departmentId" element={<EditDepartment />} />
 
-      {/* ALWAYS PUBLIC */}
+      </Route>
+
+      {/* ====================== ALWAYS PUBLIC ====================== */}
       <Route
         path="verify-email/:token"
-        element={<VerifyInstitutionEmail />}
+        element={
+          <VerifyInstitutionEmail />
+        }
+      />
+
+      {/* FALLBACK */}
+      <Route
+        path="*"
+        element={
+          <NotFound />
+        }
       />
     </Routes>
   );

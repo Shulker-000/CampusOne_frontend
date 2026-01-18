@@ -1,5 +1,5 @@
 import React from "react";
-import OurStory from './../../assets/about/ourStory.png'
+import OurStory from './../assets/about/ourStory.png'
 const AboutPage = () => {
   return (
     <div className="bg-white text-slate-800">

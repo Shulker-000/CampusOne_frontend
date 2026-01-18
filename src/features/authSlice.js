@@ -21,7 +21,7 @@ const authSlice = createSlice({
   reducers: {
     institutionLoginSuccess: (state, action) => {
       state.institution.data = action.payload.institution;
-      state.institution.token = action.payload.token;
+      state.institution.token = action.payload.token ?? null;
       state.institution.isAuthenticated = true;
       state.institution.authChecked = true;
     },
@@ -36,7 +36,7 @@ const authSlice = createSlice({
 
     userLoginSuccess: (state, action) => {
       state.user.data = action.payload.user;
-      state.user.token = action.payload.token;
+      state.user.token = action.payload.token ?? null;
       state.user.isAuthenticated = true;
       state.user.authChecked = true;
     },
