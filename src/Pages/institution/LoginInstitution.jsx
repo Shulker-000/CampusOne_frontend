@@ -51,6 +51,7 @@ const LoginInstitution = () => {
       const payload = form.identifier.includes("@")
         ? { contactEmail: form.identifier, password: form.password }
         : { code: form.identifier, password: form.password };
+      console.log("Profile Page:", import.meta.env.VITE_BACKEND_URL)
 
       const res = await fetch(
         `${import.meta.env.VITE_BACKEND_URL}/api/institutions/login`,
