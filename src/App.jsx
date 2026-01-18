@@ -2,10 +2,10 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 
-import LandingPage from "./pages/LandingPage";
-import AboutPage from "./pages/AboutPage";
-import ContactPage from "./pages/ContactPage";
-import NotFound from "./pages/NotFound";
+import LandingPage from "./Pages/LandingPage";
+import AboutPage from "./Pages/AboutPage";
+import ContactPage from "./Pages/ContactPage";
+import NotFound from "./Pages/NotFound";
 import Navbar from "./components/Navbar";
 import Loader from "./components/Loader.jsx";
 
