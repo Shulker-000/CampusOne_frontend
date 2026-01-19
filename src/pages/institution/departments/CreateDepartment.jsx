@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
@@ -8,7 +8,7 @@ const CreateDepartment = () => {
     const navigate = useNavigate();
 
     const institutionId = useSelector((s) => s.auth.institution.data?._id);
-    const institutionToken = localStorage.getItem("institutionToken");
+    const institutionToken = useSelector((s) => s.auth.institution.token);
 
     const [loading, setLoading] = useState(false);
 
@@ -20,10 +20,9 @@ const CreateDepartment = () => {
         name: "",
         code: "",
         contactEmail: "",
-        headOfDepartment: "", // ✅ ADDED (optional)
+        headOfDepartment: "", // optional
     });
 
-    // ================= FETCH FACULTIES (for optional HOD) =================
     const fetchFaculties = async () => {
         if (!institutionId) return;
 
@@ -57,10 +56,8 @@ const CreateDepartment = () => {
         fetchFaculties();
     }, [institutionId]);
 
-    const handleChange = (e) =>
-        setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
+    const handleChange = (e) => setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
 
-    // ================= CREATE DEPARTMENT =================
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -86,7 +83,6 @@ const CreateDepartment = () => {
                 contactEmail: contactEmail.trim(),
             };
 
-            // ✅ OPTIONAL HOD
             if (headOfDepartment) payload.headOfDepartment = headOfDepartment;
 
             const res = await fetch(
@@ -114,29 +110,28 @@ const CreateDepartment = () => {
     };
 
     return (
-        // ✅ FULL PAGE (no centered white box)
-        <div className="min-h-screen w-full bg-slate-50 px-4 sm:px-6 lg:px-10 py-8">
+        <div className="min-h-screen w-full bg-[var(--bg)] text-[var(--text)] px-4 sm:px-6 lg:px-10 py-8">
             <div className="w-full">
                 {/* TOP BAR */}
                 <div className="flex items-center justify-between gap-4 mb-6">
                     <button
                         type="button"
                         onClick={() => navigate("/institution/departments")}
-                        className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700 hover:text-slate-900"
+                        className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--text)] hover:opacity-80 transition"
                     >
                         <ArrowLeft size={18} />
                         Back
                     </button>
                 </div>
 
-                {/* PAGE CONTENT */}
-                <div className="p-6 w-full">
-                    <h1 className="text-2xl font-bold text-slate-900">Create Department</h1>
-                    <p className="text-sm text-slate-500 mt-1">
+                {/* PAGE CONTENT (NO CARD) */}
+                <div className="w-full">
+                    <h1 className="text-2xl font-bold text-[var(--text)]">Create Department</h1>
+                    <p className="text-sm text-[var(--muted-text)] mt-1">
                         Fill all details to create a new department.
                     </p>
 
-                    <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+                    <form onSubmit={handleSubmit} className="mt-6 space-y-5 max-w-3xl">
                         {/* REQUIRED FIELDS */}
                         <div className="grid sm:grid-cols-2 gap-4">
                             <Input
@@ -170,19 +165,19 @@ const CreateDepartment = () => {
 
                         {/* OPTIONAL HOD */}
                         <div className="space-y-1">
-                            <label className="text-xs font-semibold text-slate-600">
+                            <label className="text-xs font-semibold text-[var(--muted-text)]">
                                 Head of Department (Optional)
                             </label>
 
                             <div className="relative">
-                                <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--muted-text)]" />
 
                                 <select
                                     name="headOfDepartment"
                                     value={form.headOfDepartment}
                                     onChange={handleChange}
                                     disabled={facultiesLoading}
-                                    className="w-full rounded-xl border border-slate-200 pl-10 pr-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-500 bg-white disabled:opacity-60"
+                                    className="w-full rounded-xl border border-[var(--border)] pl-10 pr-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-500 bg-[var(--surface-2)] text-[var(--text)] disabled:opacity-60"
                                 >
                                     <option value="">
                                         {facultiesLoading ? "Loading faculties..." : "Select faculty (optional)"}
@@ -199,14 +194,15 @@ const CreateDepartment = () => {
                                 </select>
                             </div>
 
-                            <p className="text-[11px] text-slate-500">
+                            <p className="text-[11px] text-[var(--muted-text)]">
                                 You can skip this and assign HOD later from Edit page.
                             </p>
                         </div>
 
                         <button
                             disabled={loading}
-                            className="w-full sm:w-1/2 md:w-1/3 py-3 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition disabled:opacity-60"
+                            className="w-full mt-6 sm:w-1/2 md:w-1/3 py-3 rounded-xl bg-[var(--accent)] text-white font-semibold hover:opacity-90 transition disabled:opacity-60"
+                            type="submit"
                         >
                             {loading ? "Creating..." : "Create Department"}
                         </button>
@@ -219,12 +215,12 @@ const CreateDepartment = () => {
 
 const Input = ({ label, icon: Icon, ...props }) => (
     <div className="space-y-1">
-        <label className="text-xs font-semibold text-slate-600">{label}</label>
+        <label className="text-xs font-semibold text-[var(--muted-text)]">{label}</label>
         <div className="relative">
-            <Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--muted-text)]" />
             <input
                 {...props}
-                className="w-full rounded-xl border border-slate-200 pl-10 pr-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full rounded-xl border border-[var(--border)] pl-10 pr-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-500 bg-[var(--surface-2)] text-[var(--text)]"
             />
         </div>
     </div>

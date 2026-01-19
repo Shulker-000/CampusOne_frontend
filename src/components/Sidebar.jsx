@@ -9,20 +9,22 @@ import {
   ChevronLeft,
   ChevronRight,
   User2,
-  PlusIcon,
   ChevronDown,
   Building2,
   Users,
-  Layers,
   Building,
   FolderPlus,
+  Moon,
+  Sun,
 } from "lucide-react";
 import { useAuth } from "../providers/AuthProvider.jsx";
 import { toast } from "react-toastify";
+import { useTheme } from "../theme/ThemeProvider.jsx";
 
 const Sidebar = ({ collapsed, setCollapsed }) => {
   const navigate = useNavigate();
   const { logoutInstitution, logoutUser } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
 
   const { institution, user } = useSelector((s) => s.auth);
 
@@ -56,9 +58,7 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
             key: "faculties",
             label: "Faculties",
             icon: Users,
-            items: [
-              
-            ],
+            items: [],
           },
           {
             key: "departments",
@@ -66,7 +66,11 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
             icon: Building2,
             items: [
               { label: "All Departments", to: "/institution/departments", icon: Building },
-              { label: "Create Department", to: "/institution/departments/create", icon: FolderPlus },
+              {
+                label: "Create Department",
+                to: "/institution/departments/create",
+                icon: FolderPlus,
+              },
             ],
           },
         ],
@@ -124,10 +128,9 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
         onClick={() => isMobile && setMobileOpen(false)}
         className={({ isActive }) =>
           `group flex items-center gap-3 rounded-xl px-3 py-3 font-semibold transition border
-          ${
-            isActive
-              ? "bg-indigo-50 text-indigo-700 border-indigo-200"
-              : "bg-white text-slate-700 border-transparent hover:bg-slate-50"
+          ${isActive
+            ? "bg-[var(--active-bg)] text-[var(--active-text)] border-[var(--active-border)]"
+            : "bg-transparent text-[var(--text)] border-transparent hover:bg-[var(--hover)]"
           }`
         }
         title={collapsed ? item.label : undefined}
@@ -148,21 +151,25 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
           type="button"
           onClick={() => toggleGroup(group.key)}
           className={`w-full flex items-center justify-between gap-3 rounded-xl px-3 py-3 font-bold transition border
-            hover:bg-slate-50
-            ${isOpen ? "bg-slate-50 border-slate-200" : "bg-white border-transparent"}
+            hover:bg-[var(--hover)]
+            ${isOpen
+              ? "bg-[var(--hover)] border-[var(--border)]"
+              : "bg-transparent border-transparent"
+            }
           `}
           title={collapsed ? group.label : undefined}
         >
           <div className="flex items-center gap-3">
-            <GroupIcon className="h-5 w-5 shrink-0 text-slate-800" />
-            {!collapsed && <span className="text-sm text-slate-800">{group.label}</span>}
+            <GroupIcon className="h-5 w-5 shrink-0 text-[var(--text)]" />
+            {!collapsed && (
+              <span className="text-sm text-[var(--text)]">{group.label}</span>
+            )}
           </div>
 
           {!collapsed && (
             <ChevronDown
-              className={`h-4 w-4 text-slate-600 transition ${
-                isOpen ? "rotate-180" : "rotate-0"
-              }`}
+              className={`h-4 w-4 text-[var(--muted-text)] transition ${isOpen ? "rotate-180" : "rotate-0"
+                }`}
             />
           )}
         </button>
@@ -182,16 +189,16 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
   const SidebarContent = ({ isMobile = false }) => (
     <aside
       className={`
-        h-screen bg-white border-r border-slate-200 flex flex-col
+        h-screen bg-[var(--sidebar-bg)] border-r border-[var(--border)] flex flex-col
         transition-all duration-300
         ${collapsed && !isMobile ? "w-20" : "w-72"}
       `}
     >
       {/* Header */}
-      <div className="h-16 px-4 flex items-center justify-between border-b border-slate-200">
+      <div className="h-16 px-4 flex items-center justify-between border-b border-[var(--border)]">
         {!collapsed && (
           <div className="flex items-center gap-3 overflow-hidden">
-            <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center shrink-0 overflow-hidden">
+            <div className="h-10 w-10 rounded-full bg-[var(--surface-2)] flex items-center justify-center shrink-0 overflow-hidden">
               {config.avatar ? (
                 <img
                   src={config.avatar}
@@ -199,17 +206,19 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-sm font-bold text-slate-600">
+                <div className="w-full h-full flex items-center justify-center text-sm font-bold text-[var(--muted-text)]">
                   {config.title?.[0] || "U"}
                 </div>
               )}
             </div>
 
             <div className="leading-tight">
-              <h1 className="text-sm font-extrabold text-slate-900 truncate">
+              <h1 className="text-sm font-extrabold text-[var(--text)] truncate">
                 {config.title}
               </h1>
-              <p className="text-xs text-slate-500 truncate">{config.subtitle}</p>
+              <p className="text-xs text-[var(--muted-text)] truncate">
+                {config.subtitle}
+              </p>
             </div>
           </div>
         )}
@@ -218,14 +227,14 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
         {!isMobile && (
           <button
             onClick={() => setCollapsed((p) => !p)}
-            className="h-10 w-10 rounded-xl border border-slate-200 hover:bg-slate-50 transition grid place-items-center shrink-0"
+            className="h-10 w-10 rounded-xl border border-[var(--border)] hover:bg-[var(--hover)] transition grid place-items-center shrink-0"
             title={collapsed ? "Expand Sidebar" : "Collapse Sidebar"}
             type="button"
           >
             {collapsed ? (
-              <ChevronRight className="h-5 w-5 text-slate-800" />
+              <ChevronRight className="h-5 w-5 text-[var(--text)]" />
             ) : (
-              <ChevronLeft className="h-5 w-5 text-slate-800" />
+              <ChevronLeft className="h-5 w-5 text-[var(--text)]" />
             )}
           </button>
         )}
@@ -234,10 +243,10 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
         {isMobile && (
           <button
             onClick={() => setMobileOpen(false)}
-            className="h-10 w-10 rounded-xl border border-slate-200 hover:bg-slate-50 transition grid place-items-center shrink-0"
+            className="h-10 w-10 rounded-xl border border-[var(--border)] hover:bg-[var(--hover)] transition grid place-items-center shrink-0"
             type="button"
           >
-            <X className="h-5 w-5 text-slate-800" />
+            <X className="h-5 w-5 text-[var(--text)]" />
           </button>
         )}
       </div>
@@ -245,7 +254,7 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
       {/* Menu */}
       <div className="px-3 py-4 flex-1 overflow-y-auto">
         {!collapsed && (
-          <p className="text-[11px] font-bold text-slate-400 tracking-wider mb-3 px-2">
+          <p className="text-[11px] font-bold text-[var(--muted-text)] tracking-wider mb-3 px-2">
             MENU
           </p>
         )}
@@ -260,7 +269,7 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
           {config.groups?.length > 0 && (
             <div className="mt-3 space-y-3">
               {!collapsed && (
-                <p className="text-[11px] font-bold text-slate-400 tracking-wider px-2">
+                <p className="text-[11px] font-bold text-[var(--muted-text)] tracking-wider px-2">
                   MANAGE
                 </p>
               )}
@@ -273,43 +282,60 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
         </nav>
       </div>
 
-      {/* Logout (bottom) */}
-      <div className="p-3 border-t border-slate-200">
-        <button
-          onClick={config.logout}
-          className="w-full flex items-center gap-3 rounded-xl px-3 py-3 font-semibold
-          border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 transition"
-          type="button"
-          title={collapsed ? "Logout" : undefined}
-        >
-          <LogOut className="h-5 w-5 shrink-0" />
-          {!collapsed && <span className="text-sm">Logout</span>}
-        </button>
+      {/* Theme Toggle + Logout (bottom) */}
+      <div className="p-3 border-t border-[var(--border)]">
+        <div className={`flex ${collapsed ? "flex-col gap-4" : "flex-row"} gap-2`}>
+          {/* Theme Toggle (smaller) */}
+          <button
+            onClick={toggleTheme}
+            className="flex-[0.8] flex items-center justify-center gap-2 rounded-xl px-3 py-3 font-semibold border
+      border-[var(--border)] bg-[var(--surface)] text-[var(--text)]
+      hover:bg-[var(--hover)] transition"
+            type="button"
+            title={collapsed ? "Toggle Theme" : undefined}
+          >
+            {isDark ? <Sun className="h-5 w-5 shrink-0" /> : <Moon className="h-5 w-5 shrink-0" />}
+            {!collapsed && (
+              <span className="text-sm hidden xl:inline">
+                {isDark ? "Light" : "Dark"}
+              </span>
+            )}
+          </button>
+
+          {/* Logout (bigger) */}
+          <button
+            onClick={config.logout}
+            className="flex-[1.7] flex items-center justify-center gap-3 rounded-xl px-3 py-3 font-semibold
+      border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 transition"
+            type="button"
+            title={collapsed ? "Logout" : undefined}
+          >
+            <LogOut className="h-5 w-5 shrink-0" />
+            {!collapsed && <span className="text-sm">Logout</span>}
+          </button>
+        </div>
       </div>
+
     </aside>
   );
 
   return (
     <>
       {/* Mobile top bar */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-white border-b border-slate-200 z-40 flex items-center px-4">
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-[var(--sidebar-bg)] border-b border-[var(--border)] z-40 flex items-center px-4">
         <button
           onClick={() => setMobileOpen(true)}
-          className="h-10 w-10 rounded-xl border border-slate-200 hover:bg-slate-50 transition grid place-items-center"
+          className="h-10 w-10 rounded-xl border border-[var(--border)] hover:bg-[var(--hover)] transition grid place-items-center"
           type="button"
         >
-          <Menu className="h-5 w-5 text-slate-800" />
+          <Menu className="h-5 w-5 text-[var(--text)]" />
         </button>
 
-        <div className="ml-3 font-bold text-slate-900 truncate">{config.title}</div>
+        <div className="ml-3 font-bold text-[var(--text)] truncate">{config.title}</div>
       </div>
 
       {/* Desktop fixed sidebar */}
-      <div
-        className={`
-          hidden lg:block fixed left-0 top-0 h-screen z-30
-        `}
-      >
+      <div className="hidden lg:block fixed left-0 top-0 h-screen z-30">
         <SidebarContent />
       </div>
 

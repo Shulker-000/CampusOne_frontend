@@ -3,3 +3,71 @@
 button{
     cursor: pointer;
 }
+
+/* -----------------------------
+   THEME TOKENS (LIGHT)
+-------------------------------- */
+:root {
+  /* background & text */
+  --bg: #f6f8fc;
+  --text: #0f172a;
+  --muted-text: #64748b;
+
+  /* surfaces */
+  --sidebar-bg: #ffffff;
+  --surface: #ffffff;         /* inner cards */
+  --surface-2: #f8fafc;       /* subtle sections */
+  --hover: #f1f5f9;
+
+  /* borders */
+  --border: rgba(15, 23, 42, 0.10);
+
+  /* shadows */
+  --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+
+  /* accent (your current indigo vibe) */
+  --accent: #4f46e5;
+  --accent-soft: #eef2ff;
+
+  /* active sidebar item */
+  --active-bg: #eef2ff;
+  --active-text: #4338ca;
+  --active-border: rgba(79, 70, 229, 0.25);
+}
+
+/* -----------------------------
+   THEME TOKENS (DARK)
+-------------------------------- */
+:root[data-theme="dark"] {
+  /* background & text */
+  --bg: #0b1220;              /* deep navy */
+  --text: #e7edf6;            /* clean soft white */
+  --muted-text: #93a4bb;
+
+  /* surfaces */
+  --sidebar-bg: #0f172a;      /* sidebar navy */
+  --surface: #101c33;         /* inner cards */
+  --surface-2: #0c172b;       /* subtle sections */
+  --hover: rgba(255, 255, 255, 0.06);
+
+  /* borders */
+  --border: rgba(255, 255, 255, 0.10);
+
+  /* shadows */
+  --shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+
+  /* accent */
+  --accent: #818cf8;
+  --accent-soft: rgba(129, 140, 248, 0.16);
+
+  /* active sidebar item */
+  --active-bg: rgba(129, 140, 248, 0.16);
+  --active-text: #c7d2fe;
+  --active-border: rgba(129, 140, 248, 0.35);
+}
+
+/* apply to body */
+body {
+  background: var(--bg);
+  color: var(--text);
+}

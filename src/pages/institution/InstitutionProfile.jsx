@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 
-import { useAuth } from "../../providers/AuthProvider.jsx"; // ✅ ADDED
+import { useAuth } from "../../providers/AuthProvider.jsx";
 import Loader from "../../components/Loader.jsx";
 
 /* ================= IMAGE HELPERS ================= */
@@ -47,9 +47,7 @@ async function getCroppedImage(imageSrc, pixelCrop) {
         pixelCrop.height
     );
 
-    return new Promise((resolve) =>
-        canvas.toBlob((blob) => resolve(blob), "image/webp")
-    );
+    return new Promise((resolve) => canvas.toBlob((blob) => resolve(blob), "image/webp"));
 }
 
 /* ================= COMPONENT ================= */
@@ -58,7 +56,7 @@ export default function InstitutionProfile() {
     const navigate = useNavigate();
     const fileInputRef = useRef(null);
 
-    const { tokens, logoutInstitution } = useAuth(); // ✅ ADDED
+    const { tokens, logoutInstitution } = useAuth();
 
     const [institution, setInstitution] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -89,14 +87,14 @@ export default function InstitutionProfile() {
                     `${import.meta.env.VITE_BACKEND_URL}/api/institutions/current-institution`,
                     {
                         headers: {
-                            Authorization: `Bearer ${tokens.institutionToken}`, // ✅ ADDED
+                            Authorization: `Bearer ${tokens.institutionToken}`,
                         },
                     }
                 );
 
                 if (res.status === 401) {
                     toast.error("Session expired");
-                    logoutInstitution(); // ✅ provider handles redux + localstorage
+                    logoutInstitution();
                     navigate("/institution/login", { replace: true });
                     return;
                 }
@@ -144,7 +142,7 @@ export default function InstitutionProfile() {
                 {
                     method: "POST",
                     headers: {
-                        Authorization: `Bearer ${tokens.institutionToken}`, // ✅ ADDED
+                        Authorization: `Bearer ${tokens.institutionToken}`,
                     },
                 }
             );
@@ -191,7 +189,7 @@ export default function InstitutionProfile() {
                 {
                     method: "POST",
                     headers: {
-                        Authorization: `Bearer ${tokens.institutionToken}`, // ✅ ADDED
+                        Authorization: `Bearer ${tokens.institutionToken}`,
                     },
                     body: fd,
                 }
@@ -216,17 +214,16 @@ export default function InstitutionProfile() {
         try {
             const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
-            // ✅ optional backend call (fine to keep)
             await fetch(`${backendUrl}/api/institutions/logout`, {
                 method: "POST",
                 headers: {
-                    Authorization: `Bearer ${tokens.institutionToken}`, // ✅ ADDED
+                    Authorization: `Bearer ${tokens.institutionToken}`,
                 },
             });
         } catch (err) {
             console.error("Logout error:", err);
         } finally {
-            logoutInstitution(); // ✅ provider does everything
+            logoutInstitution();
             toast.success("Logged Out");
             navigate("/institution/login", { replace: true });
         }
@@ -234,21 +231,18 @@ export default function InstitutionProfile() {
 
     /* ================= UI ================= */
 
-    if (loading)
-        return (
-            <Loader/>
-        );
+    if (loading) return <Loader />;
 
     if (!institution) return null;
 
     return (
-        <div className="min-h-screen w-full md:w-[80vw] mx-auto pt-16 p-6 text-gray-800">
+        <div className="min-h-screen w-full md:w-[80vw] mx-auto pt-16 p-6 bg-[var(--bg)] text-[var(--text)]">
             {/* TOP */}
             <div className="mb-6">
                 <h1 className="text-2xl mt-2 font-bold">
                     {getGreeting()}, {institution.name}!
                 </h1>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-[var(--muted-text)]">
                     {currentTime.toLocaleTimeString([], {
                         hour: "2-digit",
                         minute: "2-digit",
@@ -260,10 +254,11 @@ export default function InstitutionProfile() {
             <div className="flex flex-col sm:flex-row items-center gap-6 mb-8 pt-8">
                 <div
                     onClick={() => setIsAvatarViewOpen(true)}
-                    className="relative w-24 h-24 rounded-full overflow-hidden cursor-pointer group"
+                    className="relative w-24 h-24 rounded-full overflow-hidden cursor-pointer group border border-[var(--border)]"
                 >
                     <img
                         src={institution.avatar}
+                        alt="Institution Avatar"
                         className={`w-full h-full object-cover ${isAvatarUpdating ? "opacity-50 blur-sm" : ""
                             }`}
                     />
@@ -272,19 +267,19 @@ export default function InstitutionProfile() {
                             <Loader2 className="animate-spin text-white w-8 h-8" />
                         </div>
                     )}
-                    <div className="absolute inset-0 bg-gray-400/40 opacity-0 group-hover:opacity-80 flex items-center justify-center">
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
                         <Camera className="text-white w-6 h-6" />
                     </div>
                 </div>
 
                 <div className="text-center sm:text-left">
-                    <h2 className="text-2xl font-bold">{institution.name}</h2>
-                    <p className="text-gray-500">{institution.contactEmail}</p>
+                    <h2 className="text-2xl font-bold text-[var(--text)]">{institution.name}</h2>
+                    <p className="text-[var(--muted-text)]">{institution.contactEmail}</p>
                 </div>
             </div>
 
             {/* DETAILS */}
-            <div className="p-6 rounded-xl border shadow-inner grid md:grid-cols-2 gap-6">
+            <div className="p-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow)] grid md:grid-cols-2 gap-6">
                 {[
                     ["Institute Name", institution.name],
                     ["Institute Code", institution.code],
@@ -293,50 +288,52 @@ export default function InstitutionProfile() {
                     ["Established Year", institution.establishedYear],
                 ].map(([label, value]) => (
                     <div key={label}>
-                        <label className="text-sm font-medium">{label}</label>
+                        <label className="text-sm font-semibold text-[var(--text)]">{label}</label>
                         <input
                             disabled
                             value={value || ""}
-                            className="w-full px-4 py-2 border rounded-lg bg-gray-50"
+                            className="w-full mt-2 px-4 py-2 border border-[var(--border)] rounded-xl bg-[var(--surface-2)] text-[var(--text)]"
                         />
                     </div>
                 ))}
 
                 <div className="md:col-span-2">
-                    <label className="text-sm font-medium">Address</label>
+                    <label className="text-sm font-semibold text-[var(--text)]">Address</label>
                     <textarea
                         disabled
                         rows={3}
                         value={institution.address || ""}
-                        className="w-full px-4 py-2 border rounded-lg bg-gray-50"
+                        className="w-full mt-2 px-4 py-2 border border-[var(--border)] rounded-xl bg-[var(--surface-2)] text-[var(--text)]"
                     />
                 </div>
             </div>
 
             {/* EMAIL */}
-            <div className="mt-8 grid md:grid-cols-2 gap-6 border-t pt-6">
+            <div className="mt-8 grid md:grid-cols-2 gap-6 border-t border-[var(--border)] pt-6">
                 <div>
-                    <label className="text-sm font-medium">Email</label>
-                    <div className="flex gap-2 items-center px-4 py-2 border rounded-lg">
-                        <Mail className="text-blue-500 w-5 h-5" />
-                        {institution.contactEmail}
+                    <label className="text-sm font-semibold text-[var(--text)]">Email</label>
+                    <div className="mt-2 flex gap-2 items-center px-4 py-2 border border-[var(--border)] rounded-xl bg-[var(--surface)]">
+                        <Mail className="text-[var(--accent)] w-5 h-5" />
+                        <span className="text-[var(--text)]">{institution.contactEmail}</span>
                     </div>
                 </div>
 
                 <div>
-                    <label className="text-sm font-medium">Verification</label>
-                    <div className="flex gap-2 items-center px-4 py-2 border rounded-lg">
+                    <label className="text-sm font-semibold text-[var(--text)]">Verification</label>
+                    <div className="mt-2 flex gap-2 items-center px-4 py-2 border border-[var(--border)] rounded-xl bg-[var(--surface)]">
                         {institution.isEmailVerified ? (
                             <>
-                                <CheckCircle className="text-green-600 w-5 h-5" /> Verified
+                                <CheckCircle className="text-green-500 w-5 h-5" />{" "}
+                                <span className="text-[var(--text)]">Verified</span>
                             </>
                         ) : (
                             <>
-                                <AlertCircle className="text-red-600 w-5 h-5" />
+                                <AlertCircle className="text-red-500 w-5 h-5" />
                                 <button
                                     onClick={handleSendVerificationEmail}
                                     disabled={isVerifying}
-                                    className="text-blue-600"
+                                    className="text-[var(--accent)] font-semibold hover:opacity-80 transition disabled:opacity-50"
+                                    type="button"
                                 >
                                     {isVerifying ? "Sending..." : "Send Verification"}
                                 </button>
@@ -350,7 +347,8 @@ export default function InstitutionProfile() {
             <div className="mt-10 flex justify-end gap-3">
                 <button
                     onClick={handleLogout}
-                    className="px-6 py-2 rounded-full bg-red-600 text-white flex items-center gap-2"
+                    className="px-6 py-2 rounded-full bg-red-600 text-white flex items-center gap-2 hover:bg-red-700 transition"
+                    type="button"
                 >
                     <LogOut size={16} /> Logout
                 </button>
@@ -360,23 +358,31 @@ export default function InstitutionProfile() {
             <AnimatePresence>
                 {isAvatarViewOpen && (
                     <motion.div
-                        className="fixed inset-0 z-50 backdrop-blur-md flex items-center justify-center"
+                        className="fixed inset-0 z-50 bg-black/40 backdrop-blur-md flex items-center justify-center px-4"
                         onClick={() => setIsAvatarViewOpen(false)}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
                     >
                         <motion.div
                             onClick={(e) => e.stopPropagation()}
-                            className="bg-white p-6 rounded-xl"
+                            className="bg-[var(--surface)] border border-[var(--border)] p-6 rounded-2xl shadow-[var(--shadow)]"
+                            initial={{ scale: 0.96, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.96, opacity: 0 }}
                         >
                             <img
                                 src={institution.avatar}
-                                className="w-72 h-72 rounded-full object-cover"
+                                alt="Institution Avatar"
+                                className="w-72 h-72 rounded-full object-cover border border-[var(--border)]"
                             />
                             <button
                                 onClick={() => {
                                     setIsAvatarViewOpen(false);
                                     fileInputRef.current.click();
                                 }}
-                                className="mt-4 w-full mx-auto px-6 py-2 rounded-full bg-blue-600 text-white"
+                                className="mt-4 w-full mx-auto px-6 py-2 rounded-full bg-[var(--accent)] text-white hover:opacity-90 transition"
+                                type="button"
                             >
                                 Change Avatar
                             </button>
@@ -387,9 +393,14 @@ export default function InstitutionProfile() {
 
             <AnimatePresence>
                 {imageSrc && (
-                    <motion.div className="fixed inset-0 z-50 backdrop-blur-md flex items-center justify-center">
-                        <div className="bg-white p-6 rounded-xl w-full max-w-xl">
-                            <div className="relative h-100">
+                    <motion.div
+                        className="fixed inset-0 z-50 bg-black/40 backdrop-blur-md flex items-center justify-center px-4"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                    >
+                        <div className="bg-[var(--surface)] border border-[var(--border)] p-6 rounded-2xl w-full max-w-xl shadow-[var(--shadow)]">
+                            <div className="relative h-[360px] rounded-xl overflow-hidden border border-[var(--border)] bg-[var(--surface-2)]">
                                 <Cropper
                                     image={imageSrc}
                                     crop={crop}
@@ -401,16 +412,20 @@ export default function InstitutionProfile() {
                                     onCropComplete={onCropComplete}
                                 />
                             </div>
+
                             <div className="flex gap-4 mt-4 w-full justify-center">
                                 <button
                                     onClick={() => setImageSrc(null)}
-                                    className="btn-secondary flex items-center gap-2 px-6 py-2 rounded-full text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-300"
+                                    className="flex items-center gap-2 px-6 py-2 rounded-full text-sm font-semibold text-white bg-[var(--accent)] hover:opacity-90 transition"
+                                    type="button"
                                 >
                                     Cancel
                                 </button>
+
                                 <button
                                     onClick={onCropSave}
-                                    className="btn-primary flex items-center gap-2 px-6 py-2 rounded-full text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-300"
+                                    className="flex items-center gap-2 px-6 py-2 rounded-full text-sm font-semibold text-white bg-[var(--accent)] hover:opacity-90 transition"
+                                    type="button"
                                 >
                                     <Crop size={16} /> Crop & Save
                                 </button>

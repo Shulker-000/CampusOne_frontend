@@ -16,12 +16,13 @@ import {
     Loader2,
 } from "lucide-react";
 import ConfirmModal from "../../../components/ConfirmModal";
+import Loader from "./../../../components/Loader.jsx"
 
 const InstitutionDepartments = () => {
     const navigate = useNavigate();
 
     const institutionId = useSelector((s) => s.auth.institution.data?._id);
-    const institutionToken = localStorage.getItem("institutionToken");
+    const institutionToken = useSelector((s) => s.auth.institution.token);
 
     const [loading, setLoading] = useState(true);
     const [departments, setDepartments] = useState([]);
@@ -34,7 +35,6 @@ const InstitutionDepartments = () => {
         departmentName: "",
     });
     const [deleting, setDeleting] = useState(false);
-
 
     const fetchDepartments = async () => {
         if (!institutionId) return;
@@ -135,42 +135,41 @@ const InstitutionDepartments = () => {
         }
     };
 
-
     if (loading) {
         return (
-            <div className="min-h-[60vh] flex flex-col items-center justify-center gap-3">
-                <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
-                <p className="text-sm font-medium text-slate-500">Loading departments...</p>
+            <div className="min-h-[60vh] flex flex-col items-center justify-center gap-3 bg-[var(--bg)]">
+                <Loader/>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-slate-50 text-slate-900">
+        <div className="min-h-screen bg-[var(--bg)] text-[var(--text)]">
             <div className="max-w-6xl mx-auto px-5 py-10">
                 {/* Header */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                     <div>
                         <h1 className="text-2xl sm:text-3xl font-bold">Departments</h1>
-                        <p className="text-slate-500 text-sm mt-1">
+                        <p className="text-[var(--muted-text)] text-sm mt-1">
                             View and manage your institution departments.
                         </p>
                     </div>
 
                     <div className="flex flex-col sm:flex-row gap-3">
                         <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--muted-text)]" />
                             <input
                                 value={query}
                                 onChange={(e) => setQuery(e.target.value)}
                                 placeholder="Search departments..."
-                                className="pl-10 pr-4 py-2.5 w-full sm:w-72 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 transition text-sm"
+                                className="pl-10 pr-4 py-2.5 w-full sm:w-72 bg-[var(--surface-2)] border border-[var(--border)] rounded-xl outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 transition text-sm text-[var(--text)]"
                             />
                         </div>
 
                         <button
                             onClick={() => navigate("/institution/departments/create")}
-                            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-700 transition"
+                            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[var(--accent)] text-white rounded-xl text-sm font-semibold hover:opacity-90 transition"
+                            type="button"
                         >
                             <Plus size={18} />
                             Add Department
@@ -180,9 +179,9 @@ const InstitutionDepartments = () => {
 
                 {/* Empty State */}
                 {filteredDepartments.length === 0 ? (
-                    <div className="bg-white border border-slate-200 rounded-2xl p-10 text-center">
-                        <h3 className="text-lg font-semibold">No departments found</h3>
-                        <p className="text-slate-500 text-sm mt-1">
+                    <div className="border border-[var(--border)] rounded-2xl p-10 text-center bg-[var(--surface-2)]">
+                        <h3 className="text-lg font-semibold text-[var(--text)]">No departments found</h3>
+                        <p className="text-[var(--muted-text)] text-sm mt-1">
                             Try a different search keyword.
                         </p>
                     </div>
@@ -199,14 +198,17 @@ const InstitutionDepartments = () => {
                                     key={dept._id}
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    className="bg-white border border-slate-200 rounded-2xl p-5 hover:shadow-md transition"
+                                    className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5 hover:shadow-[var(--shadow)] transition"
                                 >
                                     {/* Top */}
                                     <div className="flex items-start justify-between gap-3">
                                         <div className="min-w-0">
-                                            <h3 className="text-lg font-semibold truncate">{dept.name}</h3>
-                                            <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
-                                                <span className="inline-flex items-center gap-1 px-2 py-1 bg-slate-100 rounded-lg font-semibold">
+                                            <h3 className="text-lg font-semibold truncate text-[var(--text)]">
+                                                {dept.name}
+                                            </h3>
+
+                                            <div className="flex items-center gap-2 mt-1 text-xs text-[var(--muted-text)]">
+                                                <span className="inline-flex items-center gap-1 px-2 py-1 bg-[var(--surface-2)] border border-[var(--border)] rounded-lg font-semibold">
                                                     <Hash size={12} />
                                                     {dept.code}
                                                 </span>
@@ -215,19 +217,19 @@ const InstitutionDepartments = () => {
 
                                         <div className="flex items-center gap-1">
                                             <button
-                                                onClick={() =>
-                                                    navigate(`/institution/departments/edit/${dept._id}`)
-                                                }
-                                                className="p-2 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-900 transition"
+                                                onClick={() => navigate(`/institution/departments/edit/${dept._id}`)}
+                                                className="p-2 rounded-lg hover:bg-[var(--hover)] text-[var(--muted-text)] hover:text-[var(--text)] transition"
                                                 title="Edit"
+                                                type="button"
                                             >
                                                 <Pencil size={18} />
                                             </button>
+
                                             <button
                                                 onClick={() => askDeleteDepartment(dept)}
-
-                                                className="p-2 rounded-lg hover:bg-red-50 text-slate-500 hover:text-red-600 transition"
+                                                className="p-2 rounded-lg hover:bg-red-500/10 text-[var(--muted-text)] hover:text-red-500 transition"
                                                 title="Delete"
+                                                type="button"
                                             >
                                                 <Trash2 size={18} />
                                             </button>
@@ -235,28 +237,33 @@ const InstitutionDepartments = () => {
                                     </div>
 
                                     {/* Email */}
-                                    <div className="flex items-center gap-2 text-sm text-slate-600 mt-4">
-                                        <Mail size={14} className="text-slate-400" />
+                                    <div className="flex items-center gap-2 text-sm text-[var(--muted-text)] mt-4">
+                                        <Mail size={14} className="text-[var(--muted-text)]" />
                                         <span className="truncate">{dept.contactEmail}</span>
                                     </div>
 
                                     {/* HOD */}
-                                    <div className="mt-4 p-3 flex items-center gap-3">
+                                    <div className="mt-4 p-3 flex items-center gap-3 rounded-xl bg-[var(--surface-2)] border border-[var(--border)]">
                                         {user?.avatar ? (
                                             <img
                                                 src={user.avatar}
-                                                className="w-10 h-10 rounded-lg object-cover"
+                                                className="w-10 h-10 rounded-lg object-cover border border-[var(--border)]"
                                                 alt=""
+                                                onError={(e) => {
+                                                    e.currentTarget.src = "/user.png";
+                                                }}
                                             />
                                         ) : (
-                                            <div className="w-10 h-10 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500">
+                                            <div className="w-10 h-10 rounded-lg bg-[var(--surface)] border border-[var(--border)] flex items-center justify-center text-[var(--muted-text)]">
                                                 <User2 size={18} />
                                             </div>
                                         )}
 
                                         <div className="min-w-0 flex-1">
-                                            <p className="text-[11px] text-slate-500 font-semibold">HOD</p>
-                                            <p className="text-sm font-semibold truncate">
+                                            <p className="text-[11px] text-[var(--muted-text)] font-semibold">
+                                                HOD
+                                            </p>
+                                            <p className="text-sm font-semibold truncate text-[var(--text)]">
                                                 {user?.name || "Unassigned"}
                                             </p>
                                         </div>
@@ -267,7 +274,9 @@ const InstitutionDepartments = () => {
                                     {/* Bottom */}
                                     <button
                                         onClick={() => navigate(`/institution/departments/edit/${dept._id}`)}
-                                        className="w-full mt-4 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-900 hover:text-white transition font-semibold text-sm flex items-center justify-center gap-2"
+                                        className="w-full mt-4 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface-2)]
+                    hover:bg-[var(--text)] hover:text-[var(--bg)] transition font-semibold text-sm flex items-center justify-center gap-2"
+                                        type="button"
                                     >
                                         Edit Details
                                         <ArrowRight size={16} />
@@ -278,6 +287,7 @@ const InstitutionDepartments = () => {
                     </div>
                 )}
             </div>
+
             <ConfirmModal
                 open={confirmState.open}
                 title="Delete Department?"

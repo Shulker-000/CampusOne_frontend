@@ -6,7 +6,7 @@ const DashboardLayout = () => {
   const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <div className="min-h-screen w-full bg-slate-50">
+    <div className="min-h-screen w-full bg-[var(--bg)] text-[var(--text)]">
       <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} />
 
       <div

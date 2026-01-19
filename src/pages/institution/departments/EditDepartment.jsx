@@ -17,7 +17,7 @@ const EditDepartment = () => {
     const { departmentId } = useParams();
 
     const institutionId = useSelector((s) => s.auth.institution.data?._id);
-    const institutionToken = localStorage.getItem("institutionToken");
+    const institutionToken = useSelector((s) => s.auth.institution.token);
 
     const [loading, setLoading] = useState(true);
 
@@ -99,10 +99,7 @@ const EditDepartment = () => {
         return map;
     }, [faculties]);
 
-    const hodFaculty = form.headOfDepartment
-        ? facultyById.get(form.headOfDepartment)
-        : null;
-
+    const hodFaculty = form.headOfDepartment ? facultyById.get(form.headOfDepartment) : null;
     const hodUser = hodFaculty?.userId;
 
     // ---------- Inputs ----------
@@ -163,7 +160,7 @@ const EditDepartment = () => {
     // ---------- UI ----------
     if (loading) {
         return (
-            <div className="min-h-[70vh] flex items-center justify-center font-semibold text-slate-600">
+            <div className="min-h-[70vh] flex items-center justify-center font-semibold text-[var(--muted-text)] bg-[var(--bg)]">
                 Loading department...
             </div>
         );
@@ -172,15 +169,13 @@ const EditDepartment = () => {
     if (!department) return null;
 
     return (
-        // ✅ CHANGED: full page section (no central white box wrapper)
-        <div className="min-h-screen w-full bg-slate-50 px-4 sm:px-6 lg:px-10 py-8">
-            {/* ✅ CHANGED: full width container */}
+        <div className="min-h-screen w-full bg-[var(--bg)] text-[var(--text)] px-4 sm:px-6 lg:px-10 py-8">
             <div className="w-full">
                 {/* Top Bar */}
                 <div className="flex items-center justify-between gap-4 mb-6">
                     <button
                         onClick={() => navigate("/institution/departments")}
-                        className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700 hover:text-slate-900"
+                        className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--text)] hover:opacity-80 transition"
                         type="button"
                     >
                         <ArrowLeft size={18} />
@@ -190,32 +185,28 @@ const EditDepartment = () => {
                     <button
                         onClick={handleSave}
                         disabled={saving}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition disabled:opacity-60"
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--accent)] text-white font-semibold hover:opacity-90 transition disabled:opacity-60"
                         type="button"
                     >
-                        {saving ? (
-                            <Loader2 size={18} className="animate-spin" />
-                        ) : (
-                            <Save size={18} />
-                        )}
+                        {saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
                         Save Changes
                     </button>
                 </div>
 
-                {/* ✅ CHANGED: the card stays but now it's a page-wide section */}
+                {/* Page Content */}
                 <motion.div
                     initial={{ opacity: 0, y: 14 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.2 }}
                     className="w-full"
                 >
-                    <h1 className="text-xl font-bold text-slate-900">Edit Department</h1>
-                    <p className="text-sm text-slate-500 mt-1">
+                    <h1 className="text-xl font-bold text-[var(--text)]">Edit Department</h1>
+                    <p className="text-sm text-[var(--muted-text)] mt-1">
                         Update department details and manage Head of Department (HOD).
                     </p>
 
                     {/* Form */}
-                    <div className="mt-6 grid sm:grid-cols-2 gap-4">
+                    <div className="mt-6 grid sm:grid-cols-2 gap-4 max-w-4xl">
                         <Field
                             label="Department Name"
                             name="name"
@@ -241,19 +232,18 @@ const EditDepartment = () => {
                     </div>
 
                     {/* HOD */}
-                    <div className="mt-8 border-t pt-6">
+                    <div className="mt-8 border-t border-[var(--border)] pt-6 max-w-4xl">
                         <div className="flex items-center gap-2 mb-3">
-                            <Users size={18} className="text-slate-700" />
-                            <h2 className="font-bold text-slate-900">Head of Department</h2>
+                            <Users size={18} className="text-[var(--muted-text)]" />
+                            <h2 className="font-bold text-[var(--text)]">Head of Department</h2>
                         </div>
 
                         {/* Current HOD */}
-                        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-2)] p-4">
                             {hodUser ? (
                                 <div className="flex items-start justify-between gap-4">
-                                    {/* ✅ IMAGE FIX ONLY */}
                                     <div className="flex items-start gap-4">
-                                        <div className="h-14 w-14 rounded-full overflow-hidden border bg-white shrink-0">
+                                        <div className="h-14 w-14 rounded-full overflow-hidden border border-[var(--border)] bg-[var(--surface)] shrink-0">
                                             <img
                                                 src={hodUser.avatar || "/user.png"}
                                                 alt={hodUser.name || "HOD"}
@@ -265,9 +255,9 @@ const EditDepartment = () => {
                                         </div>
 
                                         <div>
-                                            <p className="font-bold text-slate-900">{hodUser.name}</p>
-                                            <p className="text-sm text-slate-600">{hodUser.email}</p>
-                                            <p className="text-xs text-slate-500 mt-1">
+                                            <p className="font-bold text-[var(--text)]">{hodUser.name}</p>
+                                            <p className="text-sm text-[var(--muted-text)]">{hodUser.email}</p>
+                                            <p className="text-xs text-[var(--muted-text)] mt-1">
                                                 Designation: {hodFaculty?.designation || "N/A"}
                                             </p>
                                         </div>
@@ -275,7 +265,7 @@ const EditDepartment = () => {
 
                                     <button
                                         onClick={removeHod}
-                                        className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border bg-white hover:bg-slate-100 transition text-sm font-semibold text-slate-700"
+                                        className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--hover)] transition text-sm font-semibold text-[var(--text)]"
                                         type="button"
                                     >
                                         <XCircle size={16} />
@@ -283,7 +273,7 @@ const EditDepartment = () => {
                                     </button>
                                 </div>
                             ) : (
-                                <p className="text-sm text-slate-600">
+                                <p className="text-sm text-[var(--muted-text)]">
                                     No HOD assigned yet. Select a faculty below.
                                 </p>
                             )}
@@ -291,7 +281,7 @@ const EditDepartment = () => {
 
                         {/* Select */}
                         <div className="mt-4">
-                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                            <label className="text-xs font-bold text-[var(--muted-text)] uppercase tracking-wider">
                                 Assign / Change HOD
                             </label>
 
@@ -304,7 +294,7 @@ const EditDepartment = () => {
                                             headOfDepartment: e.target.value,
                                         }))
                                     }
-                                    className="w-full rounded-xl border px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                                    className="w-full rounded-xl border border-[var(--border)] px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500 bg-[var(--surface)] text-[var(--text)]"
                                 >
                                     <option value="">Select faculty</option>
 
@@ -321,7 +311,7 @@ const EditDepartment = () => {
                                 <button
                                     onClick={handleSave}
                                     disabled={saving}
-                                    className="shrink-0 inline-flex items-center gap-2 px-4 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition disabled:opacity-60"
+                                    className="shrink-0 inline-flex items-center gap-2 px-4 rounded-xl bg-[var(--accent)] text-white font-semibold hover:opacity-90 transition disabled:opacity-60"
                                     type="button"
                                 >
                                     <UserRoundCog size={16} />
@@ -339,12 +329,12 @@ const EditDepartment = () => {
 const Field = ({ label, ...props }) => {
     return (
         <div className="space-y-1">
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+            <label className="text-xs font-bold text-[var(--muted-text)] uppercase tracking-wider">
                 {label}
             </label>
             <input
                 {...props}
-                className="w-full rounded-xl border px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full rounded-xl border border-[var(--border)] px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500 bg-[var(--surface-2)] text-[var(--text)]"
             />
         </div>
     );
