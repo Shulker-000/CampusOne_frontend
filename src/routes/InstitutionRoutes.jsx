@@ -17,6 +17,9 @@ import DashboardLayout from "../layouts/DashboardLayout";
 import InstitutionDepartments from "../pages/institution/departments/InstitutionDepartments";
 import CreateDepartment from "../pages/institution/departments/CreateDepartment";
 import EditDepartment from "../pages/institution/departments/EditDepartment";
+import CreateBranch from "../pages/institution/branches/CreateBranch";
+import InstitutionBranches from "../pages/institution/branches/InstitutionBranches";
+import EditBranch from "../pages/institution/branches/EditBranch";
 
 /* ---------- Guards ---------- */
 
@@ -106,6 +109,10 @@ const InstitutionRoutes = () => {
         <Route path="departments/create" element={<CreateDepartment />} />
         <Route path="departments" element={<InstitutionDepartments />} />
         <Route path="departments/edit/:departmentId" element={<EditDepartment />} />
+
+        <Route path="branches/create" element={<CreateBranch />} />
+        <Route path="branches" element={<InstitutionBranches />} />
+        <Route path="branches/edit/:branchId" element={<EditBranch />} />
 
       </Route>
 
