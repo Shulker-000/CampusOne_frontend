@@ -17,6 +17,7 @@ import {
     ToggleRight,
 } from "lucide-react";
 import ConfirmModal from "../../../components/ConfirmModal";
+import Loader from "../../../components/Loader";
 
 const InstitutionBranches = () => {
     const navigate = useNavigate();
@@ -187,10 +188,7 @@ const InstitutionBranches = () => {
 
     if (loading) {
         return (
-            <div className="min-h-[60vh] flex flex-col items-center justify-center gap-3 bg-[var(--bg)] text-[var(--text)]">
-                <Loader2 className="w-8 h-8 animate-spin text-[var(--muted-text)]" />
-                <p className="text-sm font-medium text-[var(--muted-text)]">Loading branches...</p>
-            </div>
+            <Loader />
         );
     }
 

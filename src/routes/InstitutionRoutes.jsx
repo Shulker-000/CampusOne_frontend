@@ -20,6 +20,9 @@ import EditDepartment from "../pages/institution/departments/EditDepartment";
 import CreateBranch from "../pages/institution/branches/CreateBranch";
 import InstitutionBranches from "../pages/institution/branches/InstitutionBranches";
 import EditBranch from "../pages/institution/branches/EditBranch";
+import CreateCourse from "../pages/institution/courses/CreateCourse";
+import InstitutionCourses from "../pages/institution/courses/InstitutionCourses";
+import EditCourse from "../pages/institution/courses/EditCourse";
 
 /* ---------- Guards ---------- */
 
@@ -113,6 +116,11 @@ const InstitutionRoutes = () => {
         <Route path="branches/create" element={<CreateBranch />} />
         <Route path="branches" element={<InstitutionBranches />} />
         <Route path="branches/edit/:branchId" element={<EditBranch />} />
+
+
+        <Route path="courses/create" element={<CreateCourse />} />
+        <Route path="courses" element={<InstitutionCourses />} />
+        <Route path="courses/edit/:courseId" element={<EditCourse />} />
 
       </Route>
 

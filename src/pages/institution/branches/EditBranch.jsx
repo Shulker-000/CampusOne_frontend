@@ -5,6 +5,7 @@ import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
 import { ArrowLeft, Save, Loader2, Layers } from "lucide-react";
+import Loader from "./../../../components/Loader.jsx"
 
 const EditBranch = () => {
     const navigate = useNavigate();
@@ -142,9 +143,7 @@ const EditBranch = () => {
 
     if (loading) {
         return (
-            <div className="min-h-[70vh] flex items-center justify-center font-semibold text-[var(--muted-text)] bg-[var(--bg)]">
-                Loading branch...
-            </div>
+            <Loader />
         );
     }
 
@@ -156,7 +155,7 @@ const EditBranch = () => {
                 {/* Top Bar */}
                 <div className="flex items-center justify-between gap-4 mb-6">
                     <button
-                        onClick={() => navigate("/institution/branches")}
+                        onClick={() => navigate(-1)}
                         className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--text)] hover:opacity-80 transition"
                         type="button"
                     >
