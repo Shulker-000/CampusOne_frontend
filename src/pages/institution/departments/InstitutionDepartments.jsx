@@ -137,9 +137,7 @@ const InstitutionDepartments = () => {
 
     if (loading) {
         return (
-            <div className="min-h-[60vh] flex flex-col items-center justify-center gap-3 bg-[var(--bg)]">
-                <Loader/>
-            </div>
+            <Loader />
         );
     }
 

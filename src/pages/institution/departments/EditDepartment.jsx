@@ -11,6 +11,7 @@ import {
     UserRoundCog,
     XCircle,
 } from "lucide-react";
+import Loader from "../../../components/Loader";
 
 const EditDepartment = () => {
     const navigate = useNavigate();
@@ -160,9 +161,7 @@ const EditDepartment = () => {
     // ---------- UI ----------
     if (loading) {
         return (
-            <div className="min-h-[70vh] flex items-center justify-center font-semibold text-[var(--muted-text)] bg-[var(--bg)]">
-                Loading department...
-            </div>
+            <Loader />
         );
     }
 
@@ -174,7 +173,7 @@ const EditDepartment = () => {
                 {/* Top Bar */}
                 <div className="flex items-center justify-between gap-4 mb-6">
                     <button
-                        onClick={() => navigate("/institution/departments")}
+                        onClick={() => navigate(-1)}
                         className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--text)] hover:opacity-80 transition"
                         type="button"
                     >

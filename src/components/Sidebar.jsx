@@ -17,9 +17,14 @@ import {
   Moon,
   Sun,
   BookA,
-  Layers3,
-  BookCheck,
-  BookPlus,
+  GraduationCap,
+  PlusSquare,
+  List,
+  BookOpen,
+  ListChecks,
+  LayoutGrid,
+  UserCircle,
+  Grid3X3,
 } from "lucide-react";
 import { useAuth } from "../providers/AuthProvider.jsx";
 import { toast } from "react-toastify";
@@ -53,50 +58,73 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
         avatar: institution.data?.avatar || null,
 
         items: [
-          { label: "Dashboard", to: "/institution/dashboard", icon: LayoutDashboard },
-          { label: "Profile", to: "/institution/profile", icon: User2 },
+          { label: "Dashboard", to: "/institution/dashboard", icon: Grid3X3 },
+          { label: "Profile", to: "/institution/profile", icon: UserCircle },
         ],
 
         groups: [
           {
             key: "faculties",
             label: "Faculties",
-            icon: Users,
+            icon: GraduationCap,
             items: [],
           },
+
           {
             key: "departments",
             label: "Departments",
             icon: Building2,
             items: [
-              { label: "All Departments",
+              {
+                label: "All Departments",
                 to: "/institution/departments",
-                icon: Building },
-
+                icon: Building,
+              },
               {
                 label: "Create Department",
                 to: "/institution/departments/create",
-                icon: FolderPlus,
+                icon: PlusSquare,
               },
             ],
           },
+
           {
             key: "branches",
             label: "Branches",
-            icon: BookA,
+            icon: LayoutGrid,
             items: [
-              { label: "All Branches",
+              {
+                label: "All Branches",
                 to: "/institution/branches",
-                icon: BookCheck },
-
+                icon: List,
+              },
               {
                 label: "Create Branch",
                 to: "/institution/branches/create",
-                icon: BookPlus,
+                icon: PlusSquare,
+              },
+            ],
+          },
+
+          {
+            key: "courses",
+            label: "Courses",
+            icon: BookOpen,
+            items: [
+              {
+                label: "All Courses",
+                to: "/institution/courses",
+                icon: ListChecks,
+              },
+              {
+                label: "Create Course",
+                to: "/institution/courses/create",
+                icon: PlusSquare,
               },
             ],
           },
         ],
+
 
         logout: () => {
           logoutInstitution();
