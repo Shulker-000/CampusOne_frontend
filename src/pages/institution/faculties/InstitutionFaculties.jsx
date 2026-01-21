@@ -239,9 +239,20 @@ const InstitutionFaculties = () => {
                                     <div className="flex items-start justify-between gap-3">
                                         <div className="min-w-0">
                                             <div className="flex items-center gap-2">
-                                                <div className="h-10 w-10 rounded-xl border border-[var(--border)] bg-[var(--surface-2)] grid place-items-center shrink-0">
-                                                    <User2 size={18} className="text-[var(--muted-text)]" />
+                                                <div className="h-10 w-10 rounded-xl border border-[var(--border)] bg-[var(--surface-2)] overflow-hidden shrink-0 grid place-items-center">
+                                                    {user?.avatar ? (
+                                                        <img
+                                                            src={user.avatar}
+                                                            alt={user?.name || "Faculty"}
+                                                            className="h-full w-full object-cover"
+                                                        />
+                                                    ) : (
+                                                        <User2 size={18} onClick={()=>{
+                                                            console.log(user)
+                                                        }} className="text-[var(--muted-text)]" />
+                                                    )}
                                                 </div>
+
 
                                                 <div className="min-w-0">
                                                     <h3 className="text-base font-bold truncate text-[var(--text)]">
