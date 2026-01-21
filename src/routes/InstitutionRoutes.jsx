@@ -23,6 +23,9 @@ import EditBranch from "../pages/institution/branches/EditBranch";
 import CreateCourse from "../pages/institution/courses/CreateCourse";
 import InstitutionCourses from "../pages/institution/courses/InstitutionCourses";
 import EditCourse from "../pages/institution/courses/EditCourse";
+import InstitutionFaculties from "../pages/institution/faculties/InstitutionFaculties";
+import { Edit2 } from "lucide-react";
+import EditFaculty from "../pages/institution/faculties/EditFaculty";
 
 /* ---------- Guards ---------- */
 
@@ -117,10 +120,12 @@ const InstitutionRoutes = () => {
         <Route path="branches" element={<InstitutionBranches />} />
         <Route path="branches/edit/:branchId" element={<EditBranch />} />
 
-
         <Route path="courses/create" element={<CreateCourse />} />
         <Route path="courses" element={<InstitutionCourses />} />
         <Route path="courses/edit/:courseId" element={<EditCourse />} />
+
+        <Route path="faculties" element={<InstitutionFaculties />} />
+        <Route path="/faculties/edit/:facultyId" element={<EditFaculty />} />
 
       </Route>
 

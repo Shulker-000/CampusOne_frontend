@@ -13,8 +13,6 @@ import {
   Layers,
   GraduationCap,
   Building2,
-  ToggleLeft,
-  ToggleRight,
 } from "lucide-react";
 import Loader from "../../../components/Loader";
 
@@ -27,7 +25,6 @@ const EditCourse = () => {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [statusLoading, setStatusLoading] = useState(false);
 
   const [course, setCourse] = useState(null);
 
@@ -177,44 +174,6 @@ const EditCourse = () => {
     }
   };
 
-  // ========= CHANGE STATUS =========
-  const handleToggleStatus = async () => {
-    if (!course) return;
-
-    if (!institutionToken) {
-      toast.error("Session expired. Please login again.");
-      return;
-    }
-
-    try {
-      setStatusLoading(true);
-
-      const nextStatus = !course.isOpen;
-
-      const res = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/courses/change-status/${courseId}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${institutionToken}`,
-          },
-          body: JSON.stringify({ isOpen: nextStatus }),
-        }
-      );
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Status update failed");
-
-      toast.success(`Course marked as ${data.data.isOpen ? "Open" : "Closed"}`);
-      setCourse(data.data);
-    } catch (err) {
-      toast.error(err.message || "Status update failed");
-    } finally {
-      setStatusLoading(false);
-    }
-  };
-
   if (loading) {
     return (
       <Loader />
@@ -238,26 +197,6 @@ const EditCourse = () => {
           </button>
 
           <div className="flex items-center gap-2">
-            {/* Status Toggle */}
-            <button
-              onClick={handleToggleStatus}
-              disabled={statusLoading}
-              className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-[var(--border)]
-              bg-[var(--surface-2)] font-semibold text-sm transition disabled:opacity-60
-              hover:bg-[var(--text)] hover:text-[var(--bg)]`}
-              type="button"
-              title="Change course status"
-            >
-              {statusLoading ? (
-                <Loader2 size={18} className="animate-spin" />
-              ) : course.isOpen ? (
-                <ToggleRight size={18} />
-              ) : (
-                <ToggleLeft size={18} />
-              )}
-              {course.isOpen ? "Open" : "Closed"}
-            </button>
-
             {/* Save */}
             <button
               onClick={handleSave}
@@ -279,7 +218,7 @@ const EditCourse = () => {
         >
           <h1 className="text-xl font-bold text-[var(--text)]">Edit Course</h1>
           <p className="text-sm text-[var(--muted-text)] mt-1">
-            Update course details and manage its status.
+            Update course details.
           </p>
 
           {/* FORM */}

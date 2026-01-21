@@ -11,12 +11,9 @@ import {
   User2,
   ChevronDown,
   Building2,
-  Users,
   Building,
-  FolderPlus,
   Moon,
   Sun,
-  BookA,
   GraduationCap,
   PlusSquare,
   List,
@@ -25,6 +22,7 @@ import {
   LayoutGrid,
   UserCircle,
   Grid3X3,
+  UserPen,
 } from "lucide-react";
 import { useAuth } from "../providers/AuthProvider.jsx";
 import { toast } from "react-toastify";
@@ -67,7 +65,13 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
             key: "faculties",
             label: "Faculties",
             icon: GraduationCap,
-            items: [],
+            items: [
+              {
+                label: "All Faculties",
+                to: "/institution/faculties",
+                icon: UserPen,
+              },
+            ],
           },
 
           {
