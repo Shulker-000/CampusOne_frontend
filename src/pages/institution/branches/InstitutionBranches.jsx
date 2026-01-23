@@ -10,11 +10,12 @@ import {
     Trash2,
     Search,
     Plus,
-    ArrowRight,
     Loader2,
     Building2,
     ToggleLeft,
     ToggleRight,
+    BadgeCheck,
+    Ban,
 } from "lucide-react";
 import ConfirmModal from "../../../components/ConfirmModal";
 import Loader from "../../../components/Loader";
@@ -30,10 +31,19 @@ const InstitutionBranches = () => {
     const [departments, setDepartments] = useState([]);
     const [query, setQuery] = useState("");
 
+    // ========= Delete Modal State =========
     const [confirmState, setConfirmState] = useState({
         open: false,
         branchId: null,
         branchName: "",
+    });
+
+    // ========= Status Modal State (Faculty style) =========
+    const [statusModal, setStatusModal] = useState({
+        open: false,
+        branchId: null,
+        branchName: "",
+        nextIsOpen: null,
     });
 
     const [deleting, setDeleting] = useState(false);
@@ -67,7 +77,7 @@ const InstitutionBranches = () => {
         }
     };
 
-    // ================= FETCH DEPARTMENTS (for showing dept name) =================
+    // ================= FETCH DEPARTMENTS =================
     const fetchDepartments = async () => {
         if (!institutionId) return;
 
@@ -91,7 +101,7 @@ const InstitutionBranches = () => {
 
     const departmentById = useMemo(() => {
         const map = new Map();
-        departments.forEach((d) => map.set(d._id, d));
+        departments.forEach((d) => map.set(String(d._id), d));
         return map;
     }, [departments]);
 
@@ -100,7 +110,7 @@ const InstitutionBranches = () => {
         if (!q) return branches;
 
         return branches.filter((b) => {
-            const dept = departmentById.get(b.departmentId);
+            const dept = departmentById.get(String(b.departmentId));
             return (
                 (b?.name || "").toLowerCase().includes(q) ||
                 (b?.code || "").toLowerCase().includes(q) ||
@@ -109,12 +119,18 @@ const InstitutionBranches = () => {
         });
     }, [branches, query, departmentById]);
 
+    // ================= DELETE =================
     const askDeleteBranch = (branch) => {
         setConfirmState({
             open: true,
             branchId: branch._id,
             branchName: branch.name || "this branch",
         });
+    };
+
+    const closeDeleteModal = () => {
+        if (deleting) return;
+        setConfirmState({ open: false, branchId: null, branchName: "" });
     };
 
     const deleteBranch = async () => {
@@ -141,7 +157,7 @@ const InstitutionBranches = () => {
 
             toast.success("Branch removed");
             setBranches((prev) => prev.filter((b) => b._id !== confirmState.branchId));
-            setConfirmState({ open: false, branchId: null, branchName: "" });
+            closeDeleteModal();
         } catch (err) {
             toast.error(err.message || "Delete failed");
         } finally {
@@ -149,8 +165,25 @@ const InstitutionBranches = () => {
         }
     };
 
-    const toggleStatus = async (branch) => {
+    // ================= STATUS (with confirmation modal) =================
+    const openStatusModal = (branch) => {
         if (!branch?._id) return;
+
+        setStatusModal({
+            open: true,
+            branchId: branch._id,
+            branchName: branch?.name || "this branch",
+            nextIsOpen: !branch.isOpen,
+        });
+    };
+
+    const closeStatusModal = () => {
+        if (statusUpdatingId) return;
+        setStatusModal({ open: false, branchId: null, branchName: "", nextIsOpen: null });
+    };
+
+    const toggleStatus = async () => {
+        if (!statusModal.branchId || typeof statusModal.nextIsOpen !== "boolean") return;
 
         if (!institutionToken) {
             toast.error("Session expired. Please login again.");
@@ -158,17 +191,17 @@ const InstitutionBranches = () => {
         }
 
         try {
-            setStatusUpdatingId(branch._id);
+            setStatusUpdatingId(statusModal.branchId);
 
             const res = await fetch(
-                `${import.meta.env.VITE_BACKEND_URL}/api/branches/branches/${branch._id}/status`,
+                `${import.meta.env.VITE_BACKEND_URL}/api/branches/branches/${statusModal.branchId}/status`,
                 {
                     method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
                         Authorization: `Bearer ${institutionToken}`,
                     },
-                    body: JSON.stringify({ isOpen: !branch.isOpen }),
+                    body: JSON.stringify({ isOpen: statusModal.nextIsOpen }),
                 }
             );
 
@@ -179,6 +212,7 @@ const InstitutionBranches = () => {
             setBranches((prev) => prev.map((b) => (b._id === updated._id ? updated : b)));
 
             toast.success(`Branch marked as ${updated.isOpen ? "Open" : "Closed"}`);
+            closeStatusModal();
         } catch (err) {
             toast.error(err.message || "Status update failed");
         } finally {
@@ -186,11 +220,7 @@ const InstitutionBranches = () => {
         }
     };
 
-    if (loading) {
-        return (
-            <Loader />
-        );
-    }
+    if (loading) return <Loader />;
 
     return (
         <div className="min-h-screen bg-[var(--bg)] text-[var(--text)]">
@@ -239,7 +269,8 @@ const InstitutionBranches = () => {
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                         {filteredBranches.map((branch) => {
-                            const dept = departmentById.get(branch.departmentId);
+                            const dept = departmentById.get(String(branch.departmentId));
+                            const isUpdating = statusUpdatingId === branch._id;
 
                             return (
                                 <motion.div
@@ -247,77 +278,106 @@ const InstitutionBranches = () => {
                                     key={branch._id}
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5 hover:shadow-[var(--shadow)] transition"
+                                    className={`bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5 transition
+                    ${branch.isOpen ? "hover:shadow-[var(--shadow)]" : "opacity-60"}`}
                                 >
-                                    {/* Top */}
+                                    {/* ===== TOP HEADER (Faculty style) ===== */}
                                     <div className="flex items-start justify-between gap-3">
-                                        <div className="min-w-0">
-                                            <h3 className="text-lg font-semibold truncate text-[var(--text)]">
-                                                {branch.name}
-                                            </h3>
-
-                                            <div className="flex items-center gap-2 mt-1 text-xs text-[var(--muted-text)]">
-                                                <span className="inline-flex items-center gap-1 px-2 py-1 bg-[var(--surface-2)] border border-[var(--border)] rounded-lg font-semibold text-[var(--text)]">
-                                                    <Hash size={12} />
-                                                    {branch.code}
-                                                </span>
+                                        {/* Left */}
+                                        <div className="min-w-0 flex-1 flex items-start gap-3">
+                                            <div className="h-10 w-10 rounded-xl border border-[var(--border)] bg-[var(--surface-2)] overflow-hidden shrink-0 grid place-items-center">
+                                                <Building2 size={18} className="text-[var(--muted-text)]" />
                                             </div>
 
-                                            <div className="flex items-center gap-2 mt-3 text-sm text-[var(--muted-text)]">
-                                                <Building2 size={16} className="text-[var(--muted-text)]" />
-                                                <span className="truncate">{dept?.name || "Unknown Department"}</span>
+                                            <div className="min-w-0 flex-1">
+                                                <h3 className="text-lg font-semibold truncate text-[var(--text)]">
+                                                    {branch.name || "Branch"}
+                                                </h3>
+
+                                                <p className="text-xs text-[var(--muted-text)] truncate">
+                                                    {dept?.name || "Unknown Department"}
+                                                </p>
                                             </div>
                                         </div>
 
-                                        <div className="flex items-center gap-1">
+                                        {/* Right: Toggle */}
+                                        <div className="shrink-0">
                                             <button
-                                                onClick={() => navigate(`/institution/branches/edit//${branch._id}`)}
-                                                className="p-2 rounded-lg hover:bg-[var(--hover)] text-[var(--muted-text)] hover:text-[var(--text)] transition"
-                                                title="Edit"
                                                 type="button"
+                                                onClick={() => openStatusModal(branch)}
+                                                disabled={isUpdating}
+                                                className={`relative inline-flex h-7 w-12 items-center rounded-full border transition
+                          ${branch.isOpen
+                                                        ? "bg-emerald-500/20 border-emerald-500/30"
+                                                        : "bg-red-500/15 border-red-500/25"
+                                                    }
+                          ${isUpdating ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}
+                        `}
+                                                title={branch.isOpen ? "Open" : "Closed"}
                                             >
-                                                <Pencil size={18} />
-                                            </button>
+                                                <span
+                                                    className={`inline-block h-5 w-5 transform rounded-full bg-[var(--text)] transition
+                            ${branch.isOpen ? "translate-x-6" : "translate-x-1"}
+                          `}
+                                                />
 
-                                            <button
-                                                onClick={() => askDeleteBranch(branch)}
-                                                className="p-2 rounded-lg hover:bg-red-500/10 text-[var(--muted-text)] hover:text-red-500 transition"
-                                                title="Delete"
-                                                type="button"
-                                            >
-                                                <Trash2 size={18} />
+                                                {isUpdating && (
+                                                    <span className="absolute inset-0 flex items-center justify-center">
+                                                        <Loader2 className="w-4 h-4 animate-spin text-[var(--muted-text)]" />
+                                                    </span>
+                                                )}
                                             </button>
                                         </div>
                                     </div>
 
-                                    {/* Status Toggle */}
-                                    <button
-                                        onClick={() => toggleStatus(branch)}
-                                        disabled={statusUpdatingId === branch._id}
-                                        className="w-full mt-4 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface-2)]
-                    hover:bg-[var(--text)] hover:text-[var(--bg)] transition font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-60"
-                                        type="button"
-                                    >
-                                        {statusUpdatingId === branch._id ? (
-                                            <Loader2 size={16} className="animate-spin" />
-                                        ) : branch.isOpen ? (
-                                            <ToggleRight size={18} />
-                                        ) : (
-                                            <ToggleLeft size={18} />
-                                        )}
-                                        {branch.isOpen ? "Open" : "Closed"}
-                                    </button>
+                                    {/* ===== BADGES ROW ===== */}
+                                    <div className="flex flex-wrap items-center gap-2 mt-3">
+                                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold border bg-[var(--surface-2)] text-[var(--text)] border-[var(--border)]">
+                                            <Hash size={14} />
+                                            {branch.code || "N/A"}
+                                        </span>
 
-                                    {/* Bottom */}
-                                    <button
-                                        onClick={() => navigate(`/institution/branches/edit/${branch._id}`)}
-                                        className="w-full mt-3 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface-2)]
-                    hover:bg-[var(--text)] hover:text-[var(--bg)] transition font-semibold text-sm flex items-center justify-center gap-2"
-                                        type="button"
-                                    >
-                                        Edit Details
-                                        <ArrowRight size={16} />
-                                    </button>
+                                        <span
+                                            className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold border
+                        ${branch.isOpen
+                                                    ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+                                                    : "bg-red-500/10 text-red-500 border-red-500/20"
+                                                }`}
+                                        >
+                                            {branch.isOpen ? <BadgeCheck size={14} /> : <Ban size={14} />}
+                                            {branch.isOpen ? "Open" : "Closed"}
+                                        </span>
+                                    </div>
+
+                                    {/* ===== DETAILS ===== */}
+                                    <div className="mt-4 space-y-2 text-sm">
+                                        <div className="flex items-center gap-2 text-[var(--muted-text)]">
+                                            <Building2 size={16} />
+                                            <span className="truncate">{dept?.name || "Unknown Department"}</span>
+                                        </div>
+                                    </div>
+
+                                    {/* ===== ACTIONS (bottom like Faculty) ===== */}
+                                    <div className="flex items-center gap-2 mt-5">
+                                        <button
+                                            onClick={() => navigate(`/institution/branches/edit/${branch._id}`)}
+                                            className="flex-1 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface-2)]
+                        hover:bg-[var(--text)] hover:text-[var(--bg)] transition font-semibold text-sm"
+                                            type="button"
+                                        >
+                                            Edit Branch
+                                        </button>
+
+                                        <button
+                                            onClick={() => askDeleteBranch(branch)}
+                                            className="p-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface-2)]
+                        hover:bg-red-500/10 text-[var(--muted-text)] hover:text-red-500 transition"
+                                            title="Delete"
+                                            type="button"
+                                        >
+                                            <Trash2 size={18} />
+                                        </button>
+                                    </div>
                                 </motion.div>
                             );
                         })}
@@ -325,6 +385,7 @@ const InstitutionBranches = () => {
                 )}
             </div>
 
+            {/* DELETE MODAL */}
             <ConfirmModal
                 open={confirmState.open}
                 title="Delete Branch?"
@@ -333,11 +394,25 @@ const InstitutionBranches = () => {
                 cancelText="Cancel"
                 variant="danger"
                 loading={deleting}
-                onClose={() =>
-                    !deleting &&
-                    setConfirmState({ open: false, branchId: null, branchName: "" })
-                }
+                onClose={closeDeleteModal}
                 onConfirm={deleteBranch}
+            />
+
+            {/* STATUS MODAL */}
+            <ConfirmModal
+                open={statusModal.open}
+                title="Change Branch Status?"
+                message={
+                    statusModal.nextIsOpen
+                        ? `You're about to mark "${statusModal.branchName}" as "Open". Continue?`
+                        : `You're about to mark "${statusModal.branchName}" as "Closed". Continue?`
+                }
+                confirmText={statusModal.nextIsOpen ? "Yes, Mark Open" : "Yes, Mark Closed"}
+                cancelText="Cancel"
+                variant="warning"
+                loading={!!statusUpdatingId}
+                onClose={closeStatusModal}
+                onConfirm={toggleStatus}
             />
         </div>
     );
