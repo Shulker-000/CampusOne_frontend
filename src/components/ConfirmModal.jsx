@@ -1,3 +1,4 @@
+// src/components/ConfirmModal.jsx
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertTriangle, X } from "lucide-react";
@@ -8,27 +9,44 @@ const ConfirmModal = ({
   message = "Are you sure?",
   confirmText = "Confirm",
   cancelText = "Cancel",
-  variant = "danger", // "danger" | "primary"
+  variant = "danger", // "danger" | "warning" | "primary"
   loading = false,
+  confirmDisabled = false,
   onConfirm,
   onClose,
+  children,
 }) => {
   if (!open) return null;
 
-  const confirmBtn =
-    variant === "danger"
-      ? "bg-red-600 hover:bg-red-700 text-white"
-      : "bg-indigo-600 hover:bg-indigo-700 text-white";
+  const variantStyles = {
+    danger: {
+      ring: "ring-red-500/20",
+      iconBg: "bg-red-500/15",
+      iconText: "text-red-400",
+      confirmBtn: "bg-red-600 hover:bg-red-700 text-white",
+    },
+    warning: {
+      ring: "ring-amber-500/20",
+      iconBg: "bg-amber-500/15",
+      iconText: "text-amber-300",
+      confirmBtn: "bg-amber-600 hover:bg-amber-700 text-white",
+    },
+    primary: {
+      ring: "ring-indigo-500/20",
+      iconBg: "bg-indigo-500/15",
+      iconText: "text-indigo-300",
+      confirmBtn: "bg-[var(--accent)] hover:opacity-90 text-white",
+    },
+  };
 
-  const iconWrap =
-    variant === "danger"
-      ? "bg-red-50 text-red-600 border-red-100"
-      : "bg-indigo-50 text-indigo-600 border-indigo-100";
+  const v = variantStyles[variant] || variantStyles.danger;
+
+  const disableConfirm = loading || confirmDisabled;
 
   return (
     <AnimatePresence>
       <motion.div
-        className="fixed inset-0 z-999 flex items-center justify-center p-4"
+        className="fixed inset-0 z-[999] flex items-center justify-center p-4"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -37,51 +55,85 @@ const ConfirmModal = ({
       >
         {/* Backdrop */}
         <div
-          className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+          className="absolute inset-0 bg-black/50 backdrop-blur-sm"
           onClick={() => !loading && onClose?.()}
         />
 
         {/* Modal */}
         <motion.div
-          initial={{ scale: 0.96, y: 8, opacity: 0 }}
+          initial={{ scale: 0.98, y: 10, opacity: 0 }}
           animate={{ scale: 1, y: 0, opacity: 1 }}
-          exit={{ scale: 0.98, y: 8, opacity: 0 }}
+          exit={{ scale: 0.98, y: 10, opacity: 0 }}
           transition={{ duration: 0.18 }}
-          className="relative w-full max-w-md bg-white rounded-2xl border border-slate-200 shadow-xl"
+          className={`relative w-full max-w-md rounded-2xl border shadow-[var(--shadow)] ring-1 ${v.ring}`}
+          style={{
+            background: "var(--surface)",
+            borderColor: "var(--border)",
+            color: "var(--text)",
+          }}
         >
           {/* Header */}
-          <div className="p-5 border-b border-slate-200 flex items-start justify-between gap-3">
+          <div
+            className="p-5 border-b flex items-start justify-between gap-3"
+            style={{ borderColor: "var(--border)" }}
+          >
             <div className="flex items-start gap-3">
               <div
-                className={`h-10 w-10 rounded-xl border flex items-center justify-center ${iconWrap}`}
+                className={`h-10 w-10 rounded-xl border flex items-center justify-center ${v.iconBg} ${v.iconText}`}
+                style={{ borderColor: "var(--border)" }}
               >
                 <AlertTriangle className="h-5 w-5" />
               </div>
 
               <div className="min-w-0">
-                <h3 className="text-base font-bold text-slate-900 truncate">
+                <h3 className="text-base font-bold truncate">
                   {title}
                 </h3>
-                <p className="text-sm text-slate-500 mt-1">{message}</p>
+                <p
+                  className="text-sm mt-1"
+                  style={{ color: "var(--muted-text)" }}
+                >
+                  {message}
+                </p>
               </div>
             </div>
 
             <button
               type="button"
               onClick={() => !loading && onClose?.()}
-              className="h-10 w-10 rounded-xl border border-slate-200 hover:bg-slate-50 transition grid place-items-center"
+              className="h-10 w-10 rounded-xl border transition grid place-items-center hover:opacity-80"
+              style={{
+                borderColor: "var(--border)",
+                background: "var(--surface-2)",
+                color: "var(--text)",
+              }}
               title="Close"
             >
-              <X className="h-5 w-5 text-slate-700" />
+              <X className="h-5 w-5" />
             </button>
           </div>
+
+          {/* Body */}
+          {children && (
+            <div
+              className="p-5 border-b"
+              style={{ borderColor: "var(--border)" }}
+            >
+              {children}
+            </div>
+          )}
 
           {/* Footer */}
           <div className="p-5 flex items-center justify-end gap-3">
             <button
               type="button"
               onClick={() => !loading && onClose?.()}
-              className="px-4 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 transition text-sm font-semibold"
+              className="px-4 py-2.5 rounded-xl border transition text-sm font-semibold hover:opacity-80"
+              style={{
+                borderColor: "var(--border)",
+                background: "var(--surface-2)",
+                color: "var(--text)",
+              }}
               disabled={loading}
             >
               {cancelText}
@@ -90,10 +142,14 @@ const ConfirmModal = ({
             <button
               type="button"
               onClick={onConfirm}
-              className={`px-4 py-2.5 rounded-xl transition text-sm font-semibold ${confirmBtn} ${
-                loading ? "opacity-70 cursor-not-allowed" : ""
-              }`}
-              disabled={loading}
+              disabled={disableConfirm}
+              className={`px-4 py-2.5 rounded-xl transition text-sm font-semibold ${v.confirmBtn} ${disableConfirm ? "opacity-60 cursor-not-allowed" : ""
+                }`}
+              title={
+                confirmDisabled
+                  ? "Finish course for all faculties first"
+                  : undefined
+              }
             >
               {loading ? "Please wait..." : confirmText}
             </button>

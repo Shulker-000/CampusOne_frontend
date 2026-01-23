@@ -14,6 +14,7 @@ import {
     Trash2,
     Pencil,
     Building2,
+    Users,
 } from "lucide-react";
 import ConfirmModal from "../../../components/ConfirmModal";
 import Loader from "../../../components/Loader";
@@ -24,20 +25,25 @@ const InstitutionCourses = () => {
     const institutionId = useSelector((s) => s.auth.institution.data?._id);
     const institutionToken = useSelector((s) => s.auth.institution.token);
 
-    const [departmentsLoading, setDepartmentsLoading] = useState(true);
+    // ========= Departments =========
+    const [isDepartmentsLoading, setIsDepartmentsLoading] = useState(true);
     const [departments, setDepartments] = useState([]);
 
     // ✅ DEFAULT = ALL
-    const [departmentId, setDepartmentId] = useState("all");
+    const [selectedDepartmentId, setSelectedDepartmentId] = useState("all");
 
-    const [loading, setLoading] = useState(false);
+    // ========= Courses =========
+    const [isCoursesLoading, setIsCoursesLoading] = useState(false);
     const [courses, setCourses] = useState([]);
 
-    const [query, setQuery] = useState("");
+    const [searchQuery, setSearchQuery] = useState("");
 
-    const [statusLoadingMap, setStatusLoadingMap] = useState({});
+    // ========= Per-course loading states =========
+    const [statusUpdatingMap, setStatusUpdatingMap] = useState({}); // courseId -> boolean
+    const [isDeletingCourse, setIsDeletingCourse] = useState(false);
 
-    const [confirmState, setConfirmState] = useState({
+    // ========= Confirm Modal State =========
+    const [actionModal, setActionModal] = useState({
         open: false,
         type: null, // "delete" | "status"
         courseId: null,
@@ -45,31 +51,45 @@ const InstitutionCourses = () => {
         nextIsOpen: null,
     });
 
-    const [deleting, setDeleting] = useState(false);
+    // ========= Impact (Faculties teaching this course) =========
+    const [isImpactLoading, setIsImpactLoading] = useState(false);
+    const [impactError, setImpactError] = useState("");
+    const [impactedFaculties, setImpactedFaculties] = useState([]);
+    const [finishLoadingMap, setFinishLoadingMap] = useState({}); // facultyId -> boolean
 
-    const closeConfirm = () => {
-        if (deleting) return;
-        setConfirmState({
+    const closeActionModal = () => {
+        if (isDeletingCourse) return;
+
+        // prevent closing while any finish request is running
+        const anyFinishing = Object.values(finishLoadingMap).some(Boolean);
+        if (anyFinishing) return;
+
+        setActionModal({
             open: false,
             type: null,
             courseId: null,
             courseName: "",
             nextIsOpen: null,
         });
+
+        setIsImpactLoading(false);
+        setImpactError("");
+        setImpactedFaculties([]);
+        setFinishLoadingMap({});
     };
 
-    // ========= FETCH DEPARTMENTS =========
+    // ========= Fetch Departments =========
     const fetchDepartments = async () => {
         if (!institutionId) return;
 
         if (!institutionToken) {
             toast.error("Session expired. Please login again.");
-            setDepartmentsLoading(false);
+            setIsDepartmentsLoading(false);
             return;
         }
 
         try {
-            setDepartmentsLoading(true);
+            setIsDepartmentsLoading(true);
 
             const res = await fetch(
                 `${import.meta.env.VITE_BACKEND_URL}/api/departments/institution/${institutionId}`,
@@ -79,19 +99,15 @@ const InstitutionCourses = () => {
             const data = await res.json();
             if (!res.ok) throw new Error(data.message || "Failed to fetch departments");
 
-            const list = Array.isArray(data.data) ? data.data : [];
-            setDepartments(list);
-
-            // ✅ keep dropdown default as "all"
-            // no auto select first department anymore
+            setDepartments(Array.isArray(data.data) ? data.data : []);
         } catch (err) {
             toast.error(err.message || "Failed to fetch departments");
         } finally {
-            setDepartmentsLoading(false);
+            setIsDepartmentsLoading(false);
         }
     };
 
-    // ========= FETCH COURSES BY INSTITUTION =========
+    // ========= Fetch Courses (by Institution) =========
     const fetchCoursesByInstitution = async () => {
         if (!institutionId) return;
 
@@ -101,7 +117,7 @@ const InstitutionCourses = () => {
         }
 
         try {
-            setLoading(true);
+            setIsCoursesLoading(true);
 
             const res = await fetch(
                 `${import.meta.env.VITE_BACKEND_URL}/api/courses/institution/${institutionId}`,
@@ -120,7 +136,7 @@ const InstitutionCourses = () => {
             toast.error(err.message || "Failed to fetch courses");
             setCourses([]);
         } finally {
-            setLoading(false);
+            setIsCoursesLoading(false);
         }
     };
 
@@ -132,15 +148,14 @@ const InstitutionCourses = () => {
         fetchCoursesByInstitution();
     }, [institutionId]);
 
-    // ========= FILTERING =========
-    const filteredCourses = useMemo(() => {
-        const q = query.trim().toLowerCase();
+    // ========= Filtering =========
+    const visibleCourses = useMemo(() => {
+        const q = searchQuery.trim().toLowerCase();
 
         return courses
             .filter((c) => {
-                // ✅ show all when "all"
-                if (departmentId === "all") return true;
-                return String(c?.departmentId) === String(departmentId);
+                if (selectedDepartmentId === "all") return true;
+                return String(c?.departmentId) === String(selectedDepartmentId);
             })
             .filter((c) => {
                 if (!q) return true;
@@ -151,11 +166,108 @@ const InstitutionCourses = () => {
                     String(c?.semester ?? "").toLowerCase().includes(q)
                 );
             });
-    }, [courses, departmentId, query]);
+    }, [courses, selectedDepartmentId, searchQuery]);
 
-    // ========= DELETE =========
-    const askDeleteCourse = (course) => {
-        setConfirmState({
+    // ========= Impact Fetch (Course -> Faculties Teaching It) =========
+    const fetchFacultiesTeachingCourse = async (courseId) => {
+        if (!courseId) return [];
+
+        if (!institutionToken) {
+            toast.error("Session expired. Please login again.");
+            return [];
+        }
+
+        try {
+            setIsImpactLoading(true);
+            setImpactError("");
+            setImpactedFaculties([]);
+
+            // ✅ find the selected course object
+            const selectedCourse = courses.find((c) => String(c._id) === String(courseId));
+
+            // ✅ department id from course itself (not from filter dropdown)
+            const departmentIdOfCourse = selectedCourse?.departmentId;
+
+            console.log("Selected courseId:", courseId);
+            console.log("DepartmentId of selected course:", departmentIdOfCourse);
+            console.log("Type of selected course:", typeof(departmentIdOfCourse));
+            console.log(
+                "Link:",
+                `${import.meta.env.VITE_BACKEND_URL}/api/courses/faculty/course/${courseId}/department/${departmentIdOfCourse}`
+            );
+
+            const res = await fetch(
+                `${import.meta.env.VITE_BACKEND_URL}/api/courses/faculty/course/${courseId}/department/${departmentIdOfCourse}`,
+                { headers: { Authorization: `Bearer ${institutionToken}` } }
+            );
+
+            const data = await res.json();
+
+            if (res.status === 404) {
+                setImpactedFaculties([]);
+                return [];
+            }
+
+            if (!res.ok) throw new Error(data?.message || "Failed to fetch faculties");
+
+            const list = Array.isArray(data?.data) ? data.data : [];
+
+            setImpactedFaculties(list);
+            return list;
+        } catch (err) {
+            setImpactError(err.message || "Failed to fetch faculty impact");
+            setImpactedFaculties([]);
+            return [];
+        } finally {
+            setIsImpactLoading(false);
+        }
+    };
+
+    // ========= Finish Course for a Faculty (manual, one by one) =========
+    const finishCourseForFaculty = async ({ facultyId, courseId }) => {
+        if (!facultyId || !courseId) return;
+
+        if (!institutionToken) {
+            toast.error("Session expired. Please login again.");
+            return;
+        }
+
+        try {
+            setFinishLoadingMap((p) => ({ ...p, [facultyId]: true }));
+
+            const res = await fetch(
+                `${import.meta.env.VITE_BACKEND_URL}/api/faculties/finish-course-by-faculty/${facultyId}/${courseId}`,
+                {
+                    method: "PUT",
+                    headers: { Authorization: `Bearer ${institutionToken}` },
+                }
+            );
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data?.message || "Failed to finish course");
+
+            toast.success("Course finished for faculty");
+
+            // remove from impacted list
+            setImpactedFaculties((prev) => prev.filter((f) => f._id !== facultyId));
+        } catch (err) {
+            toast.error(err.message || "Failed to finish course");
+        } finally {
+            setFinishLoadingMap((p) => {
+                const copy = { ...p };
+                delete copy[facultyId];
+                return copy;
+            });
+        }
+    };
+
+    // ========= Open Delete Modal =========
+    const openDeleteCourseModal = async (course) => {
+        if (!course?._id) return;
+
+        await fetchFacultiesTeachingCourse(course._id);
+
+        setActionModal({
             open: true,
             type: "delete",
             courseId: course._id,
@@ -164,8 +276,9 @@ const InstitutionCourses = () => {
         });
     };
 
+    // ========= Delete Course =========
     const deleteCourse = async () => {
-        if (!confirmState.courseId) return;
+        if (!actionModal.courseId) return;
 
         if (!institutionToken) {
             toast.error("Session expired. Please login again.");
@@ -173,10 +286,10 @@ const InstitutionCourses = () => {
         }
 
         try {
-            setDeleting(true);
+            setIsDeletingCourse(true);
 
             const res = await fetch(
-                `${import.meta.env.VITE_BACKEND_URL}/api/courses/${confirmState.courseId}`,
+                `${import.meta.env.VITE_BACKEND_URL}/api/courses/${actionModal.courseId}`,
                 {
                     method: "DELETE",
                     headers: { Authorization: `Bearer ${institutionToken}` },
@@ -187,30 +300,41 @@ const InstitutionCourses = () => {
             if (!res.ok) throw new Error(data.message || "Delete failed");
 
             toast.success("Course deleted");
-            setCourses((prev) => prev.filter((c) => c._id !== confirmState.courseId));
-            closeConfirm();
+            setCourses((prev) => prev.filter((c) => c._id !== actionModal.courseId));
+            closeActionModal();
         } catch (err) {
             toast.error(err.message || "Delete failed");
         } finally {
-            setDeleting(false);
+            setIsDeletingCourse(false);
         }
     };
 
-    // ========= STATUS TOGGLE =========
-    const askToggleStatus = (course) => {
-        const next = !course.isOpen;
+    // ========= Open Status Modal =========
+    const openChangeStatusModal = async (course) => {
+        if (!course?._id) return;
 
-        setConfirmState({
+        const nextIsOpen = !course.isOpen;
+
+        // Only enforce finish-course when trying to CLOSE the course
+        if (nextIsOpen === false) {
+            await fetchFacultiesTeachingCourse(course._id);
+        } else {
+            setImpactedFaculties([]);
+            setImpactError("");
+        }
+
+        setActionModal({
             open: true,
             type: "status",
             courseId: course._id,
             courseName: course.name || "this course",
-            nextIsOpen: next,
+            nextIsOpen,
         });
     };
 
+    // ========= Update Course Status =========
     const updateCourseStatus = async () => {
-        const { courseId, nextIsOpen } = confirmState;
+        const { courseId, nextIsOpen } = actionModal;
 
         if (!courseId || typeof nextIsOpen !== "boolean") return;
 
@@ -220,7 +344,7 @@ const InstitutionCourses = () => {
         }
 
         try {
-            setStatusLoadingMap((prev) => ({ ...prev, [courseId]: true }));
+            setStatusUpdatingMap((prev) => ({ ...prev, [courseId]: true }));
 
             const res = await fetch(
                 `${import.meta.env.VITE_BACKEND_URL}/api/courses/change-status/${courseId}`,
@@ -237,18 +361,18 @@ const InstitutionCourses = () => {
             const data = await res.json();
             if (!res.ok) throw new Error(data.message || "Status update failed");
 
-            const updatedCourse = data?.data;
+            const updated = data?.data;
 
             setCourses((prev) =>
-                prev.map((c) => (c._id === courseId ? { ...c, ...updatedCourse } : c))
+                prev.map((c) => (c._id === courseId ? { ...c, ...updated } : c))
             );
 
             toast.success(`Course is now ${nextIsOpen ? "Open" : "Closed"}`);
-            closeConfirm();
+            closeActionModal();
         } catch (err) {
             toast.error(err.message || "Status update failed");
         } finally {
-            setStatusLoadingMap((prev) => {
+            setStatusUpdatingMap((prev) => {
                 const copy = { ...prev };
                 delete copy[courseId];
                 return copy;
@@ -257,32 +381,23 @@ const InstitutionCourses = () => {
     };
 
     const onConfirmAction = () => {
-        if (confirmState.type === "delete") return deleteCourse();
-        if (confirmState.type === "status") return updateCourseStatus();
+        if (actionModal.type === "delete") return deleteCourse();
+        if (actionModal.type === "status") return updateCourseStatus();
     };
 
-    const confirmTitle =
-        confirmState.type === "delete"
-            ? "Delete Course?"
-            : "Change Course Status?";
+    // ========= Confirmation Guard =========
+    const requiresFinishing =
+        actionModal.type === "delete" ||
+        (actionModal.type === "status" && actionModal.nextIsOpen === false);
 
-    const confirmMessage =
-        confirmState.type === "delete"
-            ? `This will permanently delete "${confirmState.courseName}". This action cannot be undone.`
-            : `You're about to mark "${confirmState.courseName}" as "${confirmState.nextIsOpen ? "Open" : "Closed"
-            }". Continue?`;
+    const pendingImpactCount = impactedFaculties.length;
 
-    const confirmVariant = confirmState.type === "delete" ? "danger" : "warning";
+    const confirmDisabled =
+        requiresFinishing && (isImpactLoading || pendingImpactCount > 0);
 
-    const confirmText =
-        confirmState.type === "delete"
-            ? "Yes, Delete"
-            : `Yes, Mark ${confirmState.nextIsOpen ? "Open" : "Closed"}`;
-
-    const modalLoading =
-        deleting ||
-        (confirmState.type === "status" &&
-            !!statusLoadingMap[confirmState.courseId]);
+    const isModalBusy =
+        isDeletingCourse ||
+        (actionModal.type === "status" && !!statusUpdatingMap[actionModal.courseId]);
 
     return (
         <div className="min-h-screen bg-[var(--bg)] text-[var(--text)]">
@@ -320,16 +435,16 @@ const InstitutionCourses = () => {
                             <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--muted-text)]" />
 
                             <select
-                                value={departmentId}
-                                onChange={(e) => setDepartmentId(e.target.value)}
-                                disabled={departmentsLoading}
+                                value={selectedDepartmentId}
+                                onChange={(e) => setSelectedDepartmentId(e.target.value)}
+                                disabled={isDepartmentsLoading}
                                 className="w-full rounded-xl border border-[var(--border)] pl-10 pr-4 py-2.5 text-sm outline-none
                 focus:ring-2 focus:ring-indigo-500 bg-[var(--surface-2)] text-[var(--text)]
                 disabled:opacity-60"
                             >
                                 <option value="all">All Courses</option>
 
-                                {departmentsLoading ? (
+                                {isDepartmentsLoading ? (
                                     <option value="" disabled>
                                         Loading departments...
                                     </option>
@@ -357,8 +472,8 @@ const InstitutionCourses = () => {
                         <div className="relative mt-1">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--muted-text)]" />
                             <input
-                                value={query}
-                                onChange={(e) => setQuery(e.target.value)}
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder="Search by name, code, credits, semester..."
                                 className="pl-10 pr-4 py-2.5 w-full bg-[var(--surface)] border border-[var(--border)] rounded-xl outline-none
                 focus:ring-2 focus:ring-indigo-200 transition text-sm text-[var(--text)] placeholder:text-[var(--muted-text)]"
@@ -368,11 +483,11 @@ const InstitutionCourses = () => {
                 </div>
 
                 {/* Loader / Empty States / Grid */}
-                {loading ? (
+                {isCoursesLoading ? (
                     <div className="min-h-[40vh] flex flex-col items-center justify-center gap-3">
                         <Loader />
                     </div>
-                ) : filteredCourses.length === 0 ? (
+                ) : visibleCourses.length === 0 ? (
                     <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-10 text-center shadow-[var(--shadow)]">
                         <h3 className="text-lg font-semibold text-[var(--text)]">
                             No courses found
@@ -383,8 +498,8 @@ const InstitutionCourses = () => {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                        {filteredCourses.map((course) => {
-                            const isStatusLoading = !!statusLoadingMap[course._id];
+                        {visibleCourses.map((course) => {
+                            const isStatusUpdating = !!statusUpdatingMap[course._id];
 
                             return (
                                 <motion.div
@@ -404,14 +519,14 @@ const InstitutionCourses = () => {
                                                 {/* REAL TOGGLE */}
                                                 <button
                                                     type="button"
-                                                    onClick={() => askToggleStatus(course)}
-                                                    disabled={isStatusLoading}
+                                                    onClick={() => openChangeStatusModal(course)}
+                                                    disabled={isStatusUpdating}
                                                     className={`shrink-0 relative inline-flex h-7 w-12 items-center rounded-full border transition
                             ${course.isOpen
                                                             ? "bg-emerald-500/20 border-emerald-500/30"
                                                             : "bg-red-500/15 border-red-500/25"
                                                         }
-                            ${isStatusLoading
+                            ${isStatusUpdating
                                                             ? "opacity-60 cursor-not-allowed"
                                                             : "cursor-pointer"
                                                         }
@@ -420,14 +535,12 @@ const InstitutionCourses = () => {
                                                 >
                                                     <span
                                                         className={`inline-block h-5 w-5 transform rounded-full bg-[var(--text)] transition
-                              ${course.isOpen
-                                                                ? "translate-x-6"
-                                                                : "translate-x-1"
+                              ${course.isOpen ? "translate-x-6" : "translate-x-1"
                                                             }
                             `}
                                                     />
 
-                                                    {isStatusLoading && (
+                                                    {isStatusUpdating && (
                                                         <span className="absolute inset-0 flex items-center justify-center">
                                                             <Loader2 className="w-4 h-4 animate-spin text-[var(--muted-text)]" />
                                                         </span>
@@ -466,7 +579,7 @@ const InstitutionCourses = () => {
                                             </button>
 
                                             <button
-                                                onClick={() => askDeleteCourse(course)}
+                                                onClick={() => openDeleteCourseModal(course)}
                                                 className="p-2 rounded-lg hover:bg-red-500/10 text-[var(--muted-text)] hover:text-red-500 transition"
                                                 title="Delete"
                                                 type="button"
@@ -511,30 +624,165 @@ const InstitutionCourses = () => {
                 )}
             </div>
 
+            {/* ========= ACTION MODAL ========= */}
             <ConfirmModal
-                open={confirmState.open}
+                open={actionModal.open}
                 title={
-                    confirmState.type === "delete"
+                    actionModal.type === "delete"
                         ? "Delete Course?"
                         : "Change Course Status?"
                 }
                 message={
-                    confirmState.type === "delete"
-                        ? `This will permanently delete "${confirmState.courseName}". This action cannot be undone.`
-                        : `You're about to mark "${confirmState.courseName}" as "${confirmState.nextIsOpen ? "Open" : "Closed"
-                        }". Continue?`
+                    actionModal.type === "delete"
+                        ? `Before deleting "${actionModal.courseName}", you must finish this course for all assigned faculties.`
+                        : actionModal.nextIsOpen === false
+                            ? `Before closing "${actionModal.courseName}", you must finish this course for all assigned faculties.`
+                            : `You're about to mark "${actionModal.courseName}" as "Open". Continue?`
                 }
                 confirmText={
-                    confirmState.type === "delete"
+                    actionModal.type === "delete"
                         ? "Yes, Delete"
-                        : `Yes, Mark ${confirmState.nextIsOpen ? "Open" : "Closed"}`
+                        : `Yes, Mark ${actionModal.nextIsOpen ? "Open" : "Closed"}`
                 }
                 cancelText="Cancel"
-                variant={confirmState.type === "delete" ? "danger" : "warning"}
-                loading={deleting || (confirmState.type === "status" && modalLoading)}
-                onClose={closeConfirm}
+                variant={actionModal.type === "delete" ? "danger" : "warning"}
+                loading={isModalBusy}
+                confirmDisabled={confirmDisabled}
+                onClose={closeActionModal}
                 onConfirm={onConfirmAction}
-            />
+            >
+                {requiresFinishing && (
+                    <div className="space-y-3">
+                        {/* Heading */}
+                        <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-2 text-sm font-semibold text-[var(--text)]">
+                                <Users className="w-4 h-4 text-[var(--muted-text)]" />
+                                Faculty Teaching This Course
+                            </div>
+
+                            <span
+                                className="text-xs font-bold px-2 py-1 rounded-lg border"
+                                style={{
+                                    background: "var(--surface-2)",
+                                    color: "var(--text)",
+                                    borderColor: "var(--border)",
+                                }}
+                            >
+                                {impactedFaculties.length}
+                            </span>
+                        </div>
+
+                        {/* Loading / Error */}
+                        {isImpactLoading ? (
+                            <div
+                                className="text-sm rounded-xl border px-3 py-2"
+                                style={{
+                                    background: "var(--surface-2)",
+                                    color: "var(--muted-text)",
+                                    borderColor: "var(--border)",
+                                }}
+                            >
+                                Loading faculties...
+                            </div>
+                        ) : impactError ? (
+                            <div
+                                className="text-sm rounded-xl border px-3 py-2"
+                                style={{
+                                    background: "var(--surface-2)",
+                                    color: "#ef4444",
+                                    borderColor: "var(--border)",
+                                }}
+                            >
+                                {impactError}
+                            </div>
+                        ) : impactedFaculties.length === 0 ? (
+                            <div
+                                className="text-sm rounded-xl border px-3 py-2"
+                                style={{
+                                    background: "var(--surface-2)",
+                                    color: "var(--muted-text)",
+                                    borderColor: "var(--border)",
+                                }}
+                            >
+                                No faculty is currently teaching this course. You can continue.
+                            </div>
+                        ) : (
+                            <div className="max-h-60 overflow-auto space-y-2 pr-1">
+                                {impactedFaculties.map((f) => {
+                                    const avatar = f?.userId?.avatar || "/user.png";
+                                    const name = f?.userId?.name || "Faculty";
+                                    const finishing = !!finishLoadingMap[f._id];
+
+                                    return (
+                                        <div
+                                            key={f._id}
+                                            className="rounded-xl border p-3 flex items-center justify-between gap-3"
+                                            style={{
+                                                background: "var(--surface)",
+                                                borderColor: "var(--border)",
+                                            }}
+                                        >
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                <img
+                                                    src={avatar}
+                                                    alt={name}
+                                                    className="h-10 w-10 rounded-full object-cover shrink-0 ring-1 ring-white/10"
+                                                />
+
+                                                <div className="min-w-0">
+                                                    <p className="text-sm font-bold text-[var(--text)] truncate leading-tight">
+                                                        {name}
+                                                    </p>
+                                                    <p className="text-xs text-[var(--muted-text)] truncate leading-tight">
+                                                        {f?.designation || "Faculty"}
+                                                    </p>
+                                                </div>
+                                            </div>
+
+
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    finishCourseForFaculty({
+                                                        facultyId: f._id,
+                                                        courseId: actionModal.courseId,
+                                                    })
+                                                }
+                                                disabled={finishing || isModalBusy}
+                                                className={`shrink-0 px-3 py-2 rounded-lg text-xs font-bold border transition ${finishing || isModalBusy
+                                                    ? "opacity-60 cursor-not-allowed"
+                                                    : "hover:opacity-90"
+                                                    }`}
+                                                style={{
+                                                    background: "var(--surface-2)",
+                                                    color: "var(--text)",
+                                                    borderColor: "var(--border)",
+                                                }}
+                                                title="Finish this course for this faculty"
+                                            >
+                                                {finishing ? "Finishing..." : "Finish"}
+                                            </button>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+
+                        {impactedFaculties.length > 0 && (
+                            <div
+                                className="text-xs rounded-xl border px-3 py-2"
+                                style={{
+                                    background: "var(--surface-2)",
+                                    color: "var(--muted-text)",
+                                    borderColor: "var(--border)",
+                                }}
+                            >
+                                You must finish the course for every faculty before continuing.
+                            </div>
+                        )}
+                    </div>
+                )}
+            </ConfirmModal>
         </div>
     );
 };

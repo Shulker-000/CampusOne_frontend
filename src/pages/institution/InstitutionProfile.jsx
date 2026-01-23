@@ -10,6 +10,9 @@ import {
     AlertCircle,
     Crop,
     Loader2,
+    Moon,
+    Sun,
+    Sunset,
 } from "lucide-react";
 import { toast } from "react-toastify";
 
@@ -122,10 +125,15 @@ export default function InstitutionProfile() {
 
     const getGreeting = () => {
         const h = currentTime.getHours();
-        if (h < 12) return "Good Morning";
-        if (h < 16) return "Good Afternoon";
-        return "Good Evening";
+
+        if (h < 5) return { text: "Good Night", Icon: Moon };
+        if (h < 12) return { text: "Good Morning", Icon: Sun };
+        if (h < 17) return { text: "Good Afternoon", Icon: Sun };
+        if (h < 21) return { text: "Good Evening", Icon: Sunset };
+        return { text: "Good Night", Icon: Moon };
     };
+
+    const { text: greeting, Icon: GreetingIcon } = getGreeting();
 
     /* ================= EMAIL VERIFY ================= */
 
@@ -240,14 +248,19 @@ export default function InstitutionProfile() {
             {/* TOP */}
             <div className="mb-6">
                 <h1 className="text-2xl mt-2 font-bold">
-                    {getGreeting()}, {institution.name}!
+                    {greeting}, {institution.name}!
                 </h1>
-                <p className="text-sm text-[var(--muted-text)]">
-                    {currentTime.toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                    })}
-                </p>
+
+                <div className="flex gap-2 items-center">
+                    <GreetingIcon className="w-5 h-5 text-[var(--muted-text)]" />
+                    <p className="text-sm text-[var(--muted-text)]">
+                        {currentTime.toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                        })}
+                    </p>
+                </div>
+
             </div>
 
             {/* HEADER */}
