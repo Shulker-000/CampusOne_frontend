@@ -78,17 +78,17 @@ const EditFaculty = () => {
     return `${yyyy}-${mm}-${dd}`;
   };
 
-  // batch format: BRANCHCODE + YEAR (last 4 digits)
+  // batch format: BRANCHCODE-YYYY
   const splitBatch = (batch) => {
     const str = String(batch || "").trim();
     if (!str) return { branchCode: "", year: "" };
 
-    const year = str.slice(-4);
-    const branchCode = str.slice(0, -4);
+    const match = str.match(/^(.+)-(\d{4})$/);
+    if (!match) return { branchCode: "", year: "" };
 
-    if (!/^\d{4}$/.test(year)) return { branchCode: "", year: "" };
-    return { branchCode, year };
+    return { branchCode: match[1].trim(), year: match[2] };
   };
+
 
   const findBranchIdFromCode = (code, branches) => {
     const clean = String(code || "").trim().toLowerCase();
@@ -376,7 +376,7 @@ const EditFaculty = () => {
 
         const code = String(row.branchCode || "").trim();
         const year = String(row.yearOfAdmission || "").trim();
-        row.batch = code && year ? `${code}${year}` : "";
+        row.batch = code && year ? `${code}-${year}` : "";
       }
 
       next[index] = row;
@@ -1100,7 +1100,7 @@ const EditFaculty = () => {
                                 <p className="text-[11px] text-[var(--muted-text)] mt-1">
                                   Derived:{" "}
                                   <span className="font-semibold text-[var(--text)]">
-                                    {c.branchCode || "?"} + {c.yearOfAdmission || "?"}
+                                    {c.branchCode || "?"} - {c.yearOfAdmission || "?"}
                                   </span>
                                 </p>
                               </>

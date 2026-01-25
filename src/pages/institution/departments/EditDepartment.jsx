@@ -1,17 +1,13 @@
+// src/pages/institution/departments/EditDepartment.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
-import {
-    ArrowLeft,
-    Save,
-    Loader2,
-    Users,
-    UserRoundCog,
-    XCircle,
-} from "lucide-react";
+import { ArrowLeft, Save, Loader2, Users, UserRoundCog, XCircle, User2 } from "lucide-react";
+
 import Loader from "../../../components/Loader";
+import ConfirmModal from "../../../components/ConfirmModal";
 
 const EditDepartment = () => {
     const navigate = useNavigate();
@@ -21,9 +17,10 @@ const EditDepartment = () => {
     const institutionToken = useSelector((s) => s.auth.institution.token);
 
     const [loading, setLoading] = useState(true);
-
     const [department, setDepartment] = useState(null);
+
     const [faculties, setFaculties] = useState([]);
+    const [departments, setDepartments] = useState([]);
 
     const [saving, setSaving] = useState(false);
 
@@ -34,14 +31,25 @@ const EditDepartment = () => {
         headOfDepartment: "",
     });
 
+    // Confirmation Modal State
+    const [confirmState, setConfirmState] = useState({
+        open: false,
+        type: null, // "assignHod" | "removeHod"
+    });
+
+    const closeConfirm = () => {
+        if (saving) return;
+        setConfirmState({ open: false, type: null });
+    };
+
     // ---------- Fetch Department ----------
     const fetchDepartment = async () => {
         try {
             setLoading(true);
 
-            const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/departments/${departmentId}`, {
-                headers: { Authorization: `Bearer ${institutionToken}` }
-            });
+            const res = await fetch(
+                `${import.meta.env.VITE_BACKEND_URL}/api/departments/${departmentId}`
+            );
 
             const data = await res.json();
             if (!res.ok) throw new Error(data.message || "Failed to fetch department");
@@ -83,6 +91,24 @@ const EditDepartment = () => {
         }
     };
 
+    // ---------- Fetch Departments (for filtering HODs) ----------
+    const fetchDepartments = async () => {
+        if (!institutionId) return;
+
+        try {
+            const res = await fetch(
+                `${import.meta.env.VITE_BACKEND_URL}/api/departments/institution/${institutionId}`
+            );
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message || "Failed to fetch departments");
+
+            setDepartments(Array.isArray(data.data) ? data.data : []);
+        } catch (err) {
+            toast.error(err.message || "Failed to fetch departments");
+        }
+    };
+
     useEffect(() => {
         if (!departmentId) return;
         fetchDepartment();
@@ -91,6 +117,7 @@ const EditDepartment = () => {
     useEffect(() => {
         if (!institutionId) return;
         fetchFaculties();
+        fetchDepartments();
     }, [institutionId]);
 
     // ---------- Helpers ----------
@@ -100,6 +127,26 @@ const EditDepartment = () => {
         return map;
     }, [faculties]);
 
+    const hodSet = useMemo(() => {
+        const set = new Set();
+        departments.forEach((d) => {
+            const hodId = d?.headOfDepartment?._id || d?.headOfDepartment;
+            if (hodId) set.add(hodId);
+        });
+        return set;
+    }, [departments]);
+
+    const availableFaculties = useMemo(() => {
+        return faculties.filter((f) => {
+            const isHodSomewhere = hodSet.has(f._id);
+
+            // allow current department's HOD to remain selectable
+            if (f._id === form.headOfDepartment) return true;
+
+            return !isHodSomewhere;
+        });
+    }, [faculties, hodSet, form.headOfDepartment]);
+
     const hodFaculty = form.headOfDepartment ? facultyById.get(form.headOfDepartment) : null;
     const hodUser = hodFaculty?.userId;
 
@@ -108,9 +155,9 @@ const EditDepartment = () => {
         setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
     };
 
-    // ---------- Save ----------
+    // ---------- Update Department ----------
     const handleSave = async () => {
-        const { name, code, contactEmail, headOfDepartment } = form;
+        const { name, code, contactEmail } = form;
 
         if (!name.trim() || !code.trim() || !contactEmail.trim()) {
             toast.error("All fields are required");
@@ -137,7 +184,6 @@ const EditDepartment = () => {
                         name: name.trim(),
                         code: code.trim(),
                         contactEmail: contactEmail.trim(),
-                        headOfDepartment: headOfDepartment || null,
                     }),
                 }
             );
@@ -154,21 +200,194 @@ const EditDepartment = () => {
         }
     };
 
-    const removeHod = () => {
-        setForm((prev) => ({ ...prev, headOfDepartment: "" }));
+    // ---------- Assign / Change HOD (API) ----------
+    const assignHodApi = async () => {
+        if (!form.headOfDepartment) {
+            toast.error("Select a faculty first");
+            return;
+        }
+
+        if (!institutionToken) {
+            toast.error("Session expired. Please login again.");
+            return;
+        }
+
+        try {
+            setSaving(true);
+
+            const res = await fetch(
+                `${import.meta.env.VITE_BACKEND_URL}/api/departments/add-hod/${departmentId}`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${institutionToken}`,
+                    },
+                    body: JSON.stringify({
+                        headOfDepartment: form.headOfDepartment,
+                    }),
+                }
+            );
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message || "Failed to assign HOD");
+
+            toast.success("HOD assigned successfully");
+            await fetchDepartment();
+            await fetchDepartments();
+            closeConfirm();
+        } catch (err) {
+            toast.error(err.message || "Failed to assign HOD");
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    // ---------- Remove HOD (API) ----------
+    const removeHodApi = async () => {
+        if (!institutionToken) {
+            toast.error("Session expired. Please login again.");
+            return;
+        }
+
+        try {
+            setSaving(true);
+
+            const res = await fetch(
+                `${import.meta.env.VITE_BACKEND_URL}/api/departments/remove-hod/${departmentId}`,
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${institutionToken}`,
+                    },
+                }
+            );
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message || "Failed to remove HOD");
+
+            toast.success("HOD removed successfully");
+            await fetchDepartment();
+            await fetchDepartments();
+            closeConfirm();
+        } catch (err) {
+            toast.error(err.message || "Failed to remove HOD");
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    // ---------- Open Confirm Modals ----------
+    const openAssignConfirm = () => {
+        if (!form.headOfDepartment) {
+            toast.error("Select a faculty first");
+            return;
+        }
+        setConfirmState({ open: true, type: "assignHod" });
+    };
+
+    const openRemoveConfirm = () => {
+        if (!hodUser) {
+            toast.error("No HOD assigned");
+            return;
+        }
+        setConfirmState({ open: true, type: "removeHod" });
+    };
+
+    // ---------- Modal data ----------
+    const selectedFaculty = form.headOfDepartment
+        ? facultyById.get(form.headOfDepartment)
+        : null;
+
+    const selectedUser = selectedFaculty?.userId;
+
+    const modalTitle =
+        confirmState.type === "assignHod"
+            ? "Confirm HOD Assignment"
+            : "Confirm HOD Removal";
+
+    const modalMessage =
+        confirmState.type === "assignHod"
+            ? "This will assign/change the Head of Department for this department."
+            : "This will remove the current Head of Department from this department.";
+
+    const modalConfirmText =
+        confirmState.type === "assignHod" ? "Assign HOD" : "Remove HOD";
+
+    const modalVariant =
+        confirmState.type === "assignHod" ? "primary" : "danger";
+
+    const handleModalConfirm = () => {
+        if (confirmState.type === "assignHod") return assignHodApi();
+        if (confirmState.type === "removeHod") return removeHodApi();
     };
 
     // ---------- UI ----------
-    if (loading) {
-        return (
-            <Loader />
-        );
-    }
-
+    if (loading) return <Loader />;
     if (!department) return null;
 
     return (
         <div className="min-h-screen w-full bg-[var(--bg)] text-[var(--text)] px-4 sm:px-6 lg:px-10 py-8">
+            <ConfirmModal
+                open={confirmState.open}
+                title={modalTitle}
+                message={modalMessage}
+                confirmText={modalConfirmText}
+                cancelText="Cancel"
+                variant={modalVariant}
+                loading={saving}
+                onClose={closeConfirm}
+                onConfirm={handleModalConfirm}
+            >
+                {confirmState.type === "assignHod" ? (
+                    <div className="text-sm text-[var(--muted-text)]">
+                        <p className="font-semibold text-[var(--text)]">Selected Faculty</p>
+
+                        <div className="mt-2 flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-xl border border-[var(--border)] bg-[var(--surface-2)] overflow-hidden shrink-0 grid place-items-center">
+                                {selectedUser?.avatar ? (
+                                    <img
+                                        src={selectedUser.avatar}
+                                        alt={selectedUser?.name || "Faculty"}
+                                        className="h-full w-full object-cover"
+                                        onError={(e) => {
+                                            e.currentTarget.src = "/user.png";
+                                        }}
+                                    />
+                                ) : (
+                                    <User2 size={18} className="text-[var(--muted-text)]" />
+                                )}
+                            </div>
+
+                            <div className="min-w-0">
+                                <p className="font-semibold text-[var(--text)] truncate">
+                                    {selectedUser?.name || "Faculty"}
+                                    {selectedFaculty?.designation ? ` - ${selectedFaculty.designation}` : ""}
+                                </p>
+
+                                {selectedUser?.email && (
+                                    <p className="text-xs text-[var(--muted-text)] truncate mt-0.5">
+                                        {selectedUser.email}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                ) : (
+                    <div className="text-sm" style={{ color: "var(--muted-text)" }}>
+                        <p className="font-semibold" style={{ color: "var(--text)" }}>
+                            Current HOD
+                        </p>
+                        <p className="mt-1">
+                            {hodUser?.name || "Faculty"}{" "}
+                            {hodFaculty?.designation ? `- ${hodFaculty.designation}` : ""}
+                        </p>
+                        {hodUser?.email && <p className="mt-1">{hodUser.email}</p>}
+                    </div>
+                )}
+            </ConfirmModal>
+
             <div className="w-full">
                 {/* Top Bar */}
                 <div className="flex items-center justify-between gap-4 mb-6">
@@ -206,19 +425,8 @@ const EditDepartment = () => {
 
                     {/* Form */}
                     <div className="mt-6 grid sm:grid-cols-2 gap-4 max-w-4xl">
-                        <Field
-                            label="Department Name"
-                            name="name"
-                            value={form.name}
-                            onChange={handleChange}
-                        />
-
-                        <Field
-                            label="Department Code"
-                            name="code"
-                            value={form.code}
-                            onChange={handleChange}
-                        />
+                        <Field label="Department Name" name="name" value={form.name} onChange={handleChange} />
+                        <Field label="Department Code" name="code" value={form.code} onChange={handleChange} />
 
                         <div className="sm:col-span-2">
                             <Field
@@ -263,8 +471,9 @@ const EditDepartment = () => {
                                     </div>
 
                                     <button
-                                        onClick={removeHod}
-                                        className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--hover)] transition text-sm font-semibold text-[var(--text)]"
+                                        onClick={openRemoveConfirm}
+                                        disabled={saving}
+                                        className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--hover)] transition text-sm font-semibold text-[var(--text)] disabled:opacity-60"
                                         type="button"
                                     >
                                         <XCircle size={16} />
@@ -297,7 +506,7 @@ const EditDepartment = () => {
                                 >
                                     <option value="">Select faculty</option>
 
-                                    {faculties.map((f) => {
+                                    {availableFaculties.map((f) => {
                                         const user = f.userId;
                                         return (
                                             <option key={f._id} value={f._id}>
@@ -308,15 +517,23 @@ const EditDepartment = () => {
                                 </select>
 
                                 <button
-                                    onClick={handleSave}
-                                    disabled={saving}
+                                    onClick={openAssignConfirm}
+                                    disabled={saving || !form.headOfDepartment}
                                     className="shrink-0 inline-flex items-center gap-2 px-4 rounded-xl bg-[var(--accent)] text-white font-semibold hover:opacity-90 transition disabled:opacity-60"
                                     type="button"
                                 >
-                                    <UserRoundCog size={16} />
+                                    {saving ? (
+                                        <Loader2 size={16} className="animate-spin" />
+                                    ) : (
+                                        <UserRoundCog size={16} />
+                                    )}
                                     Apply
                                 </button>
                             </div>
+
+                            <p className="text-xs text-[var(--muted-text)] mt-2">
+                                Only faculties who are not already HOD of another department are shown here.
+                            </p>
                         </div>
                     </div>
                 </motion.div>

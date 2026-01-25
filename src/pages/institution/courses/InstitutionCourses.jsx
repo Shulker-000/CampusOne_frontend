@@ -15,6 +15,8 @@ import {
     Pencil,
     Building2,
     Users,
+    BadgeCheck,
+    Ban,
 } from "lucide-react";
 import ConfirmModal from "../../../components/ConfirmModal";
 import Loader from "../../../components/Loader";
@@ -60,7 +62,6 @@ const InstitutionCourses = () => {
     const closeActionModal = () => {
         if (isDeletingCourse) return;
 
-        // prevent closing while any finish request is running
         const anyFinishing = Object.values(finishLoadingMap).some(Boolean);
         if (anyFinishing) return;
 
@@ -121,11 +122,7 @@ const InstitutionCourses = () => {
 
             const res = await fetch(
                 `${import.meta.env.VITE_BACKEND_URL}/api/courses/institution/${institutionId}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${institutionToken}`,
-                    },
-                }
+                { headers: { Authorization: `Bearer ${institutionToken}` } }
             );
 
             const data = await res.json();
@@ -182,19 +179,8 @@ const InstitutionCourses = () => {
             setImpactError("");
             setImpactedFaculties([]);
 
-            // ✅ find the selected course object
             const selectedCourse = courses.find((c) => String(c._id) === String(courseId));
-
-            // ✅ department id from course itself (not from filter dropdown)
             const departmentIdOfCourse = selectedCourse?.departmentId;
-
-            console.log("Selected courseId:", courseId);
-            console.log("DepartmentId of selected course:", departmentIdOfCourse);
-            console.log("Type of selected course:", typeof(departmentIdOfCourse));
-            console.log(
-                "Link:",
-                `${import.meta.env.VITE_BACKEND_URL}/api/courses/faculty/course/${courseId}/department/${departmentIdOfCourse}`
-            );
 
             const res = await fetch(
                 `${import.meta.env.VITE_BACKEND_URL}/api/courses/faculty/course/${courseId}/department/${departmentIdOfCourse}`,
@@ -211,7 +197,6 @@ const InstitutionCourses = () => {
             if (!res.ok) throw new Error(data?.message || "Failed to fetch faculties");
 
             const list = Array.isArray(data?.data) ? data.data : [];
-
             setImpactedFaculties(list);
             return list;
         } catch (err) {
@@ -223,7 +208,7 @@ const InstitutionCourses = () => {
         }
     };
 
-    // ========= Finish Course for a Faculty (manual, one by one) =========
+    // ========= Finish Course for a Faculty =========
     const finishCourseForFaculty = async ({ facultyId, courseId }) => {
         if (!facultyId || !courseId) return;
 
@@ -247,8 +232,6 @@ const InstitutionCourses = () => {
             if (!res.ok) throw new Error(data?.message || "Failed to finish course");
 
             toast.success("Course finished for faculty");
-
-            // remove from impacted list
             setImpactedFaculties((prev) => prev.filter((f) => f._id !== facultyId));
         } catch (err) {
             toast.error(err.message || "Failed to finish course");
@@ -315,7 +298,6 @@ const InstitutionCourses = () => {
 
         const nextIsOpen = !course.isOpen;
 
-        // Only enforce finish-course when trying to CLOSE the course
         if (nextIsOpen === false) {
             await fetchFacultiesTeachingCourse(course._id);
         } else {
@@ -392,8 +374,7 @@ const InstitutionCourses = () => {
 
     const pendingImpactCount = impactedFaculties.length;
 
-    const confirmDisabled =
-        requiresFinishing && (isImpactLoading || pendingImpactCount > 0);
+    const confirmDisabled = requiresFinishing && (isImpactLoading || pendingImpactCount > 0);
 
     const isModalBusy =
         isDeletingCourse ||
@@ -439,8 +420,8 @@ const InstitutionCourses = () => {
                                 onChange={(e) => setSelectedDepartmentId(e.target.value)}
                                 disabled={isDepartmentsLoading}
                                 className="w-full rounded-xl border border-[var(--border)] pl-10 pr-4 py-2.5 text-sm outline-none
-                focus:ring-2 focus:ring-indigo-500 bg-[var(--surface-2)] text-[var(--text)]
-                disabled:opacity-60"
+                  focus:ring-2 focus:ring-indigo-500 bg-[var(--surface-2)] text-[var(--text)]
+                  disabled:opacity-60"
                             >
                                 <option value="all">All Courses</option>
 
@@ -465,9 +446,7 @@ const InstitutionCourses = () => {
 
                     {/* Search */}
                     <div className="flex-1">
-                        <label className="text-xs font-semibold text-[var(--muted-text)]">
-                            Search
-                        </label>
+                        <label className="text-xs font-semibold text-[var(--muted-text)]">Search</label>
 
                         <div className="relative mt-1">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--muted-text)]" />
@@ -476,7 +455,7 @@ const InstitutionCourses = () => {
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder="Search by name, code, credits, semester..."
                                 className="pl-10 pr-4 py-2.5 w-full bg-[var(--surface)] border border-[var(--border)] rounded-xl outline-none
-                focus:ring-2 focus:ring-indigo-200 transition text-sm text-[var(--text)] placeholder:text-[var(--muted-text)]"
+                  focus:ring-2 focus:ring-indigo-200 transition text-sm text-[var(--text)] placeholder:text-[var(--muted-text)]"
                             />
                         </div>
                     </div>
@@ -489,9 +468,7 @@ const InstitutionCourses = () => {
                     </div>
                 ) : visibleCourses.length === 0 ? (
                     <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-10 text-center shadow-[var(--shadow)]">
-                        <h3 className="text-lg font-semibold text-[var(--text)]">
-                            No courses found
-                        </h3>
+                        <h3 className="text-lg font-semibold text-[var(--text)]">No courses found</h3>
                         <p className="text-[var(--muted-text)] text-sm mt-1">
                             Try changing department or search keyword.
                         </p>
@@ -507,116 +484,116 @@ const InstitutionCourses = () => {
                                     key={course._id}
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5 hover:shadow-[var(--shadow)] transition"
+                                    className={`bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5 transition
+                    ${course.isOpen ? "hover:shadow-[var(--shadow)]" : "opacity-60"}`}
                                 >
+                                    {/* ===== TOP HEADER (Faculty style) ===== */}
                                     <div className="flex items-start justify-between gap-3">
-                                        <div className="min-w-0 flex-1">
-                                            <div className="flex items-start justify-between gap-3">
+                                        <div className="min-w-0 flex-1 flex items-start gap-3">
+                                            <div className="h-10 w-10 rounded-xl border border-[var(--border)] bg-[var(--surface-2)] overflow-hidden shrink-0 grid place-items-center">
+                                                <BookOpen size={18} className="text-[var(--muted-text)]" />
+                                            </div>
+
+                                            <div className="min-w-0 flex-1">
                                                 <h3 className="text-lg font-semibold truncate text-[var(--text)]">
                                                     {course.name}
                                                 </h3>
-
-                                                {/* REAL TOGGLE */}
-                                                <button
-                                                    type="button"
-                                                    onClick={() => openChangeStatusModal(course)}
-                                                    disabled={isStatusUpdating}
-                                                    className={`shrink-0 relative inline-flex h-7 w-12 items-center rounded-full border transition
-                            ${course.isOpen
-                                                            ? "bg-emerald-500/20 border-emerald-500/30"
-                                                            : "bg-red-500/15 border-red-500/25"
-                                                        }
-                            ${isStatusUpdating
-                                                            ? "opacity-60 cursor-not-allowed"
-                                                            : "cursor-pointer"
-                                                        }
-                          `}
-                                                    title={course.isOpen ? "Open" : "Closed"}
-                                                >
-                                                    <span
-                                                        className={`inline-block h-5 w-5 transform rounded-full bg-[var(--text)] transition
-                              ${course.isOpen ? "translate-x-6" : "translate-x-1"
-                                                            }
-                            `}
-                                                    />
-
-                                                    {isStatusUpdating && (
-                                                        <span className="absolute inset-0 flex items-center justify-center">
-                                                            <Loader2 className="w-4 h-4 animate-spin text-[var(--muted-text)]" />
-                                                        </span>
-                                                    )}
-                                                </button>
-                                            </div>
-
-                                            <div className="flex items-center gap-2 mt-2">
-                                                <span className="inline-flex items-center gap-1 px-2 py-1 bg-[var(--surface-2)] border border-[var(--border)] rounded-lg text-xs font-semibold text-[var(--text)]">
-                                                    <Hash size={12} />
-                                                    {course.code}
-                                                </span>
-
-                                                <span
-                                                    className={`text-xs font-bold px-2 py-1 rounded-lg border
-                          ${course.isOpen
-                                                            ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
-                                                            : "bg-red-500/10 text-red-500 border-red-500/20"
-                                                        }`}
-                                                >
-                                                    {course.isOpen ? "Open" : "Closed"}
-                                                </span>
+                                                <p className="text-xs text-[var(--muted-text)] truncate">
+                                                    Code: {course.code}
+                                                </p>
                                             </div>
                                         </div>
 
-                                        <div className="flex items-center gap-1">
+                                        {/* Toggle top-right */}
+                                        <div className="shrink-0">
                                             <button
-                                                onClick={() =>
-                                                    navigate(`/institution/courses/edit/${course._id}`)
-                                                }
-                                                className="p-2 rounded-lg hover:bg-[var(--hover)] text-[var(--muted-text)] hover:text-[var(--text)] transition"
-                                                title="Edit"
                                                 type="button"
+                                                onClick={() => openChangeStatusModal(course)}
+                                                disabled={isStatusUpdating}
+                                                className={`relative inline-flex h-7 w-12 items-center rounded-full border transition
+                          ${course.isOpen
+                                                        ? "bg-emerald-500/20 border-emerald-500/30"
+                                                        : "bg-red-500/15 border-red-500/25"
+                                                    }
+                          ${isStatusUpdating ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}
+                        `}
+                                                title={course.isOpen ? "Open" : "Closed"}
                                             >
-                                                <Pencil size={18} />
-                                            </button>
+                                                <span
+                                                    className={`inline-block h-5 w-5 transform rounded-full bg-[var(--text)] transition
+                            ${course.isOpen ? "translate-x-6" : "translate-x-1"}
+                          `}
+                                                />
 
-                                            <button
-                                                onClick={() => openDeleteCourseModal(course)}
-                                                className="p-2 rounded-lg hover:bg-red-500/10 text-[var(--muted-text)] hover:text-red-500 transition"
-                                                title="Delete"
-                                                type="button"
-                                            >
-                                                <Trash2 size={18} />
+                                                {isStatusUpdating && (
+                                                    <span className="absolute inset-0 flex items-center justify-center">
+                                                        <Loader2 className="w-4 h-4 animate-spin text-[var(--muted-text)]" />
+                                                    </span>
+                                                )}
                                             </button>
                                         </div>
                                     </div>
 
+                                    {/* ===== BADGES ROW (Faculty style) ===== */}
+                                    <div className="flex flex-wrap items-center gap-2 mt-3">
+                                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold border bg-[var(--surface-2)] text-[var(--text)] border-[var(--border)]">
+                                            <Hash size={14} />
+                                            {course.code || "N/A"}
+                                        </span>
+
+                                        <span
+                                            className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold border
+                        ${course.isOpen
+                                                    ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+                                                    : "bg-red-500/10 text-red-500 border-red-500/20"
+                                                }`}
+                                        >
+                                            {course.isOpen ? <BadgeCheck size={14} /> : <Ban size={14} />}
+                                            {course.isOpen ? "Open" : "Closed"}
+                                        </span>
+
+                                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold border bg-[var(--surface-2)] text-[var(--text)] border-[var(--border)]">
+                                            <GraduationCap size={14} />
+                                            Sem: {course.semester ?? "N/A"}
+                                        </span>
+                                    </div>
+
+                                    {/* ===== DETAILS ===== */}
                                     <div className="mt-4 space-y-2 text-sm">
                                         <div className="flex items-center gap-2 text-[var(--muted-text)]">
                                             <BookOpen size={16} />
-                                            <span className="font-semibold text-[var(--text)]">
-                                                Credits:
-                                            </span>
-                                            <span>{course.credits}</span>
+                                            <span className="font-semibold text-[var(--text)]">Credits:</span>
+                                            <span>{course.credits ?? "N/A"}</span>
                                         </div>
 
                                         <div className="flex items-center gap-2 text-[var(--muted-text)]">
                                             <GraduationCap size={16} />
-                                            <span className="font-semibold text-[var(--text)]">
-                                                Semester:
-                                            </span>
-                                            <span>{course.semester}</span>
+                                            <span className="font-semibold text-[var(--text)]">Semester:</span>
+                                            <span>{course.semester ?? "N/A"}</span>
                                         </div>
                                     </div>
 
-                                    <button
-                                        onClick={() =>
-                                            navigate(`/institution/courses/edit/${course._id}`)
-                                        }
-                                        className="w-full mt-5 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface-2)]
-                    hover:bg-[var(--text)] hover:text-[var(--bg)] transition font-semibold text-sm"
-                                        type="button"
-                                    >
-                                        Edit Course
-                                    </button>
+                                    {/* ===== ACTIONS (bottom like Faculty) ===== */}
+                                    <div className="flex items-center gap-2 mt-5">
+                                        <button
+                                            onClick={() => navigate(`/institution/courses/edit/${course._id}`)}
+                                            className="flex-1 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface-2)]
+                        hover:bg-[var(--text)] hover:text-[var(--bg)] transition font-semibold text-sm"
+                                            type="button"
+                                        >
+                                            Edit Course
+                                        </button>
+
+                                        <button
+                                            onClick={() => openDeleteCourseModal(course)}
+                                            className="p-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface-2)]
+                        hover:bg-red-500/10 text-[var(--muted-text)] hover:text-red-500 transition"
+                                            title="Delete"
+                                            type="button"
+                                        >
+                                            <Trash2 size={18} />
+                                        </button>
+                                    </div>
                                 </motion.div>
                             );
                         })}
@@ -627,11 +604,7 @@ const InstitutionCourses = () => {
             {/* ========= ACTION MODAL ========= */}
             <ConfirmModal
                 open={actionModal.open}
-                title={
-                    actionModal.type === "delete"
-                        ? "Delete Course?"
-                        : "Change Course Status?"
-                }
+                title={actionModal.type === "delete" ? "Delete Course?" : "Change Course Status?"}
                 message={
                     actionModal.type === "delete"
                         ? `Before deleting "${actionModal.courseName}", you must finish this course for all assigned faculties.`
@@ -727,6 +700,9 @@ const InstitutionCourses = () => {
                                                     src={avatar}
                                                     alt={name}
                                                     className="h-10 w-10 rounded-full object-cover shrink-0 ring-1 ring-white/10"
+                                                    onError={(e) => {
+                                                        e.currentTarget.src = "/user.png";
+                                                    }}
                                                 />
 
                                                 <div className="min-w-0">
@@ -739,7 +715,6 @@ const InstitutionCourses = () => {
                                                 </div>
                                             </div>
 
-
                                             <button
                                                 type="button"
                                                 onClick={() =>
@@ -750,8 +725,8 @@ const InstitutionCourses = () => {
                                                 }
                                                 disabled={finishing || isModalBusy}
                                                 className={`shrink-0 px-3 py-2 rounded-lg text-xs font-bold border transition ${finishing || isModalBusy
-                                                    ? "opacity-60 cursor-not-allowed"
-                                                    : "hover:opacity-90"
+                                                        ? "opacity-60 cursor-not-allowed"
+                                                        : "hover:opacity-90"
                                                     }`}
                                                 style={{
                                                     background: "var(--surface-2)",

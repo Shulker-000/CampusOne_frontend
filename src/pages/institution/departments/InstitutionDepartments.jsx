@@ -14,6 +14,8 @@ import {
     Plus,
     ArrowRight,
     Loader2,
+    Building2,
+    Building,
 } from "lucide-react";
 import ConfirmModal from "../../../components/ConfirmModal";
 import Loader from "./../../../components/Loader.jsx"
@@ -191,95 +193,134 @@ const InstitutionDepartments = () => {
                             const user = hod?.userId;
 
                             return (
-                                <motion.div
-                                    layout
-                                    key={dept._id}
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5 hover:shadow-[var(--shadow)] transition"
-                                >
-                                    {/* Top */}
-                                    <div className="flex items-start justify-between gap-3">
-                                        <div className="min-w-0">
-                                            <h3 className="text-lg font-semibold truncate text-[var(--text)]">
-                                                {dept.name}
-                                            </h3>
+<motion.div
+  layout
+  key={dept._id}
+  initial={{ opacity: 0, y: 10 }}
+  animate={{ opacity: 1, y: 0 }}
+  className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5 transition hover:shadow-[var(--shadow)]"
+>
+  {/* ===== TOP HEADER (same as Faculty) ===== */}
+  <div className="flex items-start justify-between gap-3">
+    {/* Left: Department Icon + Name */}
+    <div className="min-w-0 flex-1 flex items-start gap-3">
+      <div className="h-10 w-10 rounded-xl border border-[var(--border)] bg-[var(--surface-2)] overflow-hidden shrink-0 grid place-items-center">
+        <Building size={18} className="text-[var(--muted-text)]" />
+      </div>
 
-                                            <div className="flex items-center gap-2 mt-1 text-xs text-[var(--muted-text)]">
-                                                <span className="inline-flex items-center gap-1 px-2 py-1 bg-[var(--surface-2)] border border-[var(--border)] rounded-lg font-semibold">
-                                                    <Hash size={12} />
-                                                    {dept.code}
-                                                </span>
-                                            </div>
-                                        </div>
+      <div className="min-w-0 flex-1">
+        <h3 className="text-lg font-semibold truncate text-[var(--text)]">
+          {dept.name}
+        </h3>
 
-                                        <div className="flex items-center gap-1">
-                                            <button
-                                                onClick={() => navigate(`/institution/departments/edit/${dept._id}`)}
-                                                className="p-2 rounded-lg hover:bg-[var(--hover)] text-[var(--muted-text)] hover:text-[var(--text)] transition"
-                                                title="Edit"
-                                                type="button"
-                                            >
-                                                <Pencil size={18} />
-                                            </button>
+        <p className="text-xs text-[var(--muted-text)] truncate">
+          Code: {dept.code}
+        </p>
+      </div>
+    </div>
 
-                                            <button
-                                                onClick={() => askDeleteDepartment(dept)}
-                                                className="p-2 rounded-lg hover:bg-red-500/10 text-[var(--muted-text)] hover:text-red-500 transition"
-                                                title="Delete"
-                                                type="button"
-                                            >
-                                                <Trash2 size={18} />
-                                            </button>
-                                        </div>
-                                    </div>
+    {/* Right: Actions */}
+    <div className="flex items-center gap-2 shrink-0">
+      <button
+        onClick={() => navigate(`/institution/departments/edit/${dept._id}`)}
+        className="p-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface-2)]
+        hover:bg-[var(--text)] hover:text-[var(--bg)] transition"
+        title="Edit"
+        type="button"
+      >
+        <Pencil size={18} />
+      </button>
 
-                                    {/* Email */}
-                                    <div className="flex items-center gap-2 text-sm text-[var(--muted-text)] mt-4">
-                                        <Mail size={14} className="text-[var(--muted-text)]" />
-                                        <span className="truncate">{dept.contactEmail}</span>
-                                    </div>
+      <button
+        onClick={() => askDeleteDepartment(dept)}
+        className="p-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface-2)]
+        hover:bg-red-500/10 text-[var(--muted-text)] hover:text-red-500 transition"
+        title="Delete"
+        type="button"
+      >
+        <Trash2 size={18} />
+      </button>
+    </div>
+  </div>
 
-                                    {/* HOD */}
-                                    <div className="mt-4 p-3 flex items-center gap-3 rounded-xl bg-[var(--surface-2)] border border-[var(--border)]">
-                                        {user?.avatar ? (
-                                            <img
-                                                src={user.avatar}
-                                                className="w-10 h-10 rounded-lg object-cover border border-[var(--border)]"
-                                                alt=""
-                                                onError={(e) => {
-                                                    e.currentTarget.src = "/user.png";
-                                                }}
-                                            />
-                                        ) : (
-                                            <div className="w-10 h-10 rounded-lg bg-[var(--surface)] border border-[var(--border)] flex items-center justify-center text-[var(--muted-text)]">
-                                                <User2 size={18} />
-                                            </div>
-                                        )}
+  {/* ===== BADGES ROW (same style as Faculty) ===== */}
+  <div className="flex flex-wrap items-center gap-2 mt-3">
+    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold border bg-[var(--surface-2)] text-[var(--text)] border-[var(--border)]">
+      <Hash size={14} />
+      {dept.code}
+    </span>
 
-                                        <div className="min-w-0 flex-1">
-                                            <p className="text-[11px] text-[var(--muted-text)] font-semibold">
-                                                HOD
-                                            </p>
-                                            <p className="text-sm font-semibold truncate text-[var(--text)]">
-                                                {user?.name || "Unassigned"}
-                                            </p>
-                                        </div>
+    <span
+      className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold border ${
+        user
+          ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+          : "bg-red-500/10 text-red-500 border-red-500/20"
+      }`}
+    >
+      <BadgeCheck size={14} />
+      {user ? "HOD Assigned" : "No HOD"}
+    </span>
+  </div>
 
-                                        {user && <BadgeCheck className="w-5 h-5 text-emerald-500" />}
-                                    </div>
+  {/* ===== DETAILS ===== */}
+  <div className="mt-4 space-y-2 text-sm">
+    <div className="flex items-center gap-2 text-[var(--muted-text)]">
+      <Mail size={16} />
+      <span className="truncate">{dept.contactEmail}</span>
+    </div>
+  </div>
 
-                                    {/* Bottom */}
-                                    <button
-                                        onClick={() => navigate(`/institution/departments/edit/${dept._id}`)}
-                                        className="w-full mt-4 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface-2)]
-                    hover:bg-[var(--text)] hover:text-[var(--bg)] transition font-semibold text-sm flex items-center justify-center gap-2"
-                                        type="button"
-                                    >
-                                        Edit Details
-                                        <ArrowRight size={16} />
-                                    </button>
-                                </motion.div>
+  {/* ===== HOD SECTION (keep your same fields) ===== */}
+  <div className="mt-4 p-3 flex items-center gap-3 rounded-xl bg-[var(--surface-2)] border border-[var(--border)]">
+    {user?.avatar ? (
+      <img
+        src={user.avatar}
+        className="w-10 h-10 rounded-lg object-cover border border-[var(--border)]"
+        alt=""
+        onError={(e) => {
+          e.currentTarget.src = "/user.png";
+        }}
+      />
+    ) : (
+      <div className="w-10 h-10 rounded-lg bg-[var(--surface)] border border-[var(--border)] flex items-center justify-center text-[var(--muted-text)]">
+        <User2 size={18} />
+      </div>
+    )}
+
+    <div className="min-w-0 flex-1">
+      <p className="text-[11px] text-[var(--muted-text)] font-semibold">HOD</p>
+      <p className="text-sm font-semibold truncate text-[var(--text)]">
+        {user?.name || "Unassigned"}
+      </p>
+    </div>
+
+    {user && <BadgeCheck className="w-5 h-5 text-emerald-500" />}
+  </div>
+
+  {/* ===== ACTIONS (same as Faculty bottom) ===== */}
+  <div className="flex items-center gap-2 mt-5">
+    <button
+      onClick={() => navigate(`/institution/departments/edit/${dept._id}`)}
+      className="flex-1 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface-2)]
+        hover:bg-[var(--text)] hover:text-[var(--bg)] transition font-semibold text-sm flex items-center justify-center gap-2"
+      type="button"
+    >
+      Edit Details
+      <ArrowRight size={16} />
+    </button>
+
+    <button
+      onClick={() => askDeleteDepartment(dept)}
+      className="p-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface-2)]
+        hover:bg-red-500/10 text-[var(--muted-text)] hover:text-red-500 transition"
+      title="Delete"
+      type="button"
+    >
+      <Trash2 size={18} />
+    </button>
+  </div>
+</motion.div>
+
                             );
                         })}
                     </div>
