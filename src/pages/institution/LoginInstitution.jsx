@@ -20,7 +20,6 @@ const LoginInstitution = () => {
   const [loading, setLoading] = useState(false);
 
   const institutionAuth = useSelector((s) => s.auth.institution);
-  
   if (!institutionAuth.authChecked) return <Loader />;
 
   if (institutionAuth.isAuthenticated) {
@@ -56,6 +55,7 @@ const LoginInstitution = () => {
         `${import.meta.env.VITE_BACKEND_URL}/api/institutions/login`,
         {
           method: "POST",
+          credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         }
@@ -70,8 +70,7 @@ const LoginInstitution = () => {
 
       const { accessToken } = data.data;
 
-      // Provider will store token + dispatch redux
-      loginInstitution(accessToken, data);
+      loginInstitution(data);
 
 
       toast.success("Login successful");
