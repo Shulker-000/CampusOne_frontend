@@ -95,7 +95,7 @@ const InstitutionFaculties = () => {
 
             const res = await fetch(
                 `${import.meta.env.VITE_BACKEND_URL}/api/departments/institution/${institutionId}`,
-                { headers: { Authorization: `Bearer ${institutionToken}` } }
+                { credentials: "include" }
             );
 
             const data = await res.json();
@@ -128,7 +128,7 @@ const InstitutionFaculties = () => {
                     : `${import.meta.env.VITE_BACKEND_URL}/api/faculties/by-department/${selectedDept}`;
 
             const res = await fetch(url, {
-                headers: { Authorization: `Bearer ${institutionToken}` },
+                credentials: "include",
             });
 
             const data = await res.json();
@@ -235,8 +235,11 @@ const InstitutionFaculties = () => {
                 `${import.meta.env.VITE_BACKEND_URL}/api/faculties/${facultyId}/courses/${courseId}/finish`,
                 {
                     method: "PUT",
-                    headers: { Authorization: `Bearer ${institutionToken}` },
+                    credentials: "include",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ batch })
                 }
+
             );
 
             const data = await res.json();
@@ -288,7 +291,7 @@ const InstitutionFaculties = () => {
                 `${import.meta.env.VITE_BACKEND_URL}/api/faculties/${actionModal.facultyId}`,
                 {
                     method: "DELETE",
-                    headers: { Authorization: `Bearer ${institutionToken}` },
+                    credentials: "include",
                 }
             );
 
@@ -352,7 +355,7 @@ const InstitutionFaculties = () => {
                         method: "PUT",
                         headers: {
                             "Content-Type": "application/json",
-                            Authorization: `Bearer ${institutionToken}`,
+                            credentials: "include",
                         },
                         body: JSON.stringify({ isInCharge: false }),
                     }
@@ -378,7 +381,7 @@ const InstitutionFaculties = () => {
                     method: "PUT",
                     headers: {
                         "Content-Type": "application/json",
-                        Authorization: `Bearer ${institutionToken}`,
+                        credentials: "include",
                     },
                     body: JSON.stringify({ isActive: nextIsActive }),
                 }
@@ -523,6 +526,144 @@ const InstitutionFaculties = () => {
                             const isStatusUpdating = !!statusUpdatingMap[f._id];
 
                             return (
+                                //                             <motion.div
+                                //                                 layout
+                                //                                 key={f._id}
+                                //                                 initial={{ opacity: 0, y: 10 }}
+                                //                                 animate={{ opacity: 1, y: 0 }}
+                                //                                 className={`bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5 transition
+                                // ${f.isActive ? "hover:shadow-[var(--shadow)]" : "opacity-60"}`}
+                                //                             >
+                                //                                 {/* ===== TOP HEADER (like Courses) ===== */}
+                                //                                 <div className="flex items-start justify-between gap-3">
+                                //                                     {/* Left: Avatar + Name */}
+                                //                                     <div className="min-w-0 flex-1 flex items-start gap-3">
+                                //                                         <div className="h-10 w-10 rounded-xl border border-[var(--border)] bg-[var(--surface-2)] overflow-hidden shrink-0 grid place-items-center">
+                                //                                             {user?.avatar ? (
+                                //                                                 <img
+                                //                                                     src={user.avatar}
+                                //                                                     alt={user?.name || "Faculty"}
+                                //                                                     className="h-full w-full object-cover"
+                                //                                                 />
+                                //                                             ) : (
+                                //                                                 <User2 size={18} className="text-[var(--muted-text)]" />
+                                //                                             )}
+                                //                                         </div>
+
+                                //                                         <div className="min-w-0 flex-1">
+                                //                                             <h3 className="text-lg font-semibold truncate text-[var(--text)]">
+                                //                                                 {user?.name || "Faculty"}
+                                //                                             </h3>
+
+                                //                                             <p className="text-xs text-[var(--muted-text)] truncate">
+                                //                                                 {deptName}
+                                //                                             </p>
+                                //                                         </div>
+                                //                                     </div>
+
+                                //                                     {/* Right: Toggle */}
+                                //                                     <div className="shrink-0">
+                                //                                         <button
+                                //                                             type="button"
+                                //                                             onClick={() => openChangeStatusModal(f)}
+                                //                                             disabled={isStatusUpdating}
+                                //                                             className={`relative inline-flex h-7 w-12 items-center rounded-full border transition
+                                //       ${f.isActive
+                                //                                                     ? "bg-emerald-500/20 border-emerald-500/30"
+                                //                                                     : "bg-red-500/15 border-red-500/25"}
+                                //       ${isStatusUpdating ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}
+                                //     `}
+                                //                                             title={f.isActive ? "Active" : "Inactive"}
+                                //                                         >
+                                //                                             <span
+                                //                                                 className={`inline-block h-5 w-5 transform rounded-full bg-[var(--text)] transition
+                                //         ${f.isActive ? "translate-x-6" : "translate-x-1"}
+                                //       `}
+                                //                                             />
+
+                                //                                             {isStatusUpdating && (
+                                //                                                 <span className="absolute inset-0 flex items-center justify-center">
+                                //                                                     <Loader2 className="w-4 h-4 animate-spin text-[var(--muted-text)]" />
+                                //                                                 </span>
+                                //                                             )}
+                                //                                         </button>
+                                //                                     </div>
+                                //                                 </div>
+
+                                //                                 {/* ===== BADGES ROW ===== */}
+                                //                                 <div className="flex flex-wrap items-center gap-2 mt-3">
+                                //                                     {f.isInCharge && (
+                                //                                         <span className="px-2 py-1 rounded-lg text-xs font-bold border bg-indigo-500/10 text-indigo-500 border-indigo-500/20">
+                                //                                             In-Charge
+                                //                                         </span>
+                                //                                     )}
+
+                                //                                     <span
+                                //                                         className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold border
+                                //     ${f.isActive
+                                //                                                 ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+                                //                                                 : "bg-red-500/10 text-red-500 border-red-500/20"
+                                //                                             }`}
+                                //                                     >
+                                //                                         {f.isActive ? <BadgeCheck size={14} /> : <Ban size={14} />}
+                                //                                         {f.isActive ? "Active" : "Inactive"}
+                                //                                     </span>
+
+                                //                                     <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold border bg-[var(--surface-2)] text-[var(--text)] border-[var(--border)]">
+                                //                                         <BookOpen size={14} />
+                                //                                         {courseCount} Courses
+                                //                                     </span>
+                                //                                 </div>
+
+                                //                                 {/* ===== DETAILS ===== */}
+                                //                                 <div className="mt-4 space-y-2 text-sm">
+                                //                                     <div className="flex items-center gap-2 text-[var(--muted-text)]">
+                                //                                         <Mail size={16} />
+                                //                                         <span className="truncate">{user?.email || "N/A"}</span>
+                                //                                     </div>
+
+                                //                                     <div className="flex items-center gap-2 text-[var(--muted-text)]">
+                                //                                         <Phone size={16} />
+                                //                                         <span className="truncate">{user?.phone || "N/A"}</span>
+                                //                                     </div>
+
+                                //                                     <div className="flex items-center gap-2 text-[var(--muted-text)]">
+                                //                                         <UserStar size={16} />
+                                //                                         <span className="font-semibold text-[var(--text)]">Designation:</span>
+                                //                                         <span className="truncate">{f.designation || "N/A"}</span>
+                                //                                     </div>
+
+                                //                                     <p className="text-[11px] text-[var(--muted-text)]">
+                                //                                         Joined:{" "}
+                                //                                         <span className="font-semibold text-[var(--text)]">
+                                //                                             {formatDate(f.dateOfJoining)}
+                                //                                         </span>
+                                //                                     </p>
+                                //                                 </div>
+
+                                //                                 {/* ===== ACTIONS (BOTTOM, CLEAN) ===== */}
+                                //                                 <div className="flex items-center gap-2 mt-5">
+                                //                                     <button
+                                //                                         onClick={() => navigate(`/institution/faculties/edit/${f._id}`)}
+                                //                                         className="flex-1 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface-2)]
+                                //     hover:bg-[var(--text)] hover:text-[var(--bg)] transition font-semibold text-sm"
+                                //                                         type="button"
+                                //                                     >
+                                //                                         Edit Faculty
+                                //                                     </button>
+
+                                //                                     <button
+                                //                                         onClick={() => openDeleteFacultyModal(f)}
+                                //                                         className="p-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface-2)]
+                                //     hover:bg-red-500/10 text-[var(--muted-text)] hover:text-red-500 transition"
+                                //                                         title="Delete"
+                                //                                         type="button"
+                                //                                     >
+                                //                                         <Trash2 size={18} />
+                                //                                     </button>
+                                //                                 </div>
+                                //                             </motion.div>
+
                                 <motion.div
                                     layout
                                     key={f._id}
@@ -531,7 +672,7 @@ const InstitutionFaculties = () => {
                                     className={`bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5 transition
     ${f.isActive ? "hover:shadow-[var(--shadow)]" : "opacity-60"}`}
                                 >
-                                    {/* ===== TOP HEADER (like Courses) ===== */}
+                                    {/* TOP HEADER */}
                                     <div className="flex items-start justify-between gap-3">
                                         {/* Left: Avatar + Name */}
                                         <div className="min-w-0 flex-1 flex items-start gap-3">
@@ -541,6 +682,9 @@ const InstitutionFaculties = () => {
                                                         src={user.avatar}
                                                         alt={user?.name || "Faculty"}
                                                         className="h-full w-full object-cover"
+                                                        onError={(e) => {
+                                                            e.currentTarget.src = "/user.png";
+                                                        }}
                                                     />
                                                 ) : (
                                                     <User2 size={18} className="text-[var(--muted-text)]" />
@@ -552,30 +696,30 @@ const InstitutionFaculties = () => {
                                                     {user?.name || "Faculty"}
                                                 </h3>
 
-                                                <p className="text-xs text-[var(--muted-text)] truncate">
-                                                    {deptName}
-                                                </p>
+                                                <p className="text-xs text-[var(--muted-text)] truncate">{deptName}</p>
                                             </div>
                                         </div>
 
-                                        {/* Right: Toggle */}
+                                        {/* Toggle (standardized colors - no red/green) */}
                                         <div className="shrink-0">
                                             <button
                                                 type="button"
                                                 onClick={() => openChangeStatusModal(f)}
                                                 disabled={isStatusUpdating}
                                                 className={`relative inline-flex h-7 w-12 items-center rounded-full border transition
-          ${f.isActive
-                                                        ? "bg-emerald-500/20 border-emerald-500/30"
-                                                        : "bg-red-500/15 border-red-500/25"}
-          ${isStatusUpdating ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}
-        `}
+                ${isStatusUpdating ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}
+                                                style={{
+                                                    background: "var(--surface-2)",
+                                                    borderColor: f.isActive ? "var(--accent)" : "var(--border)",
+                                                }}
                                                 title={f.isActive ? "Active" : "Inactive"}
                                             >
                                                 <span
-                                                    className={`inline-block h-5 w-5 transform rounded-full bg-[var(--text)] transition
-            ${f.isActive ? "translate-x-6" : "translate-x-1"}
-          `}
+                                                    className="inline-block h-5 w-5 transform rounded-full transition"
+                                                    style={{
+                                                        background: "var(--text)",
+                                                        transform: f.isActive ? "translateX(24px)" : "translateX(4px)",
+                                                    }}
                                                 />
 
                                                 {isStatusUpdating && (
@@ -587,20 +731,32 @@ const InstitutionFaculties = () => {
                                         </div>
                                     </div>
 
-                                    {/* ===== BADGES ROW ===== */}
+                                    {/* BADGES */}
                                     <div className="flex flex-wrap items-center gap-2 mt-3">
+                                        {/* In-Charge (standardized) */}
                                         {f.isInCharge && (
-                                            <span className="px-2 py-1 rounded-lg text-xs font-bold border bg-indigo-500/10 text-indigo-500 border-indigo-500/20">
+                                            <span
+                                                className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold border"
+                                                style={{
+                                                    background: "var(--surface-2)",
+                                                    color: "var(--text)",
+                                                    borderColor: "var(--accent)",
+                                                }}
+                                                title="Faculty is marked as In-Charge"
+                                            >
+                                                <UserStar size={14} />
                                                 In-Charge
                                             </span>
                                         )}
 
+                                        {/* standardized Active/Inactive badge (no red/green) */}
                                         <span
-                                            className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold border
-        ${f.isActive
-                                                    ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
-                                                    : "bg-red-500/10 text-red-500 border-red-500/20"
-                                                }`}
+                                            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold border"
+                                            style={{
+                                                background: "var(--surface-2)",
+                                                color: "var(--text)",
+                                                borderColor: f.isActive ? "var(--accent)" : "var(--border)",
+                                            }}
                                         >
                                             {f.isActive ? <BadgeCheck size={14} /> : <Ban size={14} />}
                                             {f.isActive ? "Active" : "Inactive"}
@@ -612,7 +768,7 @@ const InstitutionFaculties = () => {
                                         </span>
                                     </div>
 
-                                    {/* ===== DETAILS ===== */}
+                                    {/* DETAILS */}
                                     <div className="mt-4 space-y-2 text-sm">
                                         <div className="flex items-center gap-2 text-[var(--muted-text)]">
                                             <Mail size={16} />
@@ -638,21 +794,22 @@ const InstitutionFaculties = () => {
                                         </p>
                                     </div>
 
-                                    {/* ===== ACTIONS (BOTTOM, CLEAN) ===== */}
+                                    {/* ACTIONS */}
                                     <div className="flex items-center gap-2 mt-5">
                                         <button
                                             onClick={() => navigate(`/institution/faculties/edit/${f._id}`)}
                                             className="flex-1 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface-2)]
-        hover:bg-[var(--text)] hover:text-[var(--bg)] transition font-semibold text-sm"
+            hover:bg-[var(--text)] hover:text-[var(--bg)] transition font-semibold text-sm"
                                             type="button"
                                         >
                                             Edit Faculty
                                         </button>
 
+                                        {/* standardized delete button (no red hover) */}
                                         <button
                                             onClick={() => openDeleteFacultyModal(f)}
                                             className="p-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface-2)]
-        hover:bg-red-500/10 text-[var(--muted-text)] hover:text-red-500 transition"
+            hover:opacity-90 text-[var(--muted-text)] transition"
                                             title="Delete"
                                             type="button"
                                         >

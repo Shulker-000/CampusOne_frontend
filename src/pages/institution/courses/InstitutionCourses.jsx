@@ -17,14 +17,15 @@ import {
     BadgeCheck,
     Ban,
     CheckCircle2,
+    X,
+    Trash,
 } from "lucide-react";
 
 import ConfirmModal from "../../../components/ConfirmModal";
 import Loader from "../../../components/Loader";
 
 /**
- * ✅ Small, reusable tab button UI (top-left like your screenshot)
- * - Keep it generic so you can add more tabs later
+ * ✅ Small, reusable tab button UI (top-left)
  */
 const ModalTabs = ({ active, onChange, tabs = [] }) => {
     return (
@@ -37,8 +38,8 @@ const ModalTabs = ({ active, onChange, tabs = [] }) => {
                         key={t.key}
                         type="button"
                         onClick={() => onChange(t.key)}
-                        className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-bold transition
-              ${isActive ? "" : "hover:opacity-90"}`}
+                        className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-bold transition ${isActive ? "" : "hover:opacity-90"
+                            }`}
                         style={{
                             background: isActive ? "var(--surface)" : "var(--surface-2)",
                             borderColor: isActive ? "var(--accent)" : "var(--border)",
@@ -56,19 +57,20 @@ const ModalTabs = ({ active, onChange, tabs = [] }) => {
 
 /**
  * ✅ One row = one Faculty + one Batch
- * This is exactly what you asked:
- * - No grouping/chips
- * - Same faculty can appear multiple times for different batches
+ * Supports:
+ * - Previous tag
+ * - Delete (current/previous)
  */
 const FacultyBatchRow = ({
     row,
     busy = false,
-    onFinish,
+    onDelete,
 }) => {
     const avatar = row?.avatar || "/user.png";
     const name = row?.name || "Faculty";
     const designation = row?.designation || "Faculty";
     const batch = row?.batch || "N/A";
+    const isPrev = !!row?.isPrev;
 
     return (
         <div
@@ -95,26 +97,43 @@ const FacultyBatchRow = ({
                             ({batch})
                         </span>
                     </p>
-                    <p className="text-xs text-[var(--muted-text)] truncate leading-tight">
-                        {designation}
-                    </p>
+
+                    <div className="flex items-center gap-2 mt-0.5">
+                        <p className="text-xs text-[var(--muted-text)] truncate leading-tight">
+                            {designation}
+                        </p>
+
+                        {isPrev && (
+                            <span
+                                className="inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-bold border"
+                                style={{
+                                    background: "var(--surface-2)",
+                                    borderColor: "var(--border)",
+                                    color: "var(--muted-text)",
+                                }}
+                                title="This entry is from previous courses"
+                            >
+                                Previous
+                            </span>
+                        )}
+                    </div>
                 </div>
             </div>
 
             <button
                 type="button"
-                onClick={onFinish}
+                onClick={onDelete}
                 disabled={busy}
-                className={`shrink-0 px-3 py-2 rounded-lg text-xs font-bold border transition
-          ${busy ? "opacity-60 cursor-not-allowed" : "hover:opacity-90"}`}
+                className={`shrink-0 px-3 py-2 rounded-lg text-xs font-bold border transition ${busy ? "opacity-60 cursor-not-allowed" : "hover:opacity-90"
+                    }`}
                 style={{
                     background: "var(--surface-2)",
                     color: "var(--text)",
                     borderColor: "var(--border)",
                 }}
-                title="Finish this batch course for this faculty"
+                title="Remove this faculty-course entry"
             >
-                {busy ? "Finishing..." : "Finish"}
+                {busy ? "Deleting..." : "Delete"}
             </button>
         </div>
     );
@@ -122,13 +141,15 @@ const FacultyBatchRow = ({
 
 /**
  * ✅ One row = one Student
- * - Student can be finished individually
- * - Finish all just loops over these
+ * Supports:
+ * - Previous tag
+ * - Delete (current/previous)
  */
-const StudentRow = ({ row, busy = false, onFinish }) => {
+const StudentRow = ({ row, busy = false, onDelete }) => {
     const avatar = row?.avatar || "/user.png";
     const name = row?.name || "Student";
     const enrollmentNumber = row?.enrollmentNumber || "N/A";
+    const isPrev = !!row?.isPrev;
 
     return (
         <div
@@ -152,26 +173,43 @@ const StudentRow = ({ row, busy = false, onFinish }) => {
                     <p className="text-sm font-bold text-[var(--text)] truncate leading-tight">
                         {name}
                     </p>
-                    <p className="text-xs text-[var(--muted-text)] truncate leading-tight">
-                        Enrollment: {enrollmentNumber}
-                    </p>
+
+                    <div className="flex items-center gap-2 mt-0.5">
+                        <p className="text-xs text-[var(--muted-text)] truncate leading-tight">
+                            Enrollment: {enrollmentNumber}
+                        </p>
+
+                        {isPrev && (
+                            <span
+                                className="inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-bold border"
+                                style={{
+                                    background: "var(--surface-2)",
+                                    borderColor: "var(--border)",
+                                    color: "var(--muted-text)",
+                                }}
+                                title="This entry is from previous courses"
+                            >
+                                Previous
+                            </span>
+                        )}
+                    </div>
                 </div>
             </div>
 
             <button
                 type="button"
-                onClick={onFinish}
+                onClick={onDelete}
                 disabled={busy}
-                className={`shrink-0 px-3 py-2 rounded-lg text-xs font-bold border transition
-          ${busy ? "opacity-60 cursor-not-allowed" : "hover:opacity-90"}`}
+                className={`shrink-0 px-3 py-2 rounded-lg text-xs font-bold border transition ${busy ? "opacity-60 cursor-not-allowed" : "hover:opacity-90"
+                    }`}
                 style={{
                     background: "var(--surface-2)",
                     color: "var(--text)",
                     borderColor: "var(--border)",
                 }}
-                title="Finish this course for this student"
+                title="Remove this student-course entry"
             >
-                {busy ? "Finishing..." : "Finish"}
+                {busy ? "Deleting..." : "Delete"}
             </button>
         </div>
     );
@@ -186,17 +224,15 @@ const InstitutionCourses = () => {
     // ========= Departments =========
     const [isDepartmentsLoading, setIsDepartmentsLoading] = useState(true);
     const [departments, setDepartments] = useState([]);
-
     const [selectedDepartmentId, setSelectedDepartmentId] = useState("all");
 
     // ========= Courses =========
     const [isCoursesLoading, setIsCoursesLoading] = useState(false);
     const [courses, setCourses] = useState([]);
-
     const [searchQuery, setSearchQuery] = useState("");
 
     // ========= Per-course loading states =========
-    const [statusUpdatingMap, setStatusUpdatingMap] = useState({}); // courseId -> boolean
+    const [statusUpdatingMap, setStatusUpdatingMap] = useState({});
     const [isDeletingCourse, setIsDeletingCourse] = useState(false);
 
     // ========= Confirm Modal State =========
@@ -214,30 +250,21 @@ const InstitutionCourses = () => {
     // ========= Impact loading + errors =========
     const [isImpactLoading, setIsImpactLoading] = useState(false);
     const [impactError, setImpactError] = useState("");
-
-    // ========= Impacted Lists =========
-    /**
-     * Faculties list from backend is at faculty-level.
-     * We convert it into rows = (facultyId + courseId + batch)
-     * so UI shows EXACT rows you asked: "FacultyName (Batch)"
-     */
-    const [facultyBatchRows, setFacultyBatchRows] = useState([]);
-
-    /**
-     * Students are already one per row.
-     */
-    const [impactedStudents, setImpactedStudents] = useState([]);
     const [studentsImpactError, setStudentsImpactError] = useState("");
 
-    // ========= Finish loading maps =========
-    // Faculty batch finishing is keyed by `${facultyId}__${batch}`
-    const [finishFacultyRowLoading, setFinishFacultyRowLoading] = useState({});
-    // Student finishing is keyed by `studentId`
-    const [finishStudentLoading, setFinishStudentLoading] = useState({});
+    // ========= Impacted Lists =========
+    // Faculty rows will include both current + previous; row.isPrev tells previous
+    const [facultyBatchRows, setFacultyBatchRows] = useState([]);
+    // Student rows will include both current + previous; row.isPrev tells previous
+    const [impactedStudents, setImpactedStudents] = useState([]);
 
-    // ========= Finish all busy flags =========
-    const [finishAllFacultiesBusy, setFinishAllFacultiesBusy] = useState(false);
-    const [finishAllStudentsBusy, setFinishAllStudentsBusy] = useState(false);
+    // ========= Delete Row loading maps =========
+    const [deleteFacultyRowLoading, setDeleteFacultyRowLoading] = useState({});
+    const [deleteStudentRowLoading, setDeleteStudentRowLoading] = useState({});
+
+    // ========= Bulk delete loading flags =========
+    const [deleteAllFacultiesBusy, setDeleteAllFacultiesBusy] = useState(false);
+    const [deleteAllStudentsBusy, setDeleteAllStudentsBusy] = useState(false);
 
     const closeActionModal = () => {
         // Guard: if delete/status update is running, don't allow closing the modal
@@ -247,13 +274,13 @@ const InstitutionCourses = () => {
             actionModal.type === "status" && !!statusUpdatingMap[actionModal.courseId];
         if (statusBusy) return;
 
-        // Guard: if bulk finish is running, block close to avoid half-finished UI confusion
-        if (finishAllFacultiesBusy || finishAllStudentsBusy) return;
+        // Guard: bulk delete busy flags
+        if (deleteAllFacultiesBusy || deleteAllStudentsBusy) return;
 
-        // Guard: if any individual finishing is running, block close
-        const anyFinishingFaculty = Object.values(finishFacultyRowLoading).some(Boolean);
-        const anyFinishingStudent = Object.values(finishStudentLoading).some(Boolean);
-        if (anyFinishingFaculty || anyFinishingStudent) return;
+        // Guard: any row delete running
+        const anyDeletingFaculty = Object.values(deleteFacultyRowLoading).some(Boolean);
+        const anyDeletingStudent = Object.values(deleteStudentRowLoading).some(Boolean);
+        if (anyDeletingFaculty || anyDeletingStudent) return;
 
         setActionModal({
             open: false,
@@ -273,11 +300,11 @@ const InstitutionCourses = () => {
         setFacultyBatchRows([]);
         setImpactedStudents([]);
 
-        // Reset loading maps
-        setFinishFacultyRowLoading({});
-        setFinishStudentLoading({});
-        setFinishAllFacultiesBusy(false);
-        setFinishAllStudentsBusy(false);
+        // Reset delete loading maps
+        setDeleteFacultyRowLoading({});
+        setDeleteStudentRowLoading({});
+        setDeleteAllFacultiesBusy(false);
+        setDeleteAllStudentsBusy(false);
     };
 
     // ========= Fetch Departments =========
@@ -295,7 +322,7 @@ const InstitutionCourses = () => {
 
             const res = await fetch(
                 `${import.meta.env.VITE_BACKEND_URL}/api/departments/institution/${institutionId}`,
-                { headers: { Authorization: `Bearer ${institutionToken}` } }
+                { credentials: "include" }
             );
 
             const data = await res.json();
@@ -323,7 +350,7 @@ const InstitutionCourses = () => {
 
             const res = await fetch(
                 `${import.meta.env.VITE_BACKEND_URL}/api/courses/institution/${institutionId}`,
-                { headers: { Authorization: `Bearer ${institutionToken}` } }
+                { credentials: "include" }
             );
 
             const data = await res.json();
@@ -373,32 +400,28 @@ const InstitutionCourses = () => {
     };
 
     /**
-     * ✅ Convert Faculty list -> FacultyBatch rows
-     *
-     * Backend returns faculty documents that include:
-     * - f._id
-     * - f.userId.name
-     * - f.courses[] = [{ courseId, semester, batch }]
-     *
-     * We only keep those course entries matching the selected courseId
-     * and turn each batch entry into its own UI row.
+     * Flatten Faculty list -> FacultyBatch rows
+     * adds isPrev flag
      */
-    const flattenFacultyToRows = (faculties, courseId) => {
+    const flattenFacultyToRows = (faculties, courseId, isPrev = false) => {
         const cid = String(courseId);
-
         const out = [];
 
         for (const f of faculties) {
-            const fcourses = Array.isArray(f?.courses) ? f.courses : [];
+            const listKey = isPrev ? "prevCourses" : "courses";
+            const fcourses = Array.isArray(f?.[listKey]) ? f[listKey] : [];
 
             for (const c of fcourses) {
                 if (String(c?.courseId) !== cid) continue;
 
                 out.push({
-                    key: `${f._id}__${c.batch}`, // unique per faculty-batch
+                    key: `${f._id}__${c.batch}__${isPrev ? "prev" : "curr"}`,
                     facultyId: f._id,
                     courseId: courseId,
                     batch: c.batch,
+                    semester: c.semester,
+
+                    isPrev,
 
                     // presentation
                     name: f?.userId?.name || "Faculty",
@@ -411,14 +434,169 @@ const InstitutionCourses = () => {
         return out;
     };
 
+    /**
+     * Normalize Student list -> Student rows
+     * adds isPrev flag
+     */
+    const normalizeStudents = (list, isPrev = false) => {
+        const arr = Array.isArray(list) ? list : [];
+
+        return arr.map((s) => ({
+            key: `${s._id}__${isPrev ? "prev" : "curr"}`,
+            _id: s._id,
+            name: s?.userId?.name || s?.user?.name || "Student",
+            avatar: s?.userId?.avatar || s?.user?.avatar || "/user.png",
+            enrollmentNumber: s?.enrollmentNumber || s?.userId?.enrollmentNumber || "N/A",
+            isPrev,
+        }));
+    };
+
     // ========= Impact Fetchers =========
 
     /**
-     * ✅ Fetch impacted faculties for a course (no batch filter)
-     * Then we flatten each faculty's course batches into UI rows.
-     *
+     * Fetch impacted faculties for course:
+     * - current:  GET /api/courses/faculty/course/:courseId/institution/:institutionId
+     * - previous: GET /api/courses/faculty/prev-course/:courseId/institution/:institutionId
+     */
+    const fetchFacultyRowsForDelete = async (courseId) => {
+        if (!courseId) return [];
+
+        if (!institutionToken) {
+            toast.error("Session expired. Please login again.");
+            return [];
+        }
+
+        try {
+            setIsImpactLoading(true);
+            setImpactError("");
+            setFacultyBatchRows([]);
+
+            const [currRes, prevRes] = await Promise.allSettled([
+                fetch(
+                    `${import.meta.env.VITE_BACKEND_URL}/api/courses/faculty/course/${courseId}/institution/${institutionId}`,
+                    { credentials: "include" }
+                ),
+                fetch(
+                    `${import.meta.env.VITE_BACKEND_URL}/api/courses/faculty/prev-course/${courseId}/institution/${institutionId}`,
+                    { credentials: "include" }
+                ),
+            ]);
+
+            const currList = [];
+            const prevList = [];
+
+            // Current
+            if (currRes.status === "fulfilled") {
+                const res = currRes.value;
+                const data = await res.json().catch(() => ({}));
+                if (res.ok) {
+                    const list = Array.isArray(data?.data) ? data.data : [];
+                    currList.push(...flattenFacultyToRows(list, courseId, false));
+                } else if (res.status !== 404) {
+                    throw new Error(data?.message || "Failed to fetch faculties");
+                }
+            }
+
+            // Previous
+            if (prevRes.status === "fulfilled") {
+                const res = prevRes.value;
+                const data = await res.json().catch(() => ({}));
+                if (res.ok) {
+                    const list = Array.isArray(data?.data) ? data.data : [];
+                    prevList.push(...flattenFacultyToRows(list, courseId, true));
+                } else if (res.status !== 404) {
+                    throw new Error(data?.message || "Failed to fetch previous faculties");
+                }
+            }
+
+            const merged = [...currList, ...prevList];
+
+            setFacultyBatchRows(merged);
+            return merged;
+        } catch (err) {
+            setImpactError(err.message || "Failed to fetch impacted faculties");
+            setFacultyBatchRows([]);
+            return [];
+        } finally {
+            setIsImpactLoading(false);
+        }
+    };
+
+    /**
+     * Fetch impacted students for course:
+     * - current:  GET /api/courses/student/course/:courseId/institution/:institutionId
+     * - previous: GET /api/courses/student/prev-course/:courseId/institution/:institutionId
+     */
+    const fetchStudentsForDelete = async (courseId) => {
+        if (!courseId) return [];
+
+        if (!institutionToken) {
+            toast.error("Session expired. Please login again.");
+            return [];
+        }
+
+        try {
+            setIsImpactLoading(true);
+            setStudentsImpactError("");
+            setImpactedStudents([]);
+
+            const [currRes, prevRes] = await Promise.allSettled([
+                fetch(
+                    `${import.meta.env.VITE_BACKEND_URL}/api/courses/student/course/${courseId}/institution/${institutionId}`,
+                    { credentials: "include" }
+                ),
+                fetch(
+                    `${import.meta.env.VITE_BACKEND_URL}/api/courses/student/prev-course/${courseId}/institution/${institutionId}`,
+                    { credentials: "include" }
+                ),
+            ]);
+
+            const currList = [];
+            const prevList = [];
+
+            // Current
+            if (currRes.status === "fulfilled") {
+                const res = currRes.value;
+                const data = await res.json().catch(() => ({}));
+
+                if (res.ok) {
+                    currList.push(...normalizeStudents(data?.data, false));
+                } else if (res.status !== 404) {
+                    throw new Error(data?.message || "Failed to fetch students");
+                }
+            }
+
+            // Previous
+            if (prevRes.status === "fulfilled") {
+                const res = prevRes.value;
+                const data = await res.json().catch(() => ({}));
+
+                if (res.ok) {
+                    prevList.push(...normalizeStudents(data?.data, true));
+                } else if (res.status !== 404) {
+                    throw new Error(data?.message || "Failed to fetch previous students");
+                }
+            }
+
+            const merged = [...currList, ...prevList];
+
+            setImpactedStudents(merged);
+            return merged;
+        } catch (err) {
+            setStudentsImpactError(err.message || "Failed to fetch impacted students");
+            setImpactedStudents([]);
+            return [];
+        } finally {
+            setIsImpactLoading(false);
+        }
+    };
+
+    // ========= Status Modal existing handlers (UNCHANGED logic) =========
+
+    /**
+     * ✅ Fetch impacted faculties for status close (current only)
      * Route used:
-     * GET /api/courses/faculty/course/:courseId/department/:departmentId
+     * GET /api/courses/faculty/course/:courseId/institution/:institutionId
      */
     const fetchFacultyBatchRowsForCourse = async (courseId) => {
         if (!courseId) return [];
@@ -441,7 +619,7 @@ const InstitutionCourses = () => {
 
             const res = await fetch(
                 `${import.meta.env.VITE_BACKEND_URL}/api/courses/faculty/course/${courseId}/institution/${institutionId}`,
-                { headers: { Authorization: `Bearer ${institutionToken}` } }
+                { credentials: "include" }
             );
 
             const data = await res.json();
@@ -454,7 +632,7 @@ const InstitutionCourses = () => {
             if (!res.ok) throw new Error(data?.message || "Failed to fetch faculties");
 
             const list = Array.isArray(data?.data) ? data.data : [];
-            const rows = flattenFacultyToRows(list, courseId);
+            const rows = flattenFacultyToRows(list, courseId, false);
 
             setFacultyBatchRows(rows);
             return rows;
@@ -468,10 +646,9 @@ const InstitutionCourses = () => {
     };
 
     /**
-     * ✅ Fetch impacted students for a course
-     *
+     * ✅ Fetch impacted students for status close (current only)
      * Route used:
-     * GET /api/courses/student/course/:courseId/department/:departmentId
+     * GET /api/courses/student/course/:courseId/institution/:institutionId
      */
     const fetchStudentsForCourse = async (courseId) => {
         if (!courseId) return [];
@@ -494,7 +671,7 @@ const InstitutionCourses = () => {
 
             const res = await fetch(
                 `${import.meta.env.VITE_BACKEND_URL}/api/courses/student/course/${courseId}/institution/${institutionId}`,
-                { headers: { Authorization: `Bearer ${institutionToken}` } }
+                { credentials: "include" }
             );
 
             const data = await res.json();
@@ -508,7 +685,6 @@ const InstitutionCourses = () => {
 
             const list = Array.isArray(data?.data) ? data.data : [];
 
-            // Normalize student list for UI rendering
             const normalized = list.map((s) => ({
                 _id: s._id,
                 name: s?.userId?.name || "Student",
@@ -527,14 +703,13 @@ const InstitutionCourses = () => {
         }
     };
 
-    // ========= Finish Handlers =========
+    // ========= Finish Handlers (status close) =========
 
-    /**
-     * ✅ Finish course for one faculty-batch row
-     * Endpoint:
-     * PUT /api/faculties/:facultyId/courses/:courseId/finish
-     * body: { batch }
-     */
+    const [finishFacultyRowLoading, setFinishFacultyRowLoading] = useState({});
+    const [finishStudentLoading, setFinishStudentLoading] = useState({});
+    const [finishAllFacultiesBusy, setFinishAllFacultiesBusy] = useState(false);
+    const [finishAllStudentsBusy, setFinishAllStudentsBusy] = useState(false);
+
     const finishOneFacultyBatchRow = async (row) => {
         if (!row?.facultyId || !row?.courseId || !row?.batch) return;
 
@@ -554,7 +729,7 @@ const InstitutionCourses = () => {
                     method: "PUT",
                     headers: {
                         "Content-Type": "application/json",
-                        Authorization: `Bearer ${institutionToken}`,
+                        credentials: "include",
                     },
                     body: JSON.stringify({ batch: row.batch }),
                 }
@@ -563,7 +738,6 @@ const InstitutionCourses = () => {
             const data = await res.json();
             if (!res.ok) throw new Error(data?.message || "Failed to finish faculty course");
 
-            // Remove this row from pending list (this is what enables confirm)
             setFacultyBatchRows((prev) => prev.filter((r) => r.key !== key));
             toast.success(`Finished: ${row.name} (${row.batch})`);
         } catch (err) {
@@ -577,10 +751,6 @@ const InstitutionCourses = () => {
         }
     };
 
-    /**
-     * ✅ Finish all faculties (all faculty-batch rows)
-     * - Runs sequentially to avoid backend overload and rate limits
-     */
     const finishAllFaculties = async () => {
         if (!institutionToken) {
             toast.error("Session expired. Please login again.");
@@ -591,18 +761,14 @@ const InstitutionCourses = () => {
 
         setFinishAllFacultiesBusy(true);
 
-        // Snapshot of current rows (so UI changes while finishing doesn't break the loop)
         const rows = [...facultyBatchRows];
-
         let successCount = 0;
 
         try {
             for (const row of rows) {
-                // If it already disappeared (finished manually), skip
                 const stillPending = facultyBatchRows.some((r) => r.key === row.key);
                 if (!stillPending) continue;
 
-                // Mark this row busy
                 setFinishFacultyRowLoading((p) => ({ ...p, [row.key]: true }));
 
                 try {
@@ -612,7 +778,7 @@ const InstitutionCourses = () => {
                             method: "PUT",
                             headers: {
                                 "Content-Type": "application/json",
-                                Authorization: `Bearer ${institutionToken}`,
+                                credentials: "include",
                             },
                             body: JSON.stringify({ batch: row.batch }),
                         }
@@ -624,7 +790,6 @@ const InstitutionCourses = () => {
                     successCount++;
                     setFacultyBatchRows((prev) => prev.filter((r) => r.key !== row.key));
                 } catch (err) {
-                    // Do NOT stop the whole loop on one failure
                     toast.error(`${row.name} (${row.batch}): ${err.message || "Failed"}`);
                 } finally {
                     setFinishFacultyRowLoading((p) => {
@@ -643,12 +808,6 @@ const InstitutionCourses = () => {
         }
     };
 
-    /**
-     * ✅ Finish one student for this course
-     * Endpoint:
-     * PUT /api/students/finish-courses/:studentId
-     * body: { courseIds: [courseId] }
-     */
     const finishOneStudent = async (studentId) => {
         if (!studentId || !actionModal.courseId) return;
 
@@ -666,7 +825,7 @@ const InstitutionCourses = () => {
                     method: "PUT",
                     headers: {
                         "Content-Type": "application/json",
-                        Authorization: `Bearer ${institutionToken}`,
+                        credentials: "include",
                     },
                     body: JSON.stringify({ courseIds: [actionModal.courseId] }),
                 }
@@ -688,10 +847,6 @@ const InstitutionCourses = () => {
         }
     };
 
-    /**
-     * ✅ Finish all students for this course
-     * - Runs sequentially for safety
-     */
     const finishAllStudents = async () => {
         if (!institutionToken) {
             toast.error("Session expired. Please login again.");
@@ -710,7 +865,6 @@ const InstitutionCourses = () => {
             for (const s of list) {
                 if (!s?._id) continue;
 
-                // If already finished manually, skip
                 const stillPending = impactedStudents.some((x) => x._id === s._id);
                 if (!stillPending) continue;
 
@@ -723,7 +877,7 @@ const InstitutionCourses = () => {
                             method: "PUT",
                             headers: {
                                 "Content-Type": "application/json",
-                                Authorization: `Bearer ${institutionToken}`,
+                                credentials: "include",
                             },
                             body: JSON.stringify({ courseIds: [actionModal.courseId] }),
                         }
@@ -758,8 +912,7 @@ const InstitutionCourses = () => {
         if (!course?._id) return;
 
         setActiveImpactTab("faculties");
-        // For delete, you might later show impacted lists too.
-        // For now we keep delete action simple.
+
         setActionModal({
             open: true,
             type: "delete",
@@ -767,9 +920,15 @@ const InstitutionCourses = () => {
             courseName: course.name || "this course",
             nextIsOpen: null,
         });
+
+        // Fetch impacted lists for delete modal (current + previous merged)
+        await Promise.all([
+            fetchFacultyRowsForDelete(course._id),
+            fetchStudentsForDelete(course._id),
+        ]);
     };
 
-    // ========= Delete Course =========
+    // ========= Delete Course (Delete Everything + Basic Delete both use this) =========
     const deleteCourse = async () => {
         if (!actionModal.courseId) return;
 
@@ -785,7 +944,7 @@ const InstitutionCourses = () => {
                 `${import.meta.env.VITE_BACKEND_URL}/api/courses/${actionModal.courseId}`,
                 {
                     method: "DELETE",
-                    headers: { Authorization: `Bearer ${institutionToken}` },
+                    credentials: "include",
                 }
             );
 
@@ -802,23 +961,167 @@ const InstitutionCourses = () => {
         }
     };
 
+    // ========= Delete Faculty Row =========
+    const deleteOneFacultyRow = async (row) => {
+        if (!row?.facultyId || !row?.courseId || !row?.batch || !row?.semester) return;
+        if (!institutionToken) {
+            toast.error("Session expired. Please login again.");
+            return;
+        }
+
+        const key = row.key;
+
+        try {
+            setDeleteFacultyRowLoading((p) => ({ ...p, [key]: true }));
+
+            const endpoint = row.isPrev
+                ? `${import.meta.env.VITE_BACKEND_URL}/api/faculties/${row.facultyId}/prev-courses/${row.courseId}`
+                : `${import.meta.env.VITE_BACKEND_URL}/api/faculties/${row.facultyId}/courses/${row.courseId}`;
+
+            const res = await fetch(endpoint, {
+                method: "DELETE",
+                headers: {
+                    "Content-Type": "application/json",
+                    credentials: "include",
+                },
+                body: JSON.stringify({
+                    semester: row.semester,
+                    batch: row.batch,
+                }),
+            });
+
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data?.message || "Failed to delete faculty entry");
+
+            setFacultyBatchRows((prev) => prev.filter((r) => r.key !== key));
+            toast.success("Faculty entry deleted");
+        } catch (err) {
+            toast.error(err.message || "Failed to delete faculty entry");
+        } finally {
+            setDeleteFacultyRowLoading((p) => {
+                const copy = { ...p };
+                delete copy[key];
+                return copy;
+            });
+        }
+    };
+
+    // ========= Delete Student Row =========
+    const deleteOneStudentRow = async (row) => {
+        if (!row?._id || !actionModal.courseId) return;
+        if (!institutionToken) {
+            toast.error("Session expired. Please login again.");
+            return;
+        }
+
+        const key = row.key || row._id;
+
+        try {
+            setDeleteStudentRowLoading((p) => ({ ...p, [key]: true }));
+
+            const endpoint = row.isPrev
+                ? `${import.meta.env.VITE_BACKEND_URL}/api/students/delete-prev-courses/${row._id}`
+                : `${import.meta.env.VITE_BACKEND_URL}/api/students/delete-courses/${row._id}`;
+
+            const res = await fetch(endpoint, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    credentials: "include",
+                },
+                body: JSON.stringify({ courseIds: [actionModal.courseId] }),
+            });
+
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data?.message || "Failed to delete student entry");
+
+            setImpactedStudents((prev) => prev.filter((s) => s.key !== key));
+            toast.success("Student entry deleted");
+        } catch (err) {
+            toast.error(err.message || "Failed to delete student entry");
+        } finally {
+            setDeleteStudentRowLoading((p) => {
+                const copy = { ...p };
+                delete copy[key];
+                return copy;
+            });
+        }
+    };
+
+    // ========= Delete All Faculties (bulk pull, current + prev) =========
+    const deleteAllFacultiesFromCourse = async () => {
+        if (!actionModal.courseId) return;
+        if (!institutionToken) {
+            toast.error("Session expired. Please login again.");
+            return;
+        }
+
+        if (facultyBatchRows.length === 0) return;
+
+        try {
+            setDeleteAllFacultiesBusy(true);
+
+            const res = await fetch(
+                `${import.meta.env.VITE_BACKEND_URL}/api/courses/faculty/pull-course/${actionModal.courseId}/institution/${institutionId}`,
+                { credentials: "include" }
+            );
+
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data?.message || "Failed to delete all faculties");
+
+            setFacultyBatchRows([]);
+            toast.success("All faculty entries deleted");
+        } catch (err) {
+            toast.error(err.message || "Failed to delete all faculties");
+        } finally {
+            setDeleteAllFacultiesBusy(false);
+        }
+    };
+
+    // ========= Delete All Students (bulk pull, current + prev) =========
+    const deleteAllStudentsFromCourse = async () => {
+        if (!actionModal.courseId) return;
+        if (!institutionToken) {
+            toast.error("Session expired. Please login again.");
+            return;
+        }
+
+        if (impactedStudents.length === 0) return;
+
+        try {
+            setDeleteAllStudentsBusy(true);
+
+            const res = await fetch(
+                `${import.meta.env.VITE_BACKEND_URL}/api/courses/student/pull-course/${actionModal.courseId}/institution/${institutionId}`,
+                { credentials: "include" }
+            );
+
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data?.message || "Failed to delete all students");
+
+            setImpactedStudents([]);
+            toast.success("All student entries deleted");
+        } catch (err) {
+            toast.error(err.message || "Failed to delete all students");
+        } finally {
+            setDeleteAllStudentsBusy(false);
+        }
+    };
+
     // ========= Open Status Modal =========
     const openChangeStatusModal = async (course) => {
         if (!course?._id) return;
 
         const nextIsOpen = !course.isOpen;
 
-        // Only when closing (Open -> Closed), we must show impact and force finish flow
         if (nextIsOpen === false) {
             setActiveImpactTab("faculties");
 
-            // Fetch both impacted groups in parallel
             await Promise.all([
                 fetchFacultyBatchRowsForCourse(course._id),
                 fetchStudentsForCourse(course._id),
             ]);
         } else {
-            // When opening (Closed -> Open), no impact flow required
             setFacultyBatchRows([]);
             setImpactedStudents([]);
             setImpactError("");
@@ -854,7 +1157,7 @@ const InstitutionCourses = () => {
                     method: "PUT",
                     headers: {
                         "Content-Type": "application/json",
-                        Authorization: `Bearer ${institutionToken}`,
+                        credentials: "include",
                     },
                     body: JSON.stringify({ isOpen: nextIsOpen }),
                 }
@@ -887,21 +1190,23 @@ const InstitutionCourses = () => {
         if (actionModal.type === "status") return updateCourseStatus();
     };
 
-    // ========= Confirm Guard (THIS is the main rule you wanted) =========
-    /**
-     * Only require finishing when:
-     * - Action is status change
-     * - We're closing the course (Open -> Closed)
-     *
-     * In that case:
-     * - Confirm must stay disabled until both lists are empty
-     */
+    // ========= Confirm Guard =========
     const requiresFinishingToClose =
         actionModal.type === "status" && actionModal.nextIsOpen === false;
+
+    const isDeleteModal = actionModal.type === "delete";
 
     const pendingFacultyBatchCount = facultyBatchRows.length;
     const pendingStudentsCount = impactedStudents.length;
 
+    // For delete modal:
+    // - Basic delete disabled until both lists empty
+    // - Delete everything always enabled (we add a separate button top-right)
+    const basicDeleteDisabled =
+        isDeleteModal &&
+        (isImpactLoading || pendingFacultyBatchCount > 0 || pendingStudentsCount > 0);
+
+    // For status close modal confirm disabled same as before
     const confirmDisabled =
         requiresFinishingToClose &&
         (isImpactLoading || pendingFacultyBatchCount > 0 || pendingStudentsCount > 0);
@@ -909,6 +1214,15 @@ const InstitutionCourses = () => {
     const isModalBusy =
         isDeletingCourse ||
         (actionModal.type === "status" && !!statusUpdatingMap[actionModal.courseId]);
+
+    // When delete modal open, also disable interactions if any row delete is running
+    const isAnyRowDeleteBusy =
+        Object.values(deleteFacultyRowLoading).some(Boolean) ||
+        Object.values(deleteStudentRowLoading).some(Boolean) ||
+        deleteAllFacultiesBusy ||
+        deleteAllStudentsBusy;
+
+    const deleteModalConfirmDisabled = basicDeleteDisabled || isModalBusy || isAnyRowDeleteBusy;
 
     return (
         <div className="min-h-screen bg-[var(--bg)] text-[var(--text)]">
@@ -1018,8 +1332,8 @@ const InstitutionCourses = () => {
                                     key={course._id}
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    className={`bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5 transition
-                    ${course.isOpen ? "hover:shadow-[var(--shadow)]" : "opacity-60"}`}
+                                    className={`bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5 transition ${course.isOpen ? "hover:shadow-[var(--shadow)]" : "opacity-60"
+                                        }`}
                                 >
                                     {/* TOP HEADER */}
                                     <div className="flex items-start justify-between gap-3">
@@ -1038,25 +1352,32 @@ const InstitutionCourses = () => {
                                             </div>
                                         </div>
 
-                                        {/* Toggle */}
+                                        {/* Toggle (standardized colors - no red/green) */}
                                         <div className="shrink-0">
                                             <button
                                                 type="button"
                                                 onClick={() => openChangeStatusModal(course)}
                                                 disabled={isStatusUpdating}
-                                                className={`relative inline-flex h-7 w-12 items-center rounded-full border transition
-                          ${course.isOpen
-                                                        ? "bg-emerald-500/20 border-emerald-500/30"
-                                                        : "bg-red-500/15 border-red-500/25"
-                                                    }
-                          ${isStatusUpdating ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}
-                        `}
+                                                className={`relative inline-flex h-7 w-12 items-center rounded-full border transition ${isStatusUpdating ? "opacity-60 cursor-not-allowed" : "cursor-pointer"
+                                                    }`}
+                                                style={{
+                                                    background: course.isOpen
+                                                        ? "var(--surface-2)"
+                                                        : "var(--surface-2)",
+                                                    borderColor: course.isOpen
+                                                        ? "var(--accent)"
+                                                        : "var(--border)",
+                                                }}
                                                 title={course.isOpen ? "Open" : "Closed"}
                                             >
                                                 <span
-                                                    className={`inline-block h-5 w-5 transform rounded-full bg-[var(--text)] transition
-                            ${course.isOpen ? "translate-x-6" : "translate-x-1"}
-                          `}
+                                                    className="inline-block h-5 w-5 transform rounded-full transition"
+                                                    style={{
+                                                        background: "var(--text)",
+                                                        transform: course.isOpen
+                                                            ? "translateX(24px)"
+                                                            : "translateX(4px)",
+                                                    }}
                                                 />
 
                                                 {isStatusUpdating && (
@@ -1075,12 +1396,14 @@ const InstitutionCourses = () => {
                                             {course.code || "N/A"}
                                         </span>
 
+                                        {/* standardized Open/Closed badge (no red/green) */}
                                         <span
-                                            className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold border
-                        ${course.isOpen
-                                                    ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
-                                                    : "bg-red-500/10 text-red-500 border-red-500/20"
-                                                }`}
+                                            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold border"
+                                            style={{
+                                                background: "var(--surface-2)",
+                                                color: "var(--text)",
+                                                borderColor: course.isOpen ? "var(--accent)" : "var(--border)",
+                                            }}
                                         >
                                             {course.isOpen ? <BadgeCheck size={14} /> : <Ban size={14} />}
                                             {course.isOpen ? "Open" : "Closed"}
@@ -1118,10 +1441,11 @@ const InstitutionCourses = () => {
                                             Edit Course
                                         </button>
 
+                                        {/* standardized delete button (no red hover) */}
                                         <button
                                             onClick={() => openDeleteCourseModal(course)}
                                             className="p-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface-2)]
-                        hover:bg-red-500/10 text-[var(--muted-text)] hover:text-red-500 transition"
+                        hover:opacity-90 text-[var(--muted-text)] transition"
                                             title="Delete"
                                             type="button"
                                         >
@@ -1147,7 +1471,7 @@ const InstitutionCourses = () => {
                 }
                 message={
                     actionModal.type === "delete"
-                        ? `You're about to delete "${actionModal.courseName}". Continue?`
+                        ? `You're about to delete "${actionModal.courseName}". Manage students/faculties if needed.`
                         : actionModal.nextIsOpen === false
                             ? `Before closing "${actionModal.courseName}", finish this course for all faculties and students.`
                             : `You're about to mark "${actionModal.courseName}" as "Open". Continue?`
@@ -1166,11 +1490,244 @@ const InstitutionCourses = () => {
                             : "primary"
                 }
                 loading={isModalBusy}
-                confirmDisabled={confirmDisabled}
+                confirmDisabled={actionModal.type === "delete" ? deleteModalConfirmDisabled : confirmDisabled}
                 onClose={closeActionModal}
                 onConfirm={onConfirmAction}
             >
-                {/* Only show impact tabs when closing (Open -> Closed) */}
+                {/* DELETE MODAL UI */}
+                {actionModal.type === "delete" && (
+                    <div className="space-y-4">
+                        {/* top row: tabs + delete everything */}
+                        <div className="flex items-center justify-between gap-3">
+                            <ModalTabs
+                                active={activeImpactTab}
+                                onChange={setActiveImpactTab}
+                                tabs={[
+                                    {
+                                        key: "faculties",
+                                        label: `Faculties (${pendingFacultyBatchCount})`,
+                                        icon: <Users className="w-4 h-4 text-[var(--muted-text)]" />,
+                                    },
+                                    {
+                                        key: "students",
+                                        label: `Students (${pendingStudentsCount})`,
+                                        icon: <GraduationCap className="w-4 h-4 text-[var(--muted-text)]" />,
+                                    },
+                                ]}
+                            />
+
+                            {/* Delete Everything (top-right) */}
+                            <button
+                                type="button"
+                                onClick={deleteCourse}
+                                disabled={isModalBusy || isAnyRowDeleteBusy}
+                                className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold border transition ${isModalBusy || isAnyRowDeleteBusy
+                                    ? "opacity-60 cursor-not-allowed"
+                                    : "hover:opacity-90"
+                                    }`}
+                                style={{
+                                    background: "var(--surface-2)",
+                                    borderColor: "var(--border)",
+                                    color: "var(--text)",
+                                }}
+                                title="Delete everything linked with this course"
+                            >
+                                <Trash className="w-4 h-4" />
+                                Delete Everything
+                            </button>
+                        </div>
+
+                        {/* Tab Content */}
+                        {activeImpactTab === "faculties" ? (
+                            <div className="space-y-3">
+                                {/* Actions */}
+                                <div className="flex items-center justify-between gap-2">
+                                    <p className="text-xs font-semibold text-[var(--muted-text)]">
+                                        Current + Previous faculty entries are shown together.
+                                    </p>
+
+                                    <button
+                                        type="button"
+                                        onClick={deleteAllFacultiesFromCourse}
+                                        disabled={
+                                            deleteAllFacultiesBusy ||
+                                            pendingFacultyBatchCount === 0 ||
+                                            isModalBusy ||
+                                            isAnyRowDeleteBusy
+                                        }
+                                        className={`px-3 py-2 rounded-xl text-xs font-bold border transition ${deleteAllFacultiesBusy ||
+                                            pendingFacultyBatchCount === 0 ||
+                                            isModalBusy ||
+                                            isAnyRowDeleteBusy
+                                            ? "opacity-60 cursor-not-allowed"
+                                            : "hover:opacity-90"
+                                            }`}
+                                        style={{
+                                            background: "var(--surface-2)",
+                                            borderColor: "var(--border)",
+                                            color: "var(--text)",
+                                        }}
+                                        title="Delete all faculty course links (current + previous)"
+                                    >
+                                        {deleteAllFacultiesBusy ? "Deleting..." : "Delete All Faculties"}
+                                    </button>
+                                </div>
+
+                                {/* Loading/Error/Empty/List */}
+                                {isImpactLoading ? (
+                                    <div
+                                        className="text-sm rounded-xl border px-3 py-2"
+                                        style={{
+                                            background: "var(--surface-2)",
+                                            color: "var(--muted-text)",
+                                            borderColor: "var(--border)",
+                                        }}
+                                    >
+                                        Loading faculties...
+                                    </div>
+                                ) : impactError ? (
+                                    <div
+                                        className="text-sm rounded-xl border px-3 py-2"
+                                        style={{
+                                            background: "var(--surface-2)",
+                                            color: "#ef4444",
+                                            borderColor: "var(--border)",
+                                        }}
+                                    >
+                                        {impactError}
+                                    </div>
+                                ) : facultyBatchRows.length === 0 ? (
+                                    <div
+                                        className="text-sm rounded-xl border px-3 py-2"
+                                        style={{
+                                            background: "var(--surface-2)",
+                                            color: "var(--muted-text)",
+                                            borderColor: "var(--border)",
+                                        }}
+                                    >
+                                        No faculty is linked with this course. ✅
+                                    </div>
+                                ) : (
+                                    <div className="max-h-64 overflow-auto space-y-2 pr-1">
+                                        {facultyBatchRows.map((row) => {
+                                            const busy = !!deleteFacultyRowLoading[row.key] || isModalBusy;
+
+                                            return (
+                                                <FacultyBatchRow
+                                                    key={row.key}
+                                                    row={row}
+                                                    busy={busy}
+                                                    onDelete={() => deleteOneFacultyRow(row)}
+                                                />
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {/* Actions */}
+                                <div className="flex items-center justify-between gap-2">
+                                    <p className="text-xs font-semibold text-[var(--muted-text)]">
+                                        Current + Previous student entries are shown together.
+                                    </p>
+
+                                    <button
+                                        type="button"
+                                        onClick={deleteAllStudentsFromCourse}
+                                        disabled={
+                                            deleteAllStudentsBusy ||
+                                            pendingStudentsCount === 0 ||
+                                            isModalBusy ||
+                                            isAnyRowDeleteBusy
+                                        }
+                                        className={`px-3 py-2 rounded-xl text-xs font-bold border transition ${deleteAllStudentsBusy ||
+                                            pendingStudentsCount === 0 ||
+                                            isModalBusy ||
+                                            isAnyRowDeleteBusy
+                                            ? "opacity-60 cursor-not-allowed"
+                                            : "hover:opacity-90"
+                                            }`}
+                                        style={{
+                                            background: "var(--surface-2)",
+                                            borderColor: "var(--border)",
+                                            color: "var(--text)",
+                                        }}
+                                        title="Delete all student course links (current + previous)"
+                                    >
+                                        {deleteAllStudentsBusy ? "Deleting..." : "Delete All Students"}
+                                    </button>
+                                </div>
+
+                                {/* Loading/Error/Empty/List */}
+                                {isImpactLoading ? (
+                                    <div
+                                        className="text-sm rounded-xl border px-3 py-2"
+                                        style={{
+                                            background: "var(--surface-2)",
+                                            color: "var(--muted-text)",
+                                            borderColor: "var(--border)",
+                                        }}
+                                    >
+                                        Loading students...
+                                    </div>
+                                ) : studentsImpactError ? (
+                                    <div
+                                        className="text-sm rounded-xl border px-3 py-2"
+                                        style={{
+                                            background: "var(--surface-2)",
+                                            color: "#ef4444",
+                                            borderColor: "var(--border)",
+                                        }}
+                                    >
+                                        {studentsImpactError}
+                                    </div>
+                                ) : impactedStudents.length === 0 ? (
+                                    <div
+                                        className="text-sm rounded-xl border px-3 py-2"
+                                        style={{
+                                            background: "var(--surface-2)",
+                                            color: "var(--muted-text)",
+                                            borderColor: "var(--border)",
+                                        }}
+                                    >
+                                        No student is linked with this course. ✅
+                                    </div>
+                                ) : (
+                                    <div className="max-h-64 overflow-auto space-y-2 pr-1">
+                                        {impactedStudents.map((s) => {
+                                            const busy = !!deleteStudentRowLoading[s.key] || isModalBusy;
+
+                                            return (
+                                                <StudentRow
+                                                    key={s.key}
+                                                    row={s}
+                                                    busy={busy}
+                                                    onDelete={() => deleteOneStudentRow(s)}
+                                                />
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* info + basic delete state */}
+                        <div
+                            className="text-xs rounded-xl border px-3 py-2"
+                            style={{
+                                background: "var(--surface-2)",
+                                color: "var(--muted-text)",
+                                borderColor: "var(--border)",
+                            }}
+                        >
+                            <span className="font-bold">Basic Delete</span> becomes available only when both tabs are empty.
+                            Use <span className="font-bold">Delete Everything</span> to delete directly.
+                        </div>
+                    </div>
+                )}
+
+                {/* STATUS CLOSE UI (unchanged) */}
                 {requiresFinishingToClose && (
                     <div className="space-y-4">
                         {/* Tabs (top-left) */}
@@ -1187,16 +1744,14 @@ const InstitutionCourses = () => {
                                     {
                                         key: "students",
                                         label: `Students (${pendingStudentsCount})`,
-                                        icon: (
-                                            <GraduationCap className="w-4 h-4 text-[var(--muted-text)]" />
-                                        ),
+                                        icon: <GraduationCap className="w-4 h-4 text-[var(--muted-text)]" />,
                                     },
                                 ]}
                             />
 
-                            {/* Quick “done” indicator */}
                             {pendingFacultyBatchCount === 0 && pendingStudentsCount === 0 && (
-                                <div className="inline-flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-lg border"
+                                <div
+                                    className="inline-flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-lg border"
                                     style={{
                                         background: "var(--surface-2)",
                                         borderColor: "var(--border)",
@@ -1209,10 +1764,8 @@ const InstitutionCourses = () => {
                             )}
                         </div>
 
-                        {/* Tab Content */}
                         {activeImpactTab === "faculties" ? (
                             <div className="space-y-3">
-                                {/* Actions */}
                                 <div className="flex items-center justify-between gap-2">
                                     <p className="text-xs font-semibold text-[var(--muted-text)]">
                                         Each row is one faculty + one batch for this course.
@@ -1226,10 +1779,11 @@ const InstitutionCourses = () => {
                                             pendingFacultyBatchCount === 0 ||
                                             isModalBusy
                                         }
-                                        className={`px-3 py-2 rounded-xl text-xs font-bold border transition
-                      ${finishAllFacultiesBusy || pendingFacultyBatchCount === 0 || isModalBusy
-                                                ? "opacity-60 cursor-not-allowed"
-                                                : "hover:opacity-90"
+                                        className={`px-3 py-2 rounded-xl text-xs font-bold border transition ${finishAllFacultiesBusy ||
+                                            pendingFacultyBatchCount === 0 ||
+                                            isModalBusy
+                                            ? "opacity-60 cursor-not-allowed"
+                                            : "hover:opacity-90"
                                             }`}
                                         style={{
                                             background: "var(--surface-2)",
@@ -1242,7 +1796,6 @@ const InstitutionCourses = () => {
                                     </button>
                                 </div>
 
-                                {/* Loading/Error/Empty/List */}
                                 {isImpactLoading ? (
                                     <div
                                         className="text-sm rounded-xl border px-3 py-2"
@@ -1282,12 +1835,51 @@ const InstitutionCourses = () => {
                                             const busy = !!finishFacultyRowLoading[row.key] || isModalBusy;
 
                                             return (
-                                                <FacultyBatchRow
+                                                <div
                                                     key={row.key}
-                                                    row={row}
-                                                    busy={busy}
-                                                    onFinish={() => finishOneFacultyBatchRow(row)}
-                                                />
+                                                    className="rounded-xl border p-3 flex items-center justify-between gap-3"
+                                                    style={{
+                                                        background: "var(--surface)",
+                                                        borderColor: "var(--border)",
+                                                    }}
+                                                >
+                                                    <div className="flex items-center gap-3 min-w-0">
+                                                        <img
+                                                            src={row?.avatar || "/user.png"}
+                                                            alt={row?.name || "Faculty"}
+                                                            className="h-10 w-10 rounded-full object-cover shrink-0 ring-1 ring-white/10"
+                                                            onError={(e) => {
+                                                                e.currentTarget.src = "/user.png";
+                                                            }}
+                                                        />
+                                                        <div className="min-w-0">
+                                                            <p className="text-sm font-bold text-[var(--text)] truncate leading-tight">
+                                                                {row?.name || "Faculty"}{" "}
+                                                                <span className="text-xs font-semibold text-[var(--muted-text)]">
+                                                                    ({row?.batch || "N/A"})
+                                                                </span>
+                                                            </p>
+                                                            <p className="text-xs text-[var(--muted-text)] truncate leading-tight">
+                                                                {row?.designation || "Faculty"}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => finishOneFacultyBatchRow(row)}
+                                                        disabled={busy}
+                                                        className={`shrink-0 px-3 py-2 rounded-lg text-xs font-bold border transition ${busy ? "opacity-60 cursor-not-allowed" : "hover:opacity-90"
+                                                            }`}
+                                                        style={{
+                                                            background: "var(--surface-2)",
+                                                            color: "var(--text)",
+                                                            borderColor: "var(--border)",
+                                                        }}
+                                                    >
+                                                        {busy ? "Finishing..." : "Finish"}
+                                                    </button>
+                                                </div>
                                             );
                                         })}
                                     </div>
@@ -1308,7 +1900,6 @@ const InstitutionCourses = () => {
                             </div>
                         ) : (
                             <div className="space-y-3">
-                                {/* Actions */}
                                 <div className="flex items-center justify-between gap-2">
                                     <p className="text-xs font-semibold text-[var(--muted-text)]">
                                         Finish course for each student before closing.
@@ -1322,10 +1913,11 @@ const InstitutionCourses = () => {
                                             pendingStudentsCount === 0 ||
                                             isModalBusy
                                         }
-                                        className={`px-3 py-2 rounded-xl text-xs font-bold border transition
-                      ${finishAllStudentsBusy || pendingStudentsCount === 0 || isModalBusy
-                                                ? "opacity-60 cursor-not-allowed"
-                                                : "hover:opacity-90"
+                                        className={`px-3 py-2 rounded-xl text-xs font-bold border transition ${finishAllStudentsBusy ||
+                                            pendingStudentsCount === 0 ||
+                                            isModalBusy
+                                            ? "opacity-60 cursor-not-allowed"
+                                            : "hover:opacity-90"
                                             }`}
                                         style={{
                                             background: "var(--surface-2)",
@@ -1338,7 +1930,6 @@ const InstitutionCourses = () => {
                                     </button>
                                 </div>
 
-                                {/* Loading/Error/Empty/List */}
                                 {isImpactLoading ? (
                                     <div
                                         className="text-sm rounded-xl border px-3 py-2"
@@ -1378,12 +1969,49 @@ const InstitutionCourses = () => {
                                             const busy = !!finishStudentLoading[s._id] || isModalBusy;
 
                                             return (
-                                                <StudentRow
+                                                <div
                                                     key={s._id}
-                                                    row={s}
-                                                    busy={busy}
-                                                    onFinish={() => finishOneStudent(s._id)}
-                                                />
+                                                    className="rounded-xl border p-3 flex items-center justify-between gap-3"
+                                                    style={{
+                                                        background: "var(--surface)",
+                                                        borderColor: "var(--border)",
+                                                    }}
+                                                >
+                                                    <div className="flex items-center gap-3 min-w-0">
+                                                        <img
+                                                            src={s?.avatar || "/user.png"}
+                                                            alt={s?.name || "Student"}
+                                                            className="h-10 w-10 rounded-full object-cover shrink-0 ring-1 ring-white/10"
+                                                            onError={(e) => {
+                                                                e.currentTarget.src = "/user.png";
+                                                            }}
+                                                        />
+
+                                                        <div className="min-w-0">
+                                                            <p className="text-sm font-bold text-[var(--text)] truncate leading-tight">
+                                                                {s?.name || "Student"}
+                                                            </p>
+                                                            <p className="text-xs text-[var(--muted-text)] truncate leading-tight">
+                                                                Enrollment: {s?.enrollmentNumber || "N/A"}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => finishOneStudent(s._id)}
+                                                        disabled={busy}
+                                                        className={`shrink-0 px-3 py-2 rounded-lg text-xs font-bold border transition ${busy ? "opacity-60 cursor-not-allowed" : "hover:opacity-90"
+                                                            }`}
+                                                        style={{
+                                                            background: "var(--surface-2)",
+                                                            color: "var(--text)",
+                                                            borderColor: "var(--border)",
+                                                        }}
+                                                    >
+                                                        {busy ? "Finishing..." : "Finish"}
+                                                    </button>
+                                                </div>
                                             );
                                         })}
                                     </div>
@@ -1406,6 +2034,15 @@ const InstitutionCourses = () => {
                     </div>
                 )}
             </ConfirmModal>
+
+            {/* Patch: When delete modal is open, confirm should be blocked until empty lists */}
+            {actionModal.type === "delete" && (
+                <style>
+                    {`
+            /* Block the default confirm button if disabled state doesn't reflect (ConfirmModal internal) */
+          `}
+                </style>
+            )}
         </div>
     );
 };

@@ -170,7 +170,7 @@ const EditFaculty = () => {
         `${import.meta.env.VITE_BACKEND_URL}/api/faculties/${facultyId}`,
         {
           headers: {
-            Authorization: institutionToken ? `Bearer ${institutionToken}` : "",
+            credentials: "include",
           },
         }
       );
@@ -205,7 +205,7 @@ const EditFaculty = () => {
         `${import.meta.env.VITE_BACKEND_URL}/api/departments/institution/${institutionId}`,
         {
           headers: {
-            Authorization: institutionToken ? `Bearer ${institutionToken}` : "",
+            credentials: "include",
           },
         }
       );
@@ -229,7 +229,7 @@ const EditFaculty = () => {
         `${import.meta.env.VITE_BACKEND_URL}/api/courses/institution/${institutionId}`,
         {
           headers: {
-            Authorization: institutionToken ? `Bearer ${institutionToken}` : "",
+            credentials: "include",
           },
         }
       );
@@ -259,7 +259,7 @@ const EditFaculty = () => {
         `${import.meta.env.VITE_BACKEND_URL}/api/branches/institutions/${institutionId}/branches`,
         {
           headers: {
-            Authorization: institutionToken ? `Bearer ${institutionToken}` : "",
+           credentials: "include",
           },
         }
       );
@@ -524,7 +524,7 @@ const EditFaculty = () => {
         {
           method: "PUT",
           headers: {
-            Authorization: `Bearer ${institutionToken}`,
+            credentials: "include",
           },
         }
       );
@@ -643,7 +643,7 @@ const EditFaculty = () => {
             method: "PUT",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${institutionToken}`,
+              credentials: "include",
             },
             body: JSON.stringify({
               designation: form.designation.trim(),
@@ -665,7 +665,7 @@ const EditFaculty = () => {
             method: "PUT",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${institutionToken}`,
+              credentials: "include",
             },
             body: JSON.stringify({
               departmentId: form.departmentId,
@@ -707,7 +707,7 @@ const EditFaculty = () => {
               method: "PUT",
               headers: {
                 "Content-Type": "application/json",
-                Authorization: `Bearer ${institutionToken}`,
+                credentials: "include",
               },
               body: JSON.stringify({
                 semester: Number(r.semester),
@@ -730,7 +730,7 @@ const EditFaculty = () => {
               method: "PUT",
               headers: {
                 "Content-Type": "application/json",
-                Authorization: `Bearer ${institutionToken}`,
+                credentials: "include",
               },
               body: JSON.stringify({
                 course: {
@@ -756,7 +756,7 @@ const EditFaculty = () => {
             method: "PUT",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${institutionToken}`,
+              credentials: "include",
             },
             body: JSON.stringify({
               isInCharge: form.isInCharge,

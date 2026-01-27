@@ -63,7 +63,7 @@ const InstitutionBranches = () => {
 
             const res = await fetch(
                 `${import.meta.env.VITE_BACKEND_URL}/api/branches/institutions/${institutionId}/branches`,
-                { headers: { Authorization: `Bearer ${institutionToken}` } }
+                { credentials: "include" }
             );
 
             const data = await res.json();
@@ -84,7 +84,7 @@ const InstitutionBranches = () => {
         try {
             const res = await fetch(
                 `${import.meta.env.VITE_BACKEND_URL}/api/departments/institution/${institutionId}`,
-                { headers: { Authorization: `Bearer ${institutionToken}` } }
+                { credentials: "include" }
             );
 
             const data = await res.json();
@@ -148,7 +148,7 @@ const InstitutionBranches = () => {
                 `${import.meta.env.VITE_BACKEND_URL}/api/branches/branches/${confirmState.branchId}`,
                 {
                     method: "DELETE",
-                    headers: { Authorization: `Bearer ${institutionToken}` },
+                    credentials: "include",
                 }
             );
 
@@ -199,7 +199,7 @@ const InstitutionBranches = () => {
                     method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
-                        Authorization: `Bearer ${institutionToken}`,
+                        credentials: "include",
                     },
                     body: JSON.stringify({ isOpen: statusModal.nextIsOpen }),
                 }
@@ -273,112 +273,115 @@ const InstitutionBranches = () => {
                             const isUpdating = statusUpdatingId === branch._id;
 
                             return (
-                                <motion.div
-                                    layout
-                                    key={branch._id}
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className={`bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5 transition
-                    ${branch.isOpen ? "hover:shadow-[var(--shadow)]" : "opacity-60"}`}
-                                >
-                                    {/* ===== TOP HEADER (Faculty style) ===== */}
-                                    <div className="flex items-start justify-between gap-3">
-                                        {/* Left */}
-                                        <div className="min-w-0 flex-1 flex items-start gap-3">
-                                            <div className="h-10 w-10 rounded-xl border border-[var(--border)] bg-[var(--surface-2)] overflow-hidden shrink-0 grid place-items-center">
-                                                <Building2 size={18} className="text-[var(--muted-text)]" />
-                                            </div>
+<motion.div
+    layout
+    key={branch._id}
+    initial={{ opacity: 0, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+    className={`bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5 transition ${branch.isOpen ? "hover:shadow-[var(--shadow)]" : "opacity-60"
+        }`}
+>
+    {/* TOP HEADER */}
+    <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1 flex items-start gap-3">
+            <div className="h-10 w-10 rounded-xl border border-[var(--border)] bg-[var(--surface-2)] overflow-hidden shrink-0 grid place-items-center">
+                <Building2 size={18} className="text-[var(--muted-text)]" />
+            </div>
 
-                                            <div className="min-w-0 flex-1">
-                                                <h3 className="text-lg font-semibold truncate text-[var(--text)]">
-                                                    {branch.name || "Branch"}
-                                                </h3>
+            <div className="min-w-0 flex-1">
+                <h3 className="text-lg font-semibold truncate text-[var(--text)]">
+                    {branch.name || "Branch"}
+                </h3>
+                <p className="text-xs text-[var(--muted-text)] truncate">
+                    {dept?.name || "Unknown Department"}
+                </p>
+            </div>
+        </div>
 
-                                                <p className="text-xs text-[var(--muted-text)] truncate">
-                                                    {dept?.name || "Unknown Department"}
-                                                </p>
-                                            </div>
-                                        </div>
+        {/* Toggle (standardized colors - no red/green) */}
+        <div className="shrink-0">
+            <button
+                type="button"
+                onClick={() => openStatusModal(branch)}
+                disabled={isUpdating}
+                className={`relative inline-flex h-7 w-12 items-center rounded-full border transition ${isUpdating ? "opacity-60 cursor-not-allowed" : "cursor-pointer"
+                    }`}
+                style={{
+                    background: "var(--surface-2)",
+                    borderColor: branch.isOpen ? "var(--accent)" : "var(--border)",
+                }}
+                title={branch.isOpen ? "Open" : "Closed"}
+            >
+                <span
+                    className="inline-block h-5 w-5 transform rounded-full transition"
+                    style={{
+                        background: "var(--text)",
+                        transform: branch.isOpen ? "translateX(24px)" : "translateX(4px)",
+                    }}
+                />
 
-                                        {/* Right: Toggle */}
-                                        <div className="shrink-0">
-                                            <button
-                                                type="button"
-                                                onClick={() => openStatusModal(branch)}
-                                                disabled={isUpdating}
-                                                className={`relative inline-flex h-7 w-12 items-center rounded-full border transition
-                          ${branch.isOpen
-                                                        ? "bg-emerald-500/20 border-emerald-500/30"
-                                                        : "bg-red-500/15 border-red-500/25"
-                                                    }
-                          ${isUpdating ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}
-                        `}
-                                                title={branch.isOpen ? "Open" : "Closed"}
-                                            >
-                                                <span
-                                                    className={`inline-block h-5 w-5 transform rounded-full bg-[var(--text)] transition
-                            ${branch.isOpen ? "translate-x-6" : "translate-x-1"}
-                          `}
-                                                />
+                {isUpdating && (
+                    <span className="absolute inset-0 flex items-center justify-center">
+                        <Loader2 className="w-4 h-4 animate-spin text-[var(--muted-text)]" />
+                    </span>
+                )}
+            </button>
+        </div>
+    </div>
 
-                                                {isUpdating && (
-                                                    <span className="absolute inset-0 flex items-center justify-center">
-                                                        <Loader2 className="w-4 h-4 animate-spin text-[var(--muted-text)]" />
-                                                    </span>
-                                                )}
-                                            </button>
-                                        </div>
-                                    </div>
+    {/* BADGES */}
+    <div className="flex flex-wrap items-center gap-2 mt-3">
+        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold border bg-[var(--surface-2)] text-[var(--text)] border-[var(--border)]">
+            <Hash size={14} />
+            {branch.code || "N/A"}
+        </span>
 
-                                    {/* ===== BADGES ROW ===== */}
-                                    <div className="flex flex-wrap items-center gap-2 mt-3">
-                                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold border bg-[var(--surface-2)] text-[var(--text)] border-[var(--border)]">
-                                            <Hash size={14} />
-                                            {branch.code || "N/A"}
-                                        </span>
+        {/* standardized Open/Closed badge (no red/green) */}
+        <span
+            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold border"
+            style={{
+                background: "var(--surface-2)",
+                color: "var(--text)",
+                borderColor: branch.isOpen ? "var(--accent)" : "var(--border)",
+            }}
+        >
+            {branch.isOpen ? <BadgeCheck size={14} /> : <Ban size={14} />}
+            {branch.isOpen ? "Open" : "Closed"}
+        </span>
+    </div>
 
-                                        <span
-                                            className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold border
-                        ${branch.isOpen
-                                                    ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
-                                                    : "bg-red-500/10 text-red-500 border-red-500/20"
-                                                }`}
-                                        >
-                                            {branch.isOpen ? <BadgeCheck size={14} /> : <Ban size={14} />}
-                                            {branch.isOpen ? "Open" : "Closed"}
-                                        </span>
-                                    </div>
+    {/* DETAILS */}
+    <div className="mt-4 space-y-2 text-sm">
+        <div className="flex items-center gap-2 text-[var(--muted-text)]">
+            <Building2 size={16} />
+            <span className="font-semibold text-[var(--text)]">Department:</span>
+            <span className="truncate">{dept?.name || "Unknown Department"}</span>
+        </div>
+    </div>
 
-                                    {/* ===== DETAILS ===== */}
-                                    <div className="mt-4 space-y-2 text-sm">
-                                        <div className="flex items-center gap-2 text-[var(--muted-text)]">
-                                            <Building2 size={16} />
-                                            <span className="truncate">{dept?.name || "Unknown Department"}</span>
-                                        </div>
-                                    </div>
+    {/* ACTIONS */}
+    <div className="flex items-center gap-2 mt-5">
+        <button
+            onClick={() => navigate(`/institution/branches/edit/${branch._id}`)}
+            className="flex-1 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface-2)]
+            hover:bg-[var(--text)] hover:text-[var(--bg)] transition font-semibold text-sm"
+            type="button"
+        >
+            Edit Branch
+        </button>
 
-                                    {/* ===== ACTIONS (bottom like Faculty) ===== */}
-                                    <div className="flex items-center gap-2 mt-5">
-                                        <button
-                                            onClick={() => navigate(`/institution/branches/edit/${branch._id}`)}
-                                            className="flex-1 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface-2)]
-                        hover:bg-[var(--text)] hover:text-[var(--bg)] transition font-semibold text-sm"
-                                            type="button"
-                                        >
-                                            Edit Branch
-                                        </button>
-
-                                        <button
-                                            onClick={() => askDeleteBranch(branch)}
-                                            className="p-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface-2)]
-                        hover:bg-red-500/10 text-[var(--muted-text)] hover:text-red-500 transition"
-                                            title="Delete"
-                                            type="button"
-                                        >
-                                            <Trash2 size={18} />
-                                        </button>
-                                    </div>
-                                </motion.div>
+        {/* standardized delete button (no red hover) */}
+        <button
+            onClick={() => askDeleteBranch(branch)}
+            className="p-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface-2)]
+            hover:opacity-90 text-[var(--muted-text)] transition"
+            title="Delete"
+            type="button"
+        >
+            <Trash2 size={18} />
+        </button>
+    </div>
+</motion.div>
                             );
                         })}
                     </div>

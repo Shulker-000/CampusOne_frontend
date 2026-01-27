@@ -37,7 +37,7 @@ const CreateDepartment = () => {
             const res = await fetch(
                 `${import.meta.env.VITE_BACKEND_URL}/api/faculties/by-institution/${institutionId}`,
                 {
-                    headers: { Authorization: `Bearer ${institutionToken}` },
+                    credentials: "include",
                 }
             );
 
@@ -91,7 +91,7 @@ const CreateDepartment = () => {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Authorization: `Bearer ${institutionToken}`,
+                        credentials: "include",
                     },
                     body: JSON.stringify(payload),
                 }

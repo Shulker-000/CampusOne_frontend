@@ -91,7 +91,7 @@ const CreateFaculty = () => {
             const res = await fetch(
                 `${import.meta.env.VITE_BACKEND_URL}/api/departments/institution/${institutionId}`,
                 {
-                    headers: { Authorization: `Bearer ${institutionToken}` },
+                    credentials: "include",
                 }
             );
 
@@ -154,7 +154,7 @@ const CreateFaculty = () => {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Authorization: `Bearer ${institutionToken}`,
+                        credentials: "include",
                     },
                     body: JSON.stringify(payload),
                 }
@@ -215,7 +215,7 @@ const CreateFaculty = () => {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: `Bearer ${institutionToken}`,
+                    credentials: "include",
                 },
                 body: JSON.stringify(payload),
             });
@@ -230,7 +230,7 @@ const CreateFaculty = () => {
                         {
                             method: "DELETE",
                             headers: {
-                                Authorization: `Bearer ${institutionToken}`,
+                                credentials: "include",
                             },
                         }
                     );

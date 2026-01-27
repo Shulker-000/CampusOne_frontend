@@ -48,7 +48,7 @@ const InstitutionDepartments = () => {
             setLoading(true);
             const res = await fetch(
                 `${import.meta.env.VITE_BACKEND_URL}/api/departments/institution/${institutionId}`,
-                { headers: { Authorization: `Bearer ${institutionToken}` } }
+                { credentials: "include" }
             );
             const data = await res.json();
             if (!res.ok) throw new Error(data.message || "Failed to fetch departments");
@@ -65,7 +65,7 @@ const InstitutionDepartments = () => {
         try {
             const res = await fetch(
                 `${import.meta.env.VITE_BACKEND_URL}/api/faculties/by-institution/${institutionId}`,
-                { headers: { Authorization: `Bearer ${institutionToken}` } }
+                { credentials: "include" }
             );
             const data = await res.json();
             setFaculties(Array.isArray(data.data) ? data.data : []);
@@ -119,7 +119,7 @@ const InstitutionDepartments = () => {
                 `${import.meta.env.VITE_BACKEND_URL}/api/departments/delete-department/${confirmState.departmentId}`,
                 {
                     method: "DELETE",
-                    headers: { Authorization: `Bearer ${institutionToken}` },
+                    headers: { credentials: "include" },
                 }
             );
 
@@ -193,134 +193,139 @@ const InstitutionDepartments = () => {
                             const user = hod?.userId;
 
                             return (
-<motion.div
-  layout
-  key={dept._id}
-  initial={{ opacity: 0, y: 10 }}
-  animate={{ opacity: 1, y: 0 }}
-  className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5 transition hover:shadow-[var(--shadow)]"
->
-  {/* ===== TOP HEADER (same as Faculty) ===== */}
-  <div className="flex items-start justify-between gap-3">
-    {/* Left: Department Icon + Name */}
-    <div className="min-w-0 flex-1 flex items-start gap-3">
-      <div className="h-10 w-10 rounded-xl border border-[var(--border)] bg-[var(--surface-2)] overflow-hidden shrink-0 grid place-items-center">
-        <Building size={18} className="text-[var(--muted-text)]" />
-      </div>
+                                <motion.div
+                                    layout
+                                    key={dept._id}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5 transition hover:shadow-[var(--shadow)]"
+                                >
+                                    {/* TOP HEADER */}
+                                    <div className="flex items-start justify-between gap-3">
+                                        {/* Left: Department Icon + Name */}
+                                        <div className="min-w-0 flex-1 flex items-start gap-3">
+                                            <div className="h-10 w-10 rounded-xl border border-[var(--border)] bg-[var(--surface-2)] overflow-hidden shrink-0 grid place-items-center">
+                                                <Building size={18} className="text-[var(--muted-text)]" />
+                                            </div>
 
-      <div className="min-w-0 flex-1">
-        <h3 className="text-lg font-semibold truncate text-[var(--text)]">
-          {dept.name}
-        </h3>
+                                            <div className="min-w-0 flex-1">
+                                                <h3 className="text-lg font-semibold truncate text-[var(--text)]">
+                                                    {dept.name}
+                                                </h3>
 
-        <p className="text-xs text-[var(--muted-text)] truncate">
-          Code: {dept.code}
-        </p>
-      </div>
-    </div>
+                                                <p className="text-xs text-[var(--muted-text)] truncate">
+                                                    Code: {dept.code}
+                                                </p>
+                                            </div>
+                                        </div>
 
-    {/* Right: Actions */}
-    <div className="flex items-center gap-2 shrink-0">
-      <button
-        onClick={() => navigate(`/institution/departments/edit/${dept._id}`)}
-        className="p-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface-2)]
-        hover:bg-[var(--text)] hover:text-[var(--bg)] transition"
-        title="Edit"
-        type="button"
-      >
-        <Pencil size={18} />
-      </button>
+                                        {/* Right: Actions */}
+                                        <div className="flex items-center gap-2 shrink-0">
+                                            <button
+                                                onClick={() => navigate(`/institution/departments/edit/${dept._id}`)}
+                                                className="p-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface-2)]
+                                          hover:bg-[var(--text)] hover:text-[var(--bg)] transition"
+                                                title="Edit"
+                                                type="button"
+                                            >
+                                                <Pencil size={18} />
+                                            </button>
 
-      <button
-        onClick={() => askDeleteDepartment(dept)}
-        className="p-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface-2)]
-        hover:bg-red-500/10 text-[var(--muted-text)] hover:text-red-500 transition"
-        title="Delete"
-        type="button"
-      >
-        <Trash2 size={18} />
-      </button>
-    </div>
-  </div>
+                                            {/* standardized delete (no red/green) */}
+                                            <button
+                                                onClick={() => askDeleteDepartment(dept)}
+                                                className="p-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface-2)]
+                                          hover:opacity-90 text-[var(--muted-text)] transition"
+                                                title="Delete"
+                                                type="button"
+                                            >
+                                                <Trash2 size={18} />
+                                            </button>
+                                        </div>
+                                    </div>
 
-  {/* ===== BADGES ROW (same style as Faculty) ===== */}
-  <div className="flex flex-wrap items-center gap-2 mt-3">
-    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold border bg-[var(--surface-2)] text-[var(--text)] border-[var(--border)]">
-      <Hash size={14} />
-      {dept.code}
-    </span>
+                                    {/* BADGES */}
+                                    <div className="flex flex-wrap items-center gap-2 mt-3">
+                                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold border bg-[var(--surface-2)] text-[var(--text)] border-[var(--border)]">
+                                            <Hash size={14} />
+                                            {dept.code}
+                                        </span>
 
-    <span
-      className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold border ${
-        user
-          ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
-          : "bg-red-500/10 text-red-500 border-red-500/20"
-      }`}
-    >
-      <BadgeCheck size={14} />
-      {user ? "HOD Assigned" : "No HOD"}
-    </span>
-  </div>
+                                        {/* standardized status badge (no red/green) */}
+                                        <span
+                                            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold border"
+                                            style={{
+                                                background: "var(--surface-2)",
+                                                borderColor: user ? "var(--accent)" : "var(--border)",
+                                                color: "var(--text)",
+                                            }}
+                                            title={user ? "HOD Assigned" : "No HOD Assigned"}
+                                        >
+                                            <BadgeCheck size={14} className="text-[var(--muted-text)]" />
+                                            {user ? "HOD Assigned" : "No HOD"}
+                                        </span>
+                                    </div>
 
-  {/* ===== DETAILS ===== */}
-  <div className="mt-4 space-y-2 text-sm">
-    <div className="flex items-center gap-2 text-[var(--muted-text)]">
-      <Mail size={16} />
-      <span className="truncate">{dept.contactEmail}</span>
-    </div>
-  </div>
+                                    {/* DETAILS */}
+                                    <div className="mt-4 space-y-2 text-sm">
+                                        <div className="flex items-center gap-2 text-[var(--muted-text)]">
+                                            <Mail size={16} />
+                                            <span className="truncate">{dept.contactEmail}</span>
+                                        </div>
+                                    </div>
 
-  {/* ===== HOD SECTION (keep your same fields) ===== */}
-  <div className="mt-4 p-3 flex items-center gap-3 rounded-xl bg-[var(--surface-2)] border border-[var(--border)]">
-    {user?.avatar ? (
-      <img
-        src={user.avatar}
-        className="w-10 h-10 rounded-lg object-cover border border-[var(--border)]"
-        alt=""
-        onError={(e) => {
-          e.currentTarget.src = "/user.png";
-        }}
-      />
-    ) : (
-      <div className="w-10 h-10 rounded-lg bg-[var(--surface)] border border-[var(--border)] flex items-center justify-center text-[var(--muted-text)]">
-        <User2 size={18} />
-      </div>
-    )}
+                                    {/* HOD SECTION */}
+                                    <div className="mt-4 p-3 flex items-center gap-3 rounded-xl bg-[var(--surface-2)] border border-[var(--border)]">
+                                        {user?.avatar ? (
+                                            <img
+                                                src={user.avatar}
+                                                className="w-10 h-10 rounded-xl object-cover border border-[var(--border)]"
+                                                alt=""
+                                                onError={(e) => {
+                                                    e.currentTarget.src = "/user.png";
+                                                }}
+                                            />
+                                        ) : (
+                                            <div className="w-10 h-10 rounded-xl bg-[var(--surface)] border border-[var(--border)] flex items-center justify-center text-[var(--muted-text)]">
+                                                <User2 size={18} />
+                                            </div>
+                                        )}
 
-    <div className="min-w-0 flex-1">
-      <p className="text-[11px] text-[var(--muted-text)] font-semibold">HOD</p>
-      <p className="text-sm font-semibold truncate text-[var(--text)]">
-        {user?.name || "Unassigned"}
-      </p>
-    </div>
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-[11px] text-[var(--muted-text)] font-semibold">HOD</p>
+                                            <p className="text-sm font-semibold truncate text-[var(--text)]">
+                                                {user?.name || "Not Assigned"}
+                                            </p>
+                                        </div>
 
-    {user && <BadgeCheck className="w-5 h-5 text-emerald-500" />}
-  </div>
+                                        {/* neutral assigned tag */}
+                                        {user && (
+                                            <span
+                                                className="inline-flex items-center px-2 py-1 rounded-lg text-[10px] font-bold border"
+                                                style={{
+                                                    background: "var(--surface)",
+                                                    borderColor: "var(--border)",
+                                                    color: "var(--muted-text)",
+                                                }}
+                                            >
+                                                Assigned
+                                            </span>
+                                        )}
+                                    </div>
 
-  {/* ===== ACTIONS (same as Faculty bottom) ===== */}
-  <div className="flex items-center gap-2 mt-5">
-    <button
-      onClick={() => navigate(`/institution/departments/edit/${dept._id}`)}
-      className="flex-1 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface-2)]
-        hover:bg-[var(--text)] hover:text-[var(--bg)] transition font-semibold text-sm flex items-center justify-center gap-2"
-      type="button"
-    >
-      Edit Details
-      <ArrowRight size={16} />
-    </button>
-
-    <button
-      onClick={() => askDeleteDepartment(dept)}
-      className="p-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface-2)]
-        hover:bg-red-500/10 text-[var(--muted-text)] hover:text-red-500 transition"
-      title="Delete"
-      type="button"
-    >
-      <Trash2 size={18} />
-    </button>
-  </div>
-</motion.div>
-
+                                    {/* ACTIONS (remove duplicate delete button) */}
+                                    <div className="flex items-center gap-2 mt-5">
+                                        <button
+                                            onClick={() => navigate(`/institution/departments/edit/${dept._id}`)}
+                                            className="w-full py-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface-2)]
+                                        hover:bg-[var(--text)] hover:text-[var(--bg)] transition font-semibold text-sm flex items-center justify-center gap-2"
+                                            type="button"
+                                        >
+                                            Edit Details
+                                            <ArrowRight size={16} />
+                                        </button>
+                                    </div>
+                                </motion.div>
                             );
                         })}
                     </div>

@@ -39,7 +39,7 @@ const EditBranch = () => {
 
             const res = await fetch(
                 `${import.meta.env.VITE_BACKEND_URL}/api/branches/branches/${branchId}`,
-                { headers: { Authorization: `Bearer ${institutionToken}` } }
+                { credentials: "include"}
             );
 
             const data = await res.json();
@@ -68,7 +68,7 @@ const EditBranch = () => {
 
             const res = await fetch(
                 `${import.meta.env.VITE_BACKEND_URL}/api/departments/institution/${institutionId}`,
-                { headers: { Authorization: `Bearer ${institutionToken}` } }
+                { credentials: "include" }
             );
 
             const data = await res.json();
@@ -119,7 +119,7 @@ const EditBranch = () => {
                     method: "PUT",
                     headers: {
                         "Content-Type": "application/json",
-                        Authorization: `Bearer ${institutionToken}`,
+                        credentials: "include",
                     },
                     body: JSON.stringify({
                         name: name.trim(),

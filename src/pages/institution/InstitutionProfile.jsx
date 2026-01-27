@@ -89,9 +89,7 @@ export default function InstitutionProfile() {
                 const res = await fetch(
                     `${import.meta.env.VITE_BACKEND_URL}/api/institutions/current-institution`,
                     {
-                        headers: {
-                            Authorization: `Bearer ${tokens.institutionToken}`,
-                        },
+                        credentials: "include",
                     }
                 );
 
@@ -149,9 +147,7 @@ export default function InstitutionProfile() {
                 `${import.meta.env.VITE_BACKEND_URL}/api/institutions/send-email-verification`,
                 {
                     method: "POST",
-                    headers: {
-                        Authorization: `Bearer ${tokens.institutionToken}`,
-                    },
+                    credentials: "include",
                 }
             );
 
@@ -196,9 +192,7 @@ export default function InstitutionProfile() {
                 `${import.meta.env.VITE_BACKEND_URL}/api/institutions/update-avatar`,
                 {
                     method: "POST",
-                    headers: {
-                        Authorization: `Bearer ${tokens.institutionToken}`,
-                    },
+                    credentials: "include",
                     body: fd,
                 }
             );
@@ -224,9 +218,7 @@ export default function InstitutionProfile() {
 
             await fetch(`${backendUrl}/api/institutions/logout`, {
                 method: "POST",
-                headers: {
-                    Authorization: `Bearer ${tokens.institutionToken}`,
-                },
+                credentials: "include",
             });
         } catch (err) {
             console.error("Logout error:", err);

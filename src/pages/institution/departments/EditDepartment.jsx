@@ -78,7 +78,7 @@ const EditDepartment = () => {
             const res = await fetch(
                 `${import.meta.env.VITE_BACKEND_URL}/api/faculties/by-institution/${institutionId}`,
                 {
-                    headers: { Authorization: `Bearer ${institutionToken}` },
+                    credentials: "include",
                 }
             );
 
@@ -178,7 +178,7 @@ const EditDepartment = () => {
                     method: "PUT",
                     headers: {
                         "Content-Type": "application/json",
-                        Authorization: `Bearer ${institutionToken}`,
+                       credentials: "include",
                     },
                     body: JSON.stringify({
                         name: name.trim(),
@@ -221,7 +221,7 @@ const EditDepartment = () => {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Authorization: `Bearer ${institutionToken}`,
+                        credentials: "include",
                     },
                     body: JSON.stringify({
                         headOfDepartment: form.headOfDepartment,
@@ -258,7 +258,7 @@ const EditDepartment = () => {
                 {
                     method: "POST",
                     headers: {
-                        Authorization: `Bearer ${institutionToken}`,
+                       credentials: "include",
                     },
                 }
             );
