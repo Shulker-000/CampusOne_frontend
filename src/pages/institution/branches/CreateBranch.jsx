@@ -9,7 +9,6 @@ const CreateBranch = () => {
     const navigate = useNavigate();
 
     const institutionId = useSelector((s) => s.auth.institution.data?._id);
-    const institutionToken = useSelector((s) => s.auth.institution.token);
 
     const [loading, setLoading] = useState(false);
 
@@ -24,11 +23,6 @@ const CreateBranch = () => {
 
     const fetchDepartments = async () => {
         if (!institutionId) return;
-
-        if (!institutionToken) {
-            setDepartmentsLoading(false);
-            return;
-        }
 
         try {
             setDepartmentsLoading(true);
@@ -66,11 +60,6 @@ const CreateBranch = () => {
             return;
         }
 
-        if (!institutionToken) {
-            toast.error("Session expired. Please login again.");
-            return;
-        }
-
         try {
             setLoading(true);
 
@@ -78,9 +67,9 @@ const CreateBranch = () => {
                 `${import.meta.env.VITE_BACKEND_URL}/api/branches/institutions/${institutionId}/branches`,
                 {
                     method: "POST",
+                    credentials: "include",
                     headers: {
                         "Content-Type": "application/json",
-                        credentials: "include",
                     },
                     body: JSON.stringify({
                         name: name.trim(),

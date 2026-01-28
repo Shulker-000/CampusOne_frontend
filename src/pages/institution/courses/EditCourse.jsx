@@ -21,7 +21,6 @@ const EditCourse = () => {
   const { courseId } = useParams();
 
   const institutionId = useSelector((s) => s.auth.institution.data?._id);
-  const institutionToken = useSelector((s) => s.auth.institution.token);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -71,11 +70,6 @@ const EditCourse = () => {
   // ========= FETCH DEPARTMENTS =========
   const fetchDepartments = async () => {
     if (!institutionId) {
-      setDepartmentsLoading(false);
-      return;
-    }
-
-    if (!institutionToken) {
       setDepartmentsLoading(false);
       return;
     }
@@ -135,11 +129,6 @@ const EditCourse = () => {
       return;
     }
 
-    if (!institutionToken) {
-      toast.error("Session expired. Please login again.");
-      return;
-    }
-
     try {
       setSaving(true);
 
@@ -147,9 +136,9 @@ const EditCourse = () => {
         `${import.meta.env.VITE_BACKEND_URL}/api/courses/${courseId}`,
         {
           method: "PUT",
+          credentials: "include",
           headers: {
             "Content-Type": "application/json",
-            credentials: "include",
           },
           body: JSON.stringify({
             departmentId,

@@ -24,7 +24,6 @@ const InstitutionDepartments = () => {
     const navigate = useNavigate();
 
     const institutionId = useSelector((s) => s.auth.institution.data?._id);
-    const institutionToken = useSelector((s) => s.auth.institution.token);
 
     const [loading, setLoading] = useState(true);
     const [departments, setDepartments] = useState([]);
@@ -40,10 +39,7 @@ const InstitutionDepartments = () => {
 
     const fetchDepartments = async () => {
         if (!institutionId) return;
-        if (!institutionToken) {
-            toast.error("Session expired. Please login again.");
-            return;
-        }
+
         try {
             setLoading(true);
             const res = await fetch(
@@ -119,7 +115,7 @@ const InstitutionDepartments = () => {
                 `${import.meta.env.VITE_BACKEND_URL}/api/departments/delete-department/${confirmState.departmentId}`,
                 {
                     method: "DELETE",
-                    headers: { credentials: "include" },
+                    credentials: "include",
                 }
             );
 

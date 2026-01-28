@@ -8,7 +8,6 @@ const CreateDepartment = () => {
     const navigate = useNavigate();
 
     const institutionId = useSelector((s) => s.auth.institution.data?._id);
-    const institutionToken = useSelector((s) => s.auth.institution.token);
 
     const [loading, setLoading] = useState(false);
 
@@ -25,11 +24,6 @@ const CreateDepartment = () => {
 
     const fetchFaculties = async () => {
         if (!institutionId) return;
-
-        if (!institutionToken) {
-            setFacultiesLoading(false);
-            return;
-        }
 
         try {
             setFacultiesLoading(true);
@@ -68,11 +62,6 @@ const CreateDepartment = () => {
             return;
         }
 
-        if (!institutionToken) {
-            toast.error("Session expired. Please login again.");
-            return;
-        }
-
         try {
             setLoading(true);
 
@@ -89,9 +78,9 @@ const CreateDepartment = () => {
                 `${import.meta.env.VITE_BACKEND_URL}/api/departments/create-department`,
                 {
                     method: "POST",
+                    credentials: "include",
                     headers: {
                         "Content-Type": "application/json",
-                        credentials: "include",
                     },
                     body: JSON.stringify(payload),
                 }

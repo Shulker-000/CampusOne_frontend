@@ -19,7 +19,6 @@ const CreateFaculty = () => {
     const navigate = useNavigate();
 
     const institutionId = useSelector((s) => s.auth.institution.data?._id);
-    const institutionToken = useSelector((s) => s.auth.institution.token);
 
     // Step control: 1 = User, 2 = Faculty
     const [step, setStep] = useState(1);
@@ -57,33 +56,26 @@ const CreateFaculty = () => {
         const { name, email, phone, password } = userForm;
         return (
             institutionId &&
-            institutionToken &&
             name.trim() &&
             email.trim() &&
             phone.trim() &&
             password.trim()
         );
-    }, [userForm, institutionId, institutionToken]);
+    }, [userForm, institutionId]);
 
     const canCreateFaculty = useMemo(() => {
         const { departmentId, designation, dateOfJoining } = facultyForm;
         return (
             institutionId &&
-            institutionToken &&
             createdUser?._id &&
             departmentId &&
             designation.trim() &&
             dateOfJoining
         );
-    }, [facultyForm, institutionId, institutionToken, createdUser]);
+    }, [facultyForm, institutionId, createdUser]);
 
     const fetchDepartments = async () => {
         if (!institutionId) return;
-
-        if (!institutionToken) {
-            setDepartmentsLoading(false);
-            return;
-        }
 
         try {
             setDepartmentsLoading(true);
@@ -127,11 +119,6 @@ const CreateFaculty = () => {
             toast.error("Institution not found. Please login again.");
             return;
         }
-        if (!institutionToken) {
-            toast.error("Session expired. Please login again.");
-            return;
-        }
-
         if (!name.trim() || !email.trim() || !phone.trim() || !password.trim()) {
             toast.error("All fields are required");
             return;
@@ -152,9 +139,9 @@ const CreateFaculty = () => {
                 `${import.meta.env.VITE_BACKEND_URL}/api/users/register`,
                 {
                     method: "POST",
+                    credentials: "include",
                     headers: {
                         "Content-Type": "application/json",
-                        credentials: "include",
                     },
                     body: JSON.stringify(payload),
                 }
@@ -190,11 +177,6 @@ const CreateFaculty = () => {
 
         const { departmentId, designation, dateOfJoining } = facultyForm;
 
-        if (!institutionId || !institutionToken) {
-            toast.error("Session expired. Please login again.");
-            return;
-        }
-
         if (!departmentId || !designation.trim() || !dateOfJoining) {
             toast.error("All fields are required");
             return;
@@ -213,9 +195,9 @@ const CreateFaculty = () => {
 
             const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/faculties/`, {
                 method: "POST",
+                credentials: "include",
                 headers: {
                     "Content-Type": "application/json",
-                    credentials: "include",
                 },
                 body: JSON.stringify(payload),
             });
@@ -226,16 +208,13 @@ const CreateFaculty = () => {
                 // rollback: delete created user
                 try {
                     await fetch(
-                        `${import.meta.env.VITE_BACKEND_URL}/api/user/delete/${createdUser._id}`,
+                        `${import.meta.env.VITE_BACKEND_URL}/api/users/delete/${createdUser._id}`,
                         {
                             method: "DELETE",
-                            headers: {
-                                credentials: "include",
-                            },
+                            credentials: "include",
                         }
                     );
                 } catch (_) {
-                    // do nothing, just report the faculty error (primary)
                 }
 
                 throw new Error(data.message || "Faculty creation failed");
@@ -367,7 +346,7 @@ const CreateFaculty = () => {
                                     </button>
 
                                     <p className="text-[11px] text-[var(--muted-text)]">
-                                        You cannot go back once user is created (as per your flow).
+                                        You cannot go back once user is created.
                                     </p>
                                 </form>
                             </div>
