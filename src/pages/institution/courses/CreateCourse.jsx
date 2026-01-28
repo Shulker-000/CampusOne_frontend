@@ -17,7 +17,6 @@ const CreateCourse = () => {
   const navigate = useNavigate();
 
   const institutionId = useSelector((s) => s.auth.institution.data?._id);
-  const institutionToken = useSelector((s) => s.auth.institution.token);
 
   const [loading, setLoading] = useState(false);
 
@@ -35,12 +34,6 @@ const CreateCourse = () => {
   // ========= FETCH DEPARTMENTS =========
   const fetchDepartments = async () => {
     if (!institutionId) return;
-
-    if (!institutionToken) {
-      setDepartmentsLoading(false);
-      toast.error("Session expired. Please login again.");
-      return;
-    }
 
     try {
       setDepartmentsLoading(true);
@@ -85,11 +78,6 @@ const CreateCourse = () => {
       return;
     }
 
-    if (!institutionToken) {
-      toast.error("Session expired. Please login again.");
-      return;
-    }
-
     try {
       setLoading(true);
 
@@ -97,9 +85,9 @@ const CreateCourse = () => {
         `${import.meta.env.VITE_BACKEND_URL}/api/courses/create-course`,
         {
           method: "POST",
+          credentials: "include",
           headers: {
             "Content-Type": "application/json",
-            credentials: "include",
           },
           body: JSON.stringify({
             departmentId,

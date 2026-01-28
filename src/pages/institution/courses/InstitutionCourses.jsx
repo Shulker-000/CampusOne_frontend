@@ -219,7 +219,6 @@ const InstitutionCourses = () => {
     const navigate = useNavigate();
 
     const institutionId = useSelector((s) => s.auth.institution.data?._id);
-    const institutionToken = useSelector((s) => s.auth.institution.token);
 
     // ========= Departments =========
     const [isDepartmentsLoading, setIsDepartmentsLoading] = useState(true);
@@ -311,12 +310,6 @@ const InstitutionCourses = () => {
     const fetchDepartments = async () => {
         if (!institutionId) return;
 
-        if (!institutionToken) {
-            toast.error("Session expired. Please login again.");
-            setIsDepartmentsLoading(false);
-            return;
-        }
-
         try {
             setIsDepartmentsLoading(true);
 
@@ -339,11 +332,6 @@ const InstitutionCourses = () => {
     // ========= Fetch Courses (by Institution) =========
     const fetchCoursesByInstitution = async () => {
         if (!institutionId) return;
-
-        if (!institutionToken) {
-            toast.error("Session expired. Please login again.");
-            return;
-        }
 
         try {
             setIsCoursesLoading(true);
@@ -461,11 +449,6 @@ const InstitutionCourses = () => {
     const fetchFacultyRowsForDelete = async (courseId) => {
         if (!courseId) return [];
 
-        if (!institutionToken) {
-            toast.error("Session expired. Please login again.");
-            return [];
-        }
-
         try {
             setIsImpactLoading(true);
             setImpactError("");
@@ -529,11 +512,6 @@ const InstitutionCourses = () => {
      */
     const fetchStudentsForDelete = async (courseId) => {
         if (!courseId) return [];
-
-        if (!institutionToken) {
-            toast.error("Session expired. Please login again.");
-            return [];
-        }
 
         try {
             setIsImpactLoading(true);
@@ -601,11 +579,6 @@ const InstitutionCourses = () => {
     const fetchFacultyBatchRowsForCourse = async (courseId) => {
         if (!courseId) return [];
 
-        if (!institutionToken) {
-            toast.error("Session expired. Please login again.");
-            return [];
-        }
-
         const departmentIdOfCourse = getDepartmentIdOfCourse(courseId);
         if (!departmentIdOfCourse) {
             toast.error("Department not found for this course.");
@@ -652,11 +625,6 @@ const InstitutionCourses = () => {
      */
     const fetchStudentsForCourse = async (courseId) => {
         if (!courseId) return [];
-
-        if (!institutionToken) {
-            toast.error("Session expired. Please login again.");
-            return [];
-        }
 
         const departmentIdOfCourse = getDepartmentIdOfCourse(courseId);
         if (!departmentIdOfCourse) {
@@ -713,11 +681,6 @@ const InstitutionCourses = () => {
     const finishOneFacultyBatchRow = async (row) => {
         if (!row?.facultyId || !row?.courseId || !row?.batch) return;
 
-        if (!institutionToken) {
-            toast.error("Session expired. Please login again.");
-            return;
-        }
-
         const key = row.key;
 
         try {
@@ -727,9 +690,9 @@ const InstitutionCourses = () => {
                 `${import.meta.env.VITE_BACKEND_URL}/api/faculties/${row.facultyId}/courses/${row.courseId}/finish`,
                 {
                     method: "PUT",
+                    credentials: "include",
                     headers: {
                         "Content-Type": "application/json",
-                        credentials: "include",
                     },
                     body: JSON.stringify({ batch: row.batch }),
                 }
@@ -752,10 +715,6 @@ const InstitutionCourses = () => {
     };
 
     const finishAllFaculties = async () => {
-        if (!institutionToken) {
-            toast.error("Session expired. Please login again.");
-            return;
-        }
 
         if (facultyBatchRows.length === 0) return;
 
@@ -776,9 +735,9 @@ const InstitutionCourses = () => {
                         `${import.meta.env.VITE_BACKEND_URL}/api/faculties/${row.facultyId}/courses/${row.courseId}/finish`,
                         {
                             method: "PUT",
+                            credentials: "include",
                             headers: {
                                 "Content-Type": "application/json",
-                                credentials: "include",
                             },
                             body: JSON.stringify({ batch: row.batch }),
                         }
@@ -811,11 +770,6 @@ const InstitutionCourses = () => {
     const finishOneStudent = async (studentId) => {
         if (!studentId || !actionModal.courseId) return;
 
-        if (!institutionToken) {
-            toast.error("Session expired. Please login again.");
-            return;
-        }
-
         try {
             setFinishStudentLoading((p) => ({ ...p, [studentId]: true }));
 
@@ -823,9 +777,9 @@ const InstitutionCourses = () => {
                 `${import.meta.env.VITE_BACKEND_URL}/api/students/finish-courses/${studentId}`,
                 {
                     method: "PUT",
+                    credentials: "include",
                     headers: {
                         "Content-Type": "application/json",
-                        credentials: "include",
                     },
                     body: JSON.stringify({ courseIds: [actionModal.courseId] }),
                 }
@@ -848,10 +802,6 @@ const InstitutionCourses = () => {
     };
 
     const finishAllStudents = async () => {
-        if (!institutionToken) {
-            toast.error("Session expired. Please login again.");
-            return;
-        }
 
         if (!actionModal.courseId) return;
         if (impactedStudents.length === 0) return;
@@ -875,9 +825,9 @@ const InstitutionCourses = () => {
                         `${import.meta.env.VITE_BACKEND_URL}/api/students/finish-courses/${s._id}`,
                         {
                             method: "PUT",
+                            credentials: "include",
                             headers: {
                                 "Content-Type": "application/json",
-                                credentials: "include",
                             },
                             body: JSON.stringify({ courseIds: [actionModal.courseId] }),
                         }
@@ -932,11 +882,6 @@ const InstitutionCourses = () => {
     const deleteCourse = async () => {
         if (!actionModal.courseId) return;
 
-        if (!institutionToken) {
-            toast.error("Session expired. Please login again.");
-            return;
-        }
-
         try {
             setIsDeletingCourse(true);
 
@@ -964,10 +909,6 @@ const InstitutionCourses = () => {
     // ========= Delete Faculty Row =========
     const deleteOneFacultyRow = async (row) => {
         if (!row?.facultyId || !row?.courseId || !row?.batch || !row?.semester) return;
-        if (!institutionToken) {
-            toast.error("Session expired. Please login again.");
-            return;
-        }
 
         const key = row.key;
 
@@ -980,9 +921,9 @@ const InstitutionCourses = () => {
 
             const res = await fetch(endpoint, {
                 method: "DELETE",
+                credentials: "include",
                 headers: {
                     "Content-Type": "application/json",
-                    credentials: "include",
                 },
                 body: JSON.stringify({
                     semester: row.semester,
@@ -1009,10 +950,6 @@ const InstitutionCourses = () => {
     // ========= Delete Student Row =========
     const deleteOneStudentRow = async (row) => {
         if (!row?._id || !actionModal.courseId) return;
-        if (!institutionToken) {
-            toast.error("Session expired. Please login again.");
-            return;
-        }
 
         const key = row.key || row._id;
 
@@ -1025,9 +962,9 @@ const InstitutionCourses = () => {
 
             const res = await fetch(endpoint, {
                 method: "PUT",
+                credentials: "include",
                 headers: {
                     "Content-Type": "application/json",
-                    credentials: "include",
                 },
                 body: JSON.stringify({ courseIds: [actionModal.courseId] }),
             });
@@ -1051,10 +988,6 @@ const InstitutionCourses = () => {
     // ========= Delete All Faculties (bulk pull, current + prev) =========
     const deleteAllFacultiesFromCourse = async () => {
         if (!actionModal.courseId) return;
-        if (!institutionToken) {
-            toast.error("Session expired. Please login again.");
-            return;
-        }
 
         if (facultyBatchRows.length === 0) return;
 
@@ -1081,10 +1014,6 @@ const InstitutionCourses = () => {
     // ========= Delete All Students (bulk pull, current + prev) =========
     const deleteAllStudentsFromCourse = async () => {
         if (!actionModal.courseId) return;
-        if (!institutionToken) {
-            toast.error("Session expired. Please login again.");
-            return;
-        }
 
         if (impactedStudents.length === 0) return;
 
@@ -1143,11 +1072,6 @@ const InstitutionCourses = () => {
 
         if (!courseId || typeof nextIsOpen !== "boolean") return;
 
-        if (!institutionToken) {
-            toast.error("Session expired. Please login again.");
-            return;
-        }
-
         try {
             setStatusUpdatingMap((prev) => ({ ...prev, [courseId]: true }));
 
@@ -1155,9 +1079,9 @@ const InstitutionCourses = () => {
                 `${import.meta.env.VITE_BACKEND_URL}/api/courses/change-status/${courseId}`,
                 {
                     method: "PUT",
+                    credentials: "include",
                     headers: {
                         "Content-Type": "application/json",
-                        credentials: "include",
                     },
                     body: JSON.stringify({ isOpen: nextIsOpen }),
                 }

@@ -12,7 +12,6 @@ const EditBranch = () => {
     const { branchId } = useParams();
 
     const institutionId = useSelector((s) => s.auth.institution.data?._id);
-    const institutionToken = useSelector((s) => s.auth.institution.token);
 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -29,11 +28,6 @@ const EditBranch = () => {
     });
 
     const fetchBranch = async () => {
-        if (!institutionToken) {
-            toast.error("Session expired. Please login again.");
-            return;
-        }
-
         try {
             setLoading(true);
 
@@ -105,11 +99,6 @@ const EditBranch = () => {
             return;
         }
 
-        if (!institutionToken) {
-            toast.error("Session expired. Please login again.");
-            return;
-        }
-
         try {
             setSaving(true);
 
@@ -117,9 +106,9 @@ const EditBranch = () => {
                 `${import.meta.env.VITE_BACKEND_URL}/api/branches/branches/${branchId}`,
                 {
                     method: "PUT",
+                    credentials: "include",
                     headers: {
                         "Content-Type": "application/json",
-                        credentials: "include",
                     },
                     body: JSON.stringify({
                         name: name.trim(),

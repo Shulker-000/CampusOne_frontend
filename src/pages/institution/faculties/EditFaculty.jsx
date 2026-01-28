@@ -31,7 +31,6 @@ const EditFaculty = () => {
   const { facultyId } = useParams();
 
   const institutionId = useSelector((s) => s.auth.institution.data?._id);
-  const institutionToken = useSelector((s) => s.auth.institution.token);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -169,9 +168,7 @@ const EditFaculty = () => {
       const res = await fetch(
         `${import.meta.env.VITE_BACKEND_URL}/api/faculties/${facultyId}`,
         {
-          headers: {
-            credentials: "include",
-          },
+          credentials: "include",
         }
       );
 
@@ -204,9 +201,7 @@ const EditFaculty = () => {
       const res = await fetch(
         `${import.meta.env.VITE_BACKEND_URL}/api/departments/institution/${institutionId}`,
         {
-          headers: {
-            credentials: "include",
-          },
+          credentials: "include",
         }
       );
 
@@ -228,9 +223,7 @@ const EditFaculty = () => {
       const res = await fetch(
         `${import.meta.env.VITE_BACKEND_URL}/api/courses/institution/${institutionId}`,
         {
-          headers: {
-            credentials: "include",
-          },
+          credentials: "include",
         }
       );
 
@@ -258,9 +251,7 @@ const EditFaculty = () => {
       const res = await fetch(
         `${import.meta.env.VITE_BACKEND_URL}/api/branches/institutions/${institutionId}/branches`,
         {
-          headers: {
-           credentials: "include",
-          },
+          credentials: "include",
         }
       );
 
@@ -500,11 +491,6 @@ const EditFaculty = () => {
   const finishCourseRow = async (courseRow, index) => {
     if (faculty?.isActive === false) return;
 
-    if (!institutionToken) {
-      toast.error("Session expired. Please login again.");
-      return;
-    }
-
     if (!courseRow?.isExisting) {
       toast.error("You can only finish an already assigned course.");
       return;
@@ -523,11 +509,16 @@ const EditFaculty = () => {
         `${import.meta.env.VITE_BACKEND_URL}/api/faculties/${facultyId}/courses/${courseId}/finish`,
         {
           method: "PUT",
+          credentials: "include",
           headers: {
-            credentials: "include",
+            "Content-Type": "application/json",
           },
+          body: JSON.stringify({
+            batch: courseRow.batch,
+          }),
         }
       );
+
 
       const data = await res.json();
       if (!res.ok) throw new Error(data?.message || "Failed to finish course");
@@ -543,11 +534,6 @@ const EditFaculty = () => {
 
   const handleSave = async () => {
     if (faculty?.isActive === false) return;
-
-    if (!institutionToken) {
-      toast.error("Session expired. Please login again.");
-      return;
-    }
 
     if (!form.designation.trim()) {
       toast.error("Designation is required");
@@ -638,12 +624,12 @@ const EditFaculty = () => {
 
       if (designationChanged || dojChanged) {
         const res = await fetch(
-          `${import.meta.env.VITE_BACKEND_URL}/api/faculties/self/${facultyId}`,
+          `${import.meta.env.VITE_BACKEND_URL}/api/faculties/${facultyId}`,
           {
             method: "PUT",
+            credentials: "include",
             headers: {
               "Content-Type": "application/json",
-              credentials: "include",
             },
             body: JSON.stringify({
               designation: form.designation.trim(),
@@ -663,9 +649,9 @@ const EditFaculty = () => {
           `${import.meta.env.VITE_BACKEND_URL}/api/faculties/${facultyId}/department/`,
           {
             method: "PUT",
+            credentials: "include",
             headers: {
               "Content-Type": "application/json",
-              credentials: "include",
             },
             body: JSON.stringify({
               departmentId: form.departmentId,
@@ -705,9 +691,9 @@ const EditFaculty = () => {
             `${import.meta.env.VITE_BACKEND_URL}/api/faculties/${facultyId}/courses/${r.courseId}`,
             {
               method: "PUT",
+              credentials: "include",
               headers: {
                 "Content-Type": "application/json",
-                credentials: "include",
               },
               body: JSON.stringify({
                 semester: Number(r.semester),
@@ -728,9 +714,9 @@ const EditFaculty = () => {
             `${import.meta.env.VITE_BACKEND_URL}/api/faculties/${facultyId}/courses`,
             {
               method: "PUT",
+              credentials: "include",
               headers: {
                 "Content-Type": "application/json",
-                credentials: "include",
               },
               body: JSON.stringify({
                 course: {
@@ -754,9 +740,9 @@ const EditFaculty = () => {
           `${import.meta.env.VITE_BACKEND_URL}/api/faculties/${facultyId}/in-charge`,
           {
             method: "PUT",
+            credentials: "include",
             headers: {
               "Content-Type": "application/json",
-              credentials: "include",
             },
             body: JSON.stringify({
               isInCharge: form.isInCharge,
