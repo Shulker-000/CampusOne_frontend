@@ -1,4 +1,3 @@
-// src/pages/institution/departments/EditDepartment.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -9,18 +8,16 @@ import { ArrowLeft, Save, Loader2, Users, UserRoundCog, XCircle, User2 } from "l
 import Loader from "../../../components/Loader";
 import ConfirmModal from "../../../components/ConfirmModal";
 
-const EditDepartment = () => {
+const InstitutionDepartmentProfile = () => {
     const navigate = useNavigate();
     const { departmentId } = useParams();
 
     const institutionId = useSelector((s) => s.auth.institution.data?._id);
-    const institutionToken = useSelector((s) => s.auth.institution.token);
 
     const [loading, setLoading] = useState(true);
     const [department, setDepartment] = useState(null);
 
     const [faculties, setFaculties] = useState([]);
-    const [departments, setDepartments] = useState([]);
 
     const [saving, setSaving] = useState(false);
 
@@ -48,7 +45,8 @@ const EditDepartment = () => {
             setLoading(true);
 
             const res = await fetch(
-                `${import.meta.env.VITE_BACKEND_URL}/api/departments/${departmentId}`
+                `${import.meta.env.VITE_BACKEND_URL}/api/departments/${departmentId}`,
+                { credentials: "include" }
             );
 
             const data = await res.json();
@@ -71,15 +69,13 @@ const EditDepartment = () => {
     };
 
     // ---------- Fetch Faculties ----------
-    const fetchFaculties = async () => {
-        if (!institutionId) return;
+    const fetchFacultiesByDepartment = async () => {
+        if (!departmentId) return;
 
         try {
             const res = await fetch(
-                `${import.meta.env.VITE_BACKEND_URL}/api/faculties/by-institution/${institutionId}`,
-                {
-                    credentials: "include",
-                }
+                `${import.meta.env.VITE_BACKEND_URL}/api/faculties/by-department/${departmentId}`,
+                { credentials: "include" }
             );
 
             const data = await res.json();
@@ -91,34 +87,15 @@ const EditDepartment = () => {
         }
     };
 
-    // ---------- Fetch Departments (for filtering HODs) ----------
-    const fetchDepartments = async () => {
-        if (!institutionId) return;
-
-        try {
-            const res = await fetch(
-                `${import.meta.env.VITE_BACKEND_URL}/api/departments/institution/${institutionId}`
-            );
-
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.message || "Failed to fetch departments");
-
-            setDepartments(Array.isArray(data.data) ? data.data : []);
-        } catch (err) {
-            toast.error(err.message || "Failed to fetch departments");
-        }
-    };
-
     useEffect(() => {
         if (!departmentId) return;
         fetchDepartment();
     }, [departmentId]);
 
     useEffect(() => {
-        if (!institutionId) return;
-        fetchFaculties();
-        fetchDepartments();
-    }, [institutionId]);
+        fetchFacultiesByDepartment();
+    }, [departmentId]);
+
 
     // ---------- Helpers ----------
     const facultyById = useMemo(() => {
@@ -126,26 +103,6 @@ const EditDepartment = () => {
         faculties.forEach((f) => map.set(f._id, f));
         return map;
     }, [faculties]);
-
-    const hodSet = useMemo(() => {
-        const set = new Set();
-        departments.forEach((d) => {
-            const hodId = d?.headOfDepartment?._id || d?.headOfDepartment;
-            if (hodId) set.add(hodId);
-        });
-        return set;
-    }, [departments]);
-
-    const availableFaculties = useMemo(() => {
-        return faculties.filter((f) => {
-            const isHodSomewhere = hodSet.has(f._id);
-
-            // allow current department's HOD to remain selectable
-            if (f._id === form.headOfDepartment) return true;
-
-            return !isHodSomewhere;
-        });
-    }, [faculties, hodSet, form.headOfDepartment]);
 
     const hodFaculty = form.headOfDepartment ? facultyById.get(form.headOfDepartment) : null;
     const hodUser = hodFaculty?.userId;
@@ -164,11 +121,6 @@ const EditDepartment = () => {
             return;
         }
 
-        if (!institutionToken) {
-            toast.error("Session expired. Please login again.");
-            return;
-        }
-
         try {
             setSaving(true);
 
@@ -176,9 +128,9 @@ const EditDepartment = () => {
                 `${import.meta.env.VITE_BACKEND_URL}/api/departments/update-department/${departmentId}`,
                 {
                     method: "PUT",
+                    credentials: "include",
                     headers: {
                         "Content-Type": "application/json",
-                       credentials: "include",
                     },
                     body: JSON.stringify({
                         name: name.trim(),
@@ -207,11 +159,6 @@ const EditDepartment = () => {
             return;
         }
 
-        if (!institutionToken) {
-            toast.error("Session expired. Please login again.");
-            return;
-        }
-
         try {
             setSaving(true);
 
@@ -219,9 +166,9 @@ const EditDepartment = () => {
                 `${import.meta.env.VITE_BACKEND_URL}/api/departments/add-hod/${departmentId}`,
                 {
                     method: "POST",
+                    credentials: "include",
                     headers: {
                         "Content-Type": "application/json",
-                        credentials: "include",
                     },
                     body: JSON.stringify({
                         headOfDepartment: form.headOfDepartment,
@@ -234,7 +181,7 @@ const EditDepartment = () => {
 
             toast.success("HOD assigned successfully");
             await fetchDepartment();
-            await fetchDepartments();
+            await fetchFacultiesByDepartment();
             closeConfirm();
         } catch (err) {
             toast.error(err.message || "Failed to assign HOD");
@@ -245,11 +192,6 @@ const EditDepartment = () => {
 
     // ---------- Remove HOD (API) ----------
     const removeHodApi = async () => {
-        if (!institutionToken) {
-            toast.error("Session expired. Please login again.");
-            return;
-        }
-
         try {
             setSaving(true);
 
@@ -257,9 +199,7 @@ const EditDepartment = () => {
                 `${import.meta.env.VITE_BACKEND_URL}/api/departments/remove-hod/${departmentId}`,
                 {
                     method: "POST",
-                    headers: {
-                       credentials: "include",
-                    },
+                    credentials: "include",
                 }
             );
 
@@ -268,7 +208,7 @@ const EditDepartment = () => {
 
             toast.success("HOD removed successfully");
             await fetchDepartment();
-            await fetchDepartments();
+            await fetchFacultiesByDepartment();
             closeConfirm();
         } catch (err) {
             toast.error(err.message || "Failed to remove HOD");
@@ -506,7 +446,7 @@ const EditDepartment = () => {
                                 >
                                     <option value="">Select faculty</option>
 
-                                    {availableFaculties.map((f) => {
+                                    {faculties.map((f) => {
                                         const user = f.userId;
                                         return (
                                             <option key={f._id} value={f._id}>
@@ -531,9 +471,6 @@ const EditDepartment = () => {
                                 </button>
                             </div>
 
-                            <p className="text-xs text-[var(--muted-text)] mt-2">
-                                Only faculties who are not already HOD of another department are shown here.
-                            </p>
                         </div>
                     </div>
                 </motion.div>
@@ -556,4 +493,4 @@ const Field = ({ label, ...props }) => {
     );
 };
 
-export default EditDepartment;
+export default InstitutionDepartmentProfile;

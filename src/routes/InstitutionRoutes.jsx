@@ -16,16 +16,15 @@ import Loader from "../components/Loader";
 import DashboardLayout from "../layouts/DashboardLayout";
 import InstitutionDepartments from "../pages/institution/departments/InstitutionDepartments";
 import CreateDepartment from "../pages/institution/departments/CreateDepartment";
-import EditDepartment from "../pages/institution/departments/EditDepartment";
+import InstitutionDepartmentProfile from "../pages/institution/departments/InstitutionDepartmentProfile";
 import CreateBranch from "../pages/institution/branches/CreateBranch";
 import InstitutionBranches from "../pages/institution/branches/InstitutionBranches";
-import EditBranch from "../pages/institution/branches/EditBranch";
+import InstitutionBranchProfile from "../pages/institution/branches/InstitutionBranchProfile";
 import CreateCourse from "../pages/institution/courses/CreateCourse";
 import InstitutionCourses from "../pages/institution/courses/InstitutionCourses";
-import EditCourse from "../pages/institution/courses/EditCourse";
+import InstitutionCourseProfile from "../pages/institution/courses/InstitutionCourseProfile";
 import InstitutionFaculties from "../pages/institution/faculties/InstitutionFaculties";
-import { Edit2 } from "lucide-react";
-import EditFaculty from "../pages/institution/faculties/EditFaculty";
+import InstitutionFacultyProfile from "../pages/institution/faculties/InstitutionFacultyProfile";
 import CreateFaculty from "../pages/institution/faculties/CreateFaculty";
 
 /* ---------- Guards ---------- */
@@ -115,19 +114,19 @@ const InstitutionRoutes = () => {
 
         <Route path="departments/create" element={<CreateDepartment />} />
         <Route path="departments" element={<InstitutionDepartments />} />
-        <Route path="departments/edit/:departmentId" element={<EditDepartment />} />
+        <Route path="departments/profile/:departmentId" element={<InstitutionDepartmentProfile />} />
 
         <Route path="branches/create" element={<CreateBranch />} />
         <Route path="branches" element={<InstitutionBranches />} />
-        <Route path="branches/edit/:branchId" element={<EditBranch />} />
+        <Route path="branches/profile/:branchId" element={<InstitutionBranchProfile />} />
 
         <Route path="courses/create" element={<CreateCourse />} />
         <Route path="courses" element={<InstitutionCourses />} />
-        <Route path="courses/edit/:courseId" element={<EditCourse />} />
+        <Route path="courses/profile/:courseId" element={<InstitutionCourseProfile />} />
 
         <Route path="faculties/create" element={<CreateFaculty />} />
         <Route path="faculties" element={<InstitutionFaculties />} />
-        <Route path="/faculties/edit/:facultyId" element={<EditFaculty />} />
+        <Route path="/faculties/profile/:facultyId" element={<InstitutionFacultyProfile />} />
 
       </Route>
 

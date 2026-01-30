@@ -1,18 +1,16 @@
-// src/pages/institution/branches/EditBranch.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
 import { ArrowLeft, Save, Loader2, Layers } from "lucide-react";
-import Loader from "./../../../components/Loader.jsx"
+import Loader from "../../../components/Loader.jsx"
 
-const EditBranch = () => {
+const InstitutionBranchProfile = () => {
     const navigate = useNavigate();
     const { branchId } = useParams();
 
     const institutionId = useSelector((s) => s.auth.institution.data?._id);
-    const institutionToken = useSelector((s) => s.auth.institution.token);
 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -29,11 +27,6 @@ const EditBranch = () => {
     });
 
     const fetchBranch = async () => {
-        if (!institutionToken) {
-            toast.error("Session expired. Please login again.");
-            return;
-        }
-
         try {
             setLoading(true);
 
@@ -105,11 +98,6 @@ const EditBranch = () => {
             return;
         }
 
-        if (!institutionToken) {
-            toast.error("Session expired. Please login again.");
-            return;
-        }
-
         try {
             setSaving(true);
 
@@ -117,9 +105,9 @@ const EditBranch = () => {
                 `${import.meta.env.VITE_BACKEND_URL}/api/branches/branches/${branchId}`,
                 {
                     method: "PUT",
+                    credentials: "include",
                     headers: {
                         "Content-Type": "application/json",
-                        credentials: "include",
                     },
                     body: JSON.stringify({
                         name: name.trim(),
@@ -180,10 +168,7 @@ const EditBranch = () => {
                     transition={{ duration: 0.2 }}
                     className="w-full"
                 >
-                    <h1 className="text-xl font-bold text-[var(--text)]">Edit Branch</h1>
-                    <p className="text-sm text-[var(--muted-text)] mt-1">
-                        Update branch details and change its department.
-                    </p>
+                    <h1 className="text-xl font-bold text-[var(--text)]">Branch Profile</h1>
 
                     <div className="mt-6 grid sm:grid-cols-2 gap-4 max-w-4xl">
                         <Field label="Branch Name" name="name" value={form.name} onChange={handleChange} />
@@ -247,4 +232,4 @@ const Field = ({ label, ...props }) => {
     );
 };
 
-export default EditBranch;
+export default InstitutionBranchProfile;

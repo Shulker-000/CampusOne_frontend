@@ -1,4 +1,3 @@
-// src/pages/institution/courses/EditCourse.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -16,12 +15,11 @@ import {
 } from "lucide-react";
 import Loader from "../../../components/Loader";
 
-const EditCourse = () => {
+const InstitutionCourseProfile = () => {
   const navigate = useNavigate();
   const { courseId } = useParams();
 
   const institutionId = useSelector((s) => s.auth.institution.data?._id);
-  const institutionToken = useSelector((s) => s.auth.institution.token);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -71,11 +69,6 @@ const EditCourse = () => {
   // ========= FETCH DEPARTMENTS =========
   const fetchDepartments = async () => {
     if (!institutionId) {
-      setDepartmentsLoading(false);
-      return;
-    }
-
-    if (!institutionToken) {
       setDepartmentsLoading(false);
       return;
     }
@@ -135,11 +128,6 @@ const EditCourse = () => {
       return;
     }
 
-    if (!institutionToken) {
-      toast.error("Session expired. Please login again.");
-      return;
-    }
-
     try {
       setSaving(true);
 
@@ -147,9 +135,9 @@ const EditCourse = () => {
         `${import.meta.env.VITE_BACKEND_URL}/api/courses/${courseId}`,
         {
           method: "PUT",
+          credentials: "include",
           headers: {
             "Content-Type": "application/json",
-            credentials: "include",
           },
           body: JSON.stringify({
             departmentId,
@@ -216,10 +204,7 @@ const EditCourse = () => {
           transition={{ duration: 0.2 }}
           className="w-full"
         >
-          <h1 className="text-xl font-bold text-[var(--text)]">Edit Course</h1>
-          <p className="text-sm text-[var(--muted-text)] mt-1">
-            Update course details.
-          </p>
+          <h1 className="text-xl font-bold text-[var(--text)]">Course Profile</h1>
 
           {/* FORM */}
           <div className="mt-6 grid sm:grid-cols-2 gap-4 max-w-5xl">
@@ -334,4 +319,4 @@ const Field = ({ label, icon: Icon, ...props }) => {
   );
 };
 
-export default EditCourse;
+export default InstitutionCourseProfile;
