@@ -18,6 +18,9 @@ const InstitutionBranchesCard = ({
     onDelete,
     onToggleStatus,
     isUpdatingStatus,
+    showEdit = true,
+    showDelete = true,
+    showToggleStatus = true,
 }) => {
     const navigate = useNavigate();
 
@@ -56,7 +59,7 @@ const InstitutionBranchesCard = ({
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* STATUS TOGGLE */}
-                    <button
+                    {showToggleStatus && <button
                         type="button"
                         onClick={onToggleStatus}
                         disabled={isUpdatingStatus}
@@ -85,10 +88,10 @@ const InstitutionBranchesCard = ({
                                 <Loader2 className="w-3 h-3 animate-spin text-[var(--muted-text)]" />
                             </span>
                         )}
-                    </button>
+                    </button>}
 
                     {/* EDIT */}
-                    <button
+                    {showEdit && <button
                         onClick={onEdit}
                         className="p-2 rounded-xl border border-[var(--border)]
                     bg-[var(--surface-2)]
@@ -98,10 +101,10 @@ const InstitutionBranchesCard = ({
                         type="button"
                     >
                         <Pencil size={16} />
-                    </button>
+                    </button>}
 
                     {/* DELETE */}
-                    <button
+                    {showDelete&& <button
                         onClick={onDelete}
                         className="p-2 rounded-xl border border-[var(--border)]
                     bg-[var(--surface-2)]
@@ -110,7 +113,7 @@ const InstitutionBranchesCard = ({
                         type="button"
                     >
                         <Trash2 size={16} />
-                    </button>
+                    </button>}
                 </div>
             </div>
 

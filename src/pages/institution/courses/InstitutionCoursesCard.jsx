@@ -17,6 +17,9 @@ const InstitutionCoursesCard = ({
     onDelete,
     onToggleStatus,
     isStatusUpdating,
+    showEdit = true,
+    showDelete = true,
+    showToggleStatus = true,
 }) => {
     const navigate = useNavigate();
 
@@ -56,7 +59,7 @@ const InstitutionCoursesCard = ({
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* STATUS TOGGLE */}
-                    <button
+                    {showToggleStatus && <button
                         type="button"
                         onClick={onToggleStatus}
                         disabled={isStatusUpdating}
@@ -85,10 +88,10 @@ const InstitutionCoursesCard = ({
                                 <Loader2 className="w-3 h-3 animate-spin text-[var(--muted-text)]" />
                             </span>
                         )}
-                    </button>
+                    </button>}
 
                     {/* EDIT */}
-                    <button
+                    {showEdit && <button
                         onClick={onEdit}
                         className="p-2 rounded-xl border border-[var(--border)]
                     bg-[var(--surface-2)]
@@ -98,10 +101,10 @@ const InstitutionCoursesCard = ({
                         type="button"
                     >
                         <Pencil size={16} />
-                    </button>
+                    </button>}
 
                     {/* DELETE */}
-                    <button
+                    {showDelete && <button
                         onClick={onDelete}
                         className="p-2 rounded-xl border border-[var(--border)]
                     bg-[var(--surface-2)]
@@ -110,7 +113,7 @@ const InstitutionCoursesCard = ({
                         type="button"
                     >
                         <Trash2 size={16} />
-                    </button>
+                    </button>}
                 </div>
             </div>
 
@@ -154,10 +157,10 @@ const InstitutionCoursesCard = ({
                 <div className="flex items-center gap-2 text-[var(--muted-text)]">
                     <BookOpen size={16} />
                     <span className="font-semibold text-[var(--text)]"
-                    onClick={()=>{
-                        console.log(course);
-                        
-                    }}>
+                        onClick={() => {
+                            console.log(course);
+
+                        }}>
                         Dept:
                     </span>
                     <span>{`${course.department.name}   |    ${course.department.code}` ?? "N/A"}</span>

@@ -37,19 +37,22 @@ const CreateFaculty = () => {
     const [departmentsLoading, setDepartmentsLoading] = useState(true);
     const [departments, setDepartments] = useState([]);
 
+    // get date
+    const getToday = () => {
+        const d = new Date();
+        return d.toISOString().split("T")[0]; // YYYY-MM-DD
+    };
     // Step-1 form (User)
     const [userForm, setUserForm] = useState({
         name: "",
         email: "",
         phone: "",
         password: "",
+        dob: getToday(),
     });
 
     // Step-2 form (Faculty)
-    const getToday = () => {
-        const d = new Date();
-        return d.toISOString().split("T")[0]; // YYYY-MM-DD
-    };
+
 
     const [facultyForm, setFacultyForm] = useState({
         departmentId: "",
@@ -59,14 +62,16 @@ const CreateFaculty = () => {
 
 
     const canProceedToFaculty = useMemo(() => {
-        const { name, email, phone, password } = userForm;
+        const { name, email, phone, password, dob } = userForm;
         return (
             institutionId &&
             name.trim() &&
             email.trim() &&
             phone.trim() &&
-            password.trim()
+            password.trim() &&
+            dob
         );
+
     }, [userForm, institutionId]);
 
     const canCreateFaculty = useMemo(() => {
@@ -138,8 +143,10 @@ const CreateFaculty = () => {
                 email: email.trim(),
                 phone: phone.trim(),
                 password: password.trim(),
-                role: "Faculty", // IMPORTANT: ideally backend should hardcode this too
+                dob: userForm.dob,
+                role: "Faculty",
             };
+
 
             const res = await fetch(
                 `${import.meta.env.VITE_BACKEND_URL}/api/users/register`,
@@ -338,6 +345,17 @@ const CreateFaculty = () => {
                                             placeholder="Date of birth in DDMMYYYY format"
                                             autoComplete="new-password"
                                         />
+
+                                        <Input
+                                            label="Date of Birth"
+                                            icon={CalendarDays}
+                                            name="dob"
+                                            type="date"
+                                            value={userForm.dob}
+                                            onChange={handleUserChange}
+                                            autoComplete="off"
+                                        />
+
                                     </div>
 
                                     <button
@@ -467,6 +485,11 @@ const CreateFaculty = () => {
                             <span className="font-semibold text-[var(--text)]">Phone:</span>{" "}
                             {userForm.phone || "-"}
                         </p>
+                        <p>
+                            <span className="font-semibold text-[var(--text)]">DOB:</span>{" "}
+                            {userForm.dob || "-"}
+                        </p>
+
                     </div>
                 </div>
             </ConfirmModal>

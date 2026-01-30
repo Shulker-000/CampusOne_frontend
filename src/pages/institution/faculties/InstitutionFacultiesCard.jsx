@@ -23,6 +23,7 @@ const InstitutionFacultiesCard = ({
     onDelete,
     showEdit = true,
     showDelete = true,
+    showToggleStatus = true,
 }) => {
     const navigate = useNavigate();
     const user = faculty.userId;
@@ -75,7 +76,7 @@ return (
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* STATUS TOGGLE */}
-                <button
+                {showToggleStatus && <button
                     type="button"
                     onClick={onToggleStatus}
                     disabled={isStatusUpdating}
@@ -104,7 +105,7 @@ return (
                             <Loader2 className="w-3 h-3 animate-spin text-[var(--muted-text)]" />
                         </span>
                     )}
-                </button>
+                </button>}
 
                 {/* EDIT */}
                 {showEdit && (

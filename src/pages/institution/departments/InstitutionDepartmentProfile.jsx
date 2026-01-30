@@ -1,66 +1,67 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
-import { motion } from "framer-motion";
-import { ArrowLeft, Save, Loader2, Users, UserRoundCog, XCircle, User2 } from "lucide-react";
+import {
+    ArrowLeft,
+    Users,
+    UserRoundCog,
+    XCircle,
+    Loader2,
+    User2,
+} from "lucide-react";
 
 import Loader from "../../../components/Loader";
 import ConfirmModal from "../../../components/ConfirmModal";
+import InstitutionBranchesCard from "../branches/InstitutionBranchesCard";
+import InstitutionFacultiesCard from "../faculties/InstitutionFacultiesCard";
+import InstitutionCoursesCard from "../courses/InstitutionCoursesCard";
 
 const InstitutionDepartmentProfile = () => {
     const navigate = useNavigate();
     const { departmentId } = useParams();
 
-    const institutionId = useSelector((s) => s.auth.institution.data?._id);
-
     const [loading, setLoading] = useState(true);
-    const [department, setDepartment] = useState(null);
-
-    const [faculties, setFaculties] = useState([]);
-
     const [saving, setSaving] = useState(false);
 
-    const [form, setForm] = useState({
-        name: "",
-        code: "",
-        contactEmail: "",
-        headOfDepartment: "",
-    });
+    const [department, setDepartment] = useState(null);
 
-    // Confirmation Modal State
+    // Branches
+    const [branches, setBranches] = useState([]);
+    const [branchesLoading, setBranchesLoading] = useState(false);
+
+    // Faculties
+    const [faculties, setFaculties] = useState([]);
+    const [headOfDepartment, setHeadOfDepartment] = useState("");
+
+    // Courses
+    const [courses, setCourses] = useState([]);
+    const [coursesLoading, setCoursesLoading] = useState(false);
+
+    // Students count
+    const [studentCount, setStudentCount] = useState(0);
+    const [studentsLoading, setStudentsLoading] = useState(false);
+
+
+    // confirming modal
     const [confirmState, setConfirmState] = useState({
         open: false,
-        type: null, // "assignHod" | "removeHod"
+        type: null, // assignHod | removeHod
     });
 
-    const closeConfirm = () => {
-        if (saving) return;
-        setConfirmState({ open: false, type: null });
-    };
+    /* ================= FETCH ================= */
 
-    // ---------- Fetch Department ----------
     const fetchDepartment = async () => {
         try {
             setLoading(true);
-
             const res = await fetch(
                 `${import.meta.env.VITE_BACKEND_URL}/api/departments/${departmentId}`,
                 { credentials: "include" }
             );
-
             const data = await res.json();
             if (!res.ok) throw new Error(data.message || "Failed to fetch department");
 
-            const dept = data.data;
-            setDepartment(dept);
-
-            setForm({
-                name: dept?.name || "",
-                code: dept?.code || "",
-                contactEmail: dept?.contactEmail || "",
-                headOfDepartment: dept?.headOfDepartment?._id || dept?.headOfDepartment || "",
-            });
+            setDepartment(data.data);
+            setHeadOfDepartment(data.data?.headOfDepartment?._id || "");
         } catch (err) {
             toast.error(err.message || "Failed to load department");
         } finally {
@@ -68,120 +69,107 @@ const InstitutionDepartmentProfile = () => {
         }
     };
 
-    // ---------- Fetch Faculties ----------
-    const fetchFacultiesByDepartment = async () => {
-        if (!departmentId) return;
+    const fetchBranchesByDepartment = async () => {
+        try {
+            setBranchesLoading(true);
+            const res = await fetch(
+                `${import.meta.env.VITE_BACKEND_URL}/api/branches/departments/${departmentId}/branches`,
+                { credentials: "include" }
+            );
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message);
+            setBranches(Array.isArray(data.data) ? data.data : []);
+        } catch (err) {
+            toast.error(err.message || "Failed to fetch branches");
+        } finally {
+            setBranchesLoading(false);
+        }
+    };
 
+    const fetchFaculties = async () => {
         try {
             const res = await fetch(
                 `${import.meta.env.VITE_BACKEND_URL}/api/faculties/by-department/${departmentId}`,
                 { credentials: "include" }
             );
-
             const data = await res.json();
-            if (!res.ok) throw new Error(data.message || "Failed to fetch faculties");
-
+            if (!res.ok) throw new Error(data.message);
             setFaculties(Array.isArray(data.data) ? data.data : []);
         } catch (err) {
             toast.error(err.message || "Failed to fetch faculties");
         }
     };
 
+    const fetchCoursesByDepartment = async () => {
+        if (!departmentId) return;
+
+        try {
+            setCoursesLoading(true);
+
+            const res = await fetch(
+                `${import.meta.env.VITE_BACKEND_URL}/api/courses/department/${departmentId}`,
+                { credentials: "include" }
+            );
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message || "Failed to fetch courses");
+
+            setCourses(Array.isArray(data.data) ? data.data : []);
+        } catch (err) {
+            toast.error(err.message || "Failed to fetch courses");
+        } finally {
+            setCoursesLoading(false);
+        }
+    };
+
+
     useEffect(() => {
         if (!departmentId) return;
         fetchDepartment();
+        fetchBranchesByDepartment();
+        fetchFaculties();
+        fetchCoursesByDepartment();
     }, [departmentId]);
 
-    useEffect(() => {
-        fetchFacultiesByDepartment();
-    }, [departmentId]);
+    /* ================= HELPERS ================= */
 
-
-    // ---------- Helpers ----------
     const facultyById = useMemo(() => {
         const map = new Map();
         faculties.forEach((f) => map.set(f._id, f));
         return map;
     }, [faculties]);
 
-    const hodFaculty = form.headOfDepartment ? facultyById.get(form.headOfDepartment) : null;
+    const hodFaculty = headOfDepartment
+        ? facultyById.get(headOfDepartment)
+        : null;
+
     const hodUser = hodFaculty?.userId;
 
-    // ---------- Inputs ----------
-    const handleChange = (e) => {
-        setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    const goToHodProfile = () => {
+        if (!hodFaculty?._id) return;
+        navigate(`/institution/faculties/profile/${hodFaculty._id}`);
     };
 
-    // ---------- Update Department ----------
-    const handleSave = async () => {
-        const { name, code, contactEmail } = form;
+    /* ================= HOD ACTIONS ================= */
 
-        if (!name.trim() || !code.trim() || !contactEmail.trim()) {
-            toast.error("All fields are required");
-            return;
-        }
-
-        try {
-            setSaving(true);
-
-            const res = await fetch(
-                `${import.meta.env.VITE_BACKEND_URL}/api/departments/update-department/${departmentId}`,
-                {
-                    method: "PUT",
-                    credentials: "include",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        name: name.trim(),
-                        code: code.trim(),
-                        contactEmail: contactEmail.trim(),
-                    }),
-                }
-            );
-
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.message || "Update failed");
-
-            toast.success("Department updated");
-            navigate("/institution/departments", { replace: true });
-        } catch (err) {
-            toast.error(err.message || "Update failed");
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    // ---------- Assign / Change HOD (API) ----------
     const assignHodApi = async () => {
-        if (!form.headOfDepartment) {
-            toast.error("Select a faculty first");
-            return;
-        }
-
         try {
             setSaving(true);
-
             const res = await fetch(
                 `${import.meta.env.VITE_BACKEND_URL}/api/departments/add-hod/${departmentId}`,
                 {
                     method: "POST",
                     credentials: "include",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        headOfDepartment: form.headOfDepartment,
-                    }),
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ headOfDepartment }),
                 }
             );
-
             const data = await res.json();
-            if (!res.ok) throw new Error(data.message || "Failed to assign HOD");
+            if (!res.ok) throw new Error(data.message);
 
-            toast.success("HOD assigned successfully");
+            toast.success("HOD updated");
             await fetchDepartment();
-            await fetchFacultiesByDepartment();
+            await fetchFaculties();
             closeConfirm();
         } catch (err) {
             toast.error(err.message || "Failed to assign HOD");
@@ -190,25 +178,19 @@ const InstitutionDepartmentProfile = () => {
         }
     };
 
-    // ---------- Remove HOD (API) ----------
     const removeHodApi = async () => {
         try {
             setSaving(true);
-
             const res = await fetch(
                 `${import.meta.env.VITE_BACKEND_URL}/api/departments/remove-hod/${departmentId}`,
-                {
-                    method: "POST",
-                    credentials: "include",
-                }
+                { method: "POST", credentials: "include" }
             );
-
             const data = await res.json();
-            if (!res.ok) throw new Error(data.message || "Failed to remove HOD");
+            if (!res.ok) throw new Error(data.message);
 
-            toast.success("HOD removed successfully");
+            toast.success("HOD removed");
             await fetchDepartment();
-            await fetchFacultiesByDepartment();
+            await fetchFaculties();
             closeConfirm();
         } catch (err) {
             toast.error(err.message || "Failed to remove HOD");
@@ -217,280 +199,403 @@ const InstitutionDepartmentProfile = () => {
         }
     };
 
-    // ---------- Open Confirm Modals ----------
-    const openAssignConfirm = () => {
-        if (!form.headOfDepartment) {
-            toast.error("Select a faculty first");
-            return;
-        }
-        setConfirmState({ open: true, type: "assignHod" });
-    };
+    const closeConfirm = () =>
+        !saving && setConfirmState({ open: false, type: null });
 
-    const openRemoveConfirm = () => {
-        if (!hodUser) {
-            toast.error("No HOD assigned");
-            return;
-        }
-        setConfirmState({ open: true, type: "removeHod" });
-    };
-
-    // ---------- Modal data ----------
-    const selectedFaculty = form.headOfDepartment
-        ? facultyById.get(form.headOfDepartment)
-        : null;
-
-    const selectedUser = selectedFaculty?.userId;
-
-    const modalTitle =
-        confirmState.type === "assignHod"
-            ? "Confirm HOD Assignment"
-            : "Confirm HOD Removal";
-
-    const modalMessage =
-        confirmState.type === "assignHod"
-            ? "This will assign/change the Head of Department for this department."
-            : "This will remove the current Head of Department from this department.";
-
-    const modalConfirmText =
-        confirmState.type === "assignHod" ? "Assign HOD" : "Remove HOD";
-
-    const modalVariant =
-        confirmState.type === "assignHod" ? "primary" : "danger";
-
-    const handleModalConfirm = () => {
-        if (confirmState.type === "assignHod") return assignHodApi();
-        if (confirmState.type === "removeHod") return removeHodApi();
-    };
-
-    // ---------- UI ----------
     if (loading) return <Loader />;
     if (!department) return null;
 
-    return (
-        <div className="min-h-screen w-full bg-[var(--bg)] text-[var(--text)] px-4 sm:px-6 lg:px-10 py-8">
-            <ConfirmModal
-                open={confirmState.open}
-                title={modalTitle}
-                message={modalMessage}
-                confirmText={modalConfirmText}
-                cancelText="Cancel"
-                variant={modalVariant}
-                loading={saving}
-                onClose={closeConfirm}
-                onConfirm={handleModalConfirm}
-            >
-                {confirmState.type === "assignHod" ? (
-                    <div className="text-sm text-[var(--muted-text)]">
-                        <p className="font-semibold text-[var(--text)]">Selected Faculty</p>
+    /* ================= UI ================= */
 
-                        <div className="mt-2 flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-xl border border-[var(--border)] bg-[var(--surface-2)] overflow-hidden shrink-0 grid place-items-center">
-                                {selectedUser?.avatar ? (
-                                    <img
-                                        src={selectedUser.avatar}
-                                        alt={selectedUser?.name || "Faculty"}
-                                        className="h-full w-full object-cover"
-                                        onError={(e) => {
-                                            e.currentTarget.src = "/user.png";
-                                        }}
-                                    />
-                                ) : (
-                                    <User2 size={18} className="text-[var(--muted-text)]" />
-                                )}
+    return (
+        <div className="px-6 py-8 max-w-6xl">
+
+            {/* ===== Header ===== */}
+            <div className="mb-8">
+                <button
+                    onClick={() => navigate(-1)}
+                    className="flex items-center gap-2 text-sm font-semibold text-[var(--muted-text)] hover:text-[var(--text)]"
+                >
+                    <ArrowLeft size={18} />
+                    Back
+                </button>
+
+                <h1 className="mt-4 text-3xl font-bold">
+                    {department.name}
+                </h1>
+                <p className="text-sm text-[var(--muted-text)]">
+                    Department Profile
+                </p>
+            </div>
+
+            {/* ===== Department Info ===== */}
+            <section className="border-t border-[var(--border)] pt-8 pb-10">
+                <div
+                    className="
+                        relative bg-[var(--surface)]
+                        border border-[var(--border)]
+                        rounded-2xl px-6 py-7
+                        "
+                >
+                    {/* accent rail */}
+                    <div className="absolute left-0 top-0 h-full w-[3px] bg-[var(--accent)] rounded-l-2xl" />
+
+                    {/* Header */}
+                    <div className="mb-6 pl-3">
+                        <h2 className="text-base font-bold text-[var(--text)]">
+                            Department Overview
+                        </h2>
+                        <p className="text-sm text-[var(--muted-text)]">
+                            Core identity and official contact
+                        </p>
+                    </div>
+
+                    {/* Info grid */}
+                    <div className="relative pl-3">
+                        <div className="grid sm:grid-cols-2 gap-x-10 gap-y-6">
+                            {/* vertical divider */}
+                            <div
+                                className="
+                                    hidden sm:block
+                                    absolute
+                                    left-1/2
+                                    top-1
+                                    bottom-1
+                                    w-[2px]
+                                    bg-[var(--text)]
+                                    "
+                            />
+
+
+                            {/* Code */}
+                            <div className="pr-8">
+                                <p className="text-xs uppercase tracking-wider text-[var(--muted-text)] font-semibold">
+                                    Department Code
+                                </p>
+                                <p className="mt-1.5 text-lg font-bold text-[var(--text)]">
+                                    {department.code}
+                                </p>
                             </div>
 
-                            <div className="min-w-0">
-                                <p className="font-semibold text-[var(--text)] truncate">
-                                    {selectedUser?.name || "Faculty"}
-                                    {selectedFaculty?.designation ? ` - ${selectedFaculty.designation}` : ""}
+                            {/* Email */}
+                            <div className="pl-8">
+                                <p className="text-xs uppercase tracking-wider text-[var(--muted-text)] font-semibold">
+                                    Contact Email
                                 </p>
-
-                                {selectedUser?.email && (
-                                    <p className="text-xs text-[var(--muted-text)] truncate mt-0.5">
-                                        {selectedUser.email}
-                                    </p>
-                                )}
+                                <p className="mt-1.5 text-base font-semibold text-[var(--text)] break-all">
+                                    {department.contactEmail}
+                                </p>
                             </div>
                         </div>
                     </div>
+                </div>
+            </section>
 
-                ) : (
-                    <div className="text-sm" style={{ color: "var(--muted-text)" }}>
-                        <p className="font-semibold" style={{ color: "var(--text)" }}>
-                            Current HOD
-                        </p>
-                        <p className="mt-1">
-                            {hodUser?.name || "Faculty"}{" "}
-                            {hodFaculty?.designation ? `- ${hodFaculty.designation}` : ""}
-                        </p>
-                        {hodUser?.email && <p className="mt-1">{hodUser.email}</p>}
-                    </div>
-                )}
-            </ConfirmModal>
 
-            <div className="w-full">
-                {/* Top Bar */}
-                <div className="flex items-center justify-between gap-4 mb-6">
-                    <button
-                        onClick={() => navigate(-1)}
-                        className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--text)] hover:opacity-80 transition"
-                        type="button"
-                    >
-                        <ArrowLeft size={18} />
-                        Back
-                    </button>
 
-                    <button
-                        onClick={handleSave}
-                        disabled={saving}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--accent)] text-white font-semibold hover:opacity-90 transition disabled:opacity-60"
-                        type="button"
-                    >
-                        {saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
-                        Save Changes
-                    </button>
+
+            {/* ===== HOD ===== */}
+            <section className="border-t border-[var(--border)] pt-6">
+                <div className="flex items-center gap-2 mb-4">
+                    <Users size={18} className="text-[var(--muted-text)]" />
+                    <h2 className="font-bold">Head of Department</h2>
                 </div>
 
-                {/* Page Content */}
-                <motion.div
-                    initial={{ opacity: 0, y: 14 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="w-full"
-                >
-                    <h1 className="text-xl font-bold text-[var(--text)]">Edit Department</h1>
-                    <p className="text-sm text-[var(--muted-text)] mt-1">
-                        Update department details and manage Head of Department (HOD).
-                    </p>
+                <div className="bg-[var(--surface-2)] border border-[var(--border)] rounded-xl p-5 sm:w-4/5 md:w-2/3">
+                    {hodUser ? (
+                        <div className="flex items-start justify-between gap-6">
+                            {/* ROUTABLE PROFILE */}
+                            <div
+                                onClick={goToHodProfile}
+                                className="group flex items-start gap-4 cursor-pointer rounded-lg
+                                            p-2 -m-2 transition-all
+                                            hover:scale-[1.01]"
+                            >
 
-                    {/* Form */}
-                    <div className="mt-6 grid sm:grid-cols-2 gap-4 max-w-4xl">
-                        <Field label="Department Name" name="name" value={form.name} onChange={handleChange} />
-                        <Field label="Department Code" name="code" value={form.code} onChange={handleChange} />
-
-                        <div className="sm:col-span-2">
-                            <Field
-                                label="Contact Email"
-                                name="contactEmail"
-                                value={form.contactEmail}
-                                onChange={handleChange}
-                            />
-                        </div>
-                    </div>
-
-                    {/* HOD */}
-                    <div className="mt-8 border-t border-[var(--border)] pt-6 max-w-4xl">
-                        <div className="flex items-center gap-2 mb-3">
-                            <Users size={18} className="text-[var(--muted-text)]" />
-                            <h2 className="font-bold text-[var(--text)]">Head of Department</h2>
-                        </div>
-
-                        {/* Current HOD */}
-                        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-2)] p-4">
-                            {hodUser ? (
-                                <div className="flex items-start justify-between gap-4">
-                                    <div className="flex items-start gap-4">
-                                        <div className="h-14 w-14 rounded-full overflow-hidden border border-[var(--border)] bg-[var(--surface)] shrink-0">
-                                            <img
-                                                src={hodUser.avatar || "/user.png"}
-                                                alt={hodUser.name || "HOD"}
-                                                className="h-full w-full object-cover"
-                                                onError={(e) => {
-                                                    e.currentTarget.src = "/user.png";
-                                                }}
-                                            />
-                                        </div>
-
-                                        <div>
-                                            <p className="font-bold text-[var(--text)]">{hodUser.name}</p>
-                                            <p className="text-sm text-[var(--muted-text)]">{hodUser.email}</p>
-                                            <p className="text-xs text-[var(--muted-text)] mt-1">
-                                                Designation: {hodFaculty?.designation || "N/A"}
-                                            </p>
-                                        </div>
+                                {hodUser.avatar ? (
+                                    <img
+                                        src={hodUser.avatar}
+                                        onError={(e) => (e.currentTarget.src = "/user.png")}
+                                        className="w-14 h-14 rounded-full object-cover"
+                                    />
+                                ) : (
+                                    <div className="w-14 h-14 rounded-full border grid place-items-center">
+                                        <User2 size={20} />
                                     </div>
+                                )}
 
-                                    <button
-                                        onClick={openRemoveConfirm}
-                                        disabled={saving}
-                                        className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--hover)] transition text-sm font-semibold text-[var(--text)] disabled:opacity-60"
-                                        type="button"
-                                    >
-                                        <XCircle size={16} />
-                                        Remove
-                                    </button>
+                                <div className="min-w-0">
+                                    <p className="font-semibold transition-colors group-hover:text-[var(--accent)]">
+                                        {hodUser.name}
+                                    </p>
+
+                                    <p className="text-sm text-[var(--muted-text)] truncate
+                                        transition-colors group-hover:text-[var(--accent)]/80">
+                                        {hodUser.email}
+                                    </p>
+
+                                    <p className="text-sm text-[var(--muted-text)] truncate
+                                        transition-colors group-hover:text-[var(--accent)]/80">
+                                        {hodFaculty?.designation || "N/A"}
+                                    </p>
                                 </div>
-                            ) : (
-                                <p className="text-sm text-[var(--muted-text)]">
-                                    No HOD assigned yet. Select a faculty below.
-                                </p>
-                            )}
-                        </div>
-
-                        {/* Select */}
-                        <div className="mt-4">
-                            <label className="text-xs font-bold text-[var(--muted-text)] uppercase tracking-wider">
-                                Assign / Change HOD
-                            </label>
-
-                            <div className="mt-2 flex gap-2">
-                                <select
-                                    value={form.headOfDepartment}
-                                    onChange={(e) =>
-                                        setForm((prev) => ({
-                                            ...prev,
-                                            headOfDepartment: e.target.value,
-                                        }))
-                                    }
-                                    className="w-full rounded-xl border border-[var(--border)] px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500 bg-[var(--surface)] text-[var(--text)]"
-                                >
-                                    <option value="">Select faculty</option>
-
-                                    {faculties.map((f) => {
-                                        const user = f.userId;
-                                        return (
-                                            <option key={f._id} value={f._id}>
-                                                {user?.name || "Faculty"} - {f.designation || "N/A"}
-                                            </option>
-                                        );
-                                    })}
-                                </select>
-
-                                <button
-                                    onClick={openAssignConfirm}
-                                    disabled={saving || !form.headOfDepartment}
-                                    className="shrink-0 inline-flex items-center gap-2 px-4 rounded-xl bg-[var(--accent)] text-white font-semibold hover:opacity-90 transition disabled:opacity-60"
-                                    type="button"
-                                >
-                                    {saving ? (
-                                        <Loader2 size={16} className="animate-spin" />
-                                    ) : (
-                                        <UserRoundCog size={16} />
-                                    )}
-                                    Apply
-                                </button>
                             </div>
 
+                            {/* REMOVE */}
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setConfirmState({ open: true, type: "removeHod" });
+                                }}
+                                className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border bg-[var(--surface)] hover:bg-[var(--hover)] text-sm"
+                            >
+                                <XCircle size={16} />
+                                Remove
+                            </button>
                         </div>
-                    </div>
-                </motion.div>
-            </div>
-        </div>
-    );
-};
+                    ) : (
+                        <p className="text-sm text-[var(--muted-text)]">
+                            No HOD assigned yet.
+                        </p>
+                    )}
+                </div>
 
-const Field = ({ label, ...props }) => {
-    return (
-        <div className="space-y-1">
-            <label className="text-xs font-bold text-[var(--muted-text)] uppercase tracking-wider">
-                {label}
-            </label>
-            <input
-                {...props}
-                className="w-full rounded-xl border border-[var(--border)] px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500 bg-[var(--surface-2)] text-[var(--text)]"
+                {/* Assign */}
+                <div className="mt-4 max-w-xl">
+                    <label className="text-xs font-bold uppercase text-[var(--muted-text)]">
+                        Assign / Change HOD
+                    </label>
+
+                    <div className="mt-2 flex gap-2">
+                        <select
+                            value={headOfDepartment}
+                            onChange={(e) => setHeadOfDepartment(e.target.value)}
+                            className="w-full rounded-lg border px-3 py-3 text-sm bg-[var(--surface)]"
+                        >
+                            <option value="">Select faculty</option>
+                            {faculties.map((f) => (
+                                <option key={f._id} value={f._id}>
+                                    {f.userId?.name} - {f.designation || "N/A"}
+                                </option>
+                            ))}
+                        </select>
+
+                        <button
+                            onClick={() =>
+                                setConfirmState({ open: true, type: "assignHod" })
+                            }
+                            disabled={!headOfDepartment || saving}
+                            className="inline-flex items-center gap-2 px-4 rounded-lg bg-[var(--accent)] text-white text-sm font-semibold disabled:opacity-60"
+                        >
+                            {saving ? (
+                                <Loader2 size={16} className="animate-spin" />
+                            ) : (
+                                <UserRoundCog size={16} />
+                            )}
+                            Apply
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            {/* ================= Integrated Branches ================= */}
+            <section className="border-t border-[var(--border)] pt-10 mt-10 max-w-7xl">
+                <div className="flex items-center justify-between mb-4">
+                    <div>
+                        <h2 className="text-lg font-bold text-[var(--text)]">
+                            Integrated Branches
+                        </h2>
+                        <p className="text-sm text-[var(--muted-text)]">
+                            All branches operating under this department
+                        </p>
+                    </div>
+
+                    {/* COUNT */}
+                    <span
+                        className="px-3 py-1 rounded-lg text-sm font-bold
+                 bg-[var(--surface-2)]
+                 border border-[var(--border)]"
+                    >
+                        {branches.length}
+                    </span>
+                </div>
+
+                {branchesLoading ? (
+                    <div className="py-10">
+                        <Loader />
+                    </div>
+                ) : branches.length === 0 ? (
+                    <div
+                        className="rounded-xl border border-[var(--border)]
+                 bg-[var(--surface-2)]
+                 p-6 text-sm text-[var(--muted-text)]"
+                    >
+                        No branches are currently associated with this department.
+                    </div>
+                ) : (
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {branches.map((branch) => (
+                            <InstitutionBranchesCard
+                                key={branch._id}
+                                branch={branch}
+                                departmentName={department.name}
+                                isUpdatingStatus={true}
+                                showEdit={false}
+                                showDelete={false}
+                                showToggleStatus={false}
+                            />
+                        ))}
+                    </div>
+                )}
+            </section>
+
+            {/* ================= Integrated Faculties ================= */}
+            <section className="border-t border-[var(--border)] pt-10 mt-10 max-w-7xl">
+                <div className="flex items-center justify-between mb-4">
+                    <div>
+                        <h2 className="text-lg font-bold text-[var(--text)]">
+                            Integrated Faculties
+                        </h2>
+                        <p className="text-sm text-[var(--muted-text)]">
+                            All faculties associated with this department
+                        </p>
+                    </div>
+
+                    {/* COUNT */}
+                    <span
+                        className="px-3 py-1 rounded-lg text-sm font-bold
+                 bg-[var(--surface-2)]
+                 border border-[var(--border)]"
+                    >
+                        {faculties.length}
+                    </span>
+                </div>
+
+                {faculties.length === 0 ? (
+                    <div
+                        className="rounded-xl border border-[var(--border)]
+                 bg-[var(--surface-2)]
+                 p-6 text-sm text-[var(--muted-text)]"
+                    >
+                        No faculties are currently assigned to this department.
+                    </div>
+                ) : (
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {faculties.map((faculty) => (
+                            <InstitutionFacultiesCard
+                                key={faculty._id}
+                                faculty={faculty}
+                                departmentName={department.name}
+                                courseCount={faculty.courses?.length || 0}
+                                isStatusUpdating={false}
+                                onToggleStatus={() => { }}
+                                onEdit={() => { }}
+                                onDelete={() => { }}
+                                showEdit={false}
+                                showDelete={false}
+                                showToggleStatus={false}
+                            />
+                        ))}
+                    </div>
+                )}
+            </section>
+
+            {/* ================= Integrated Courses ================= */}
+            <section className="border-t border-[var(--border)] pt-10 mt-10 max-w-7xl">
+                <div className="flex items-center justify-between mb-4">
+                    <div>
+                        <h2 className="text-lg font-bold text-[var(--text)]">
+                            Integrated Courses
+                        </h2>
+                        <p className="text-sm text-[var(--muted-text)]">
+                            All courses offered under this department
+                        </p>
+                    </div>
+
+                    {/* COUNT */}
+                    <span
+                        className="px-3 py-1 rounded-lg text-sm font-bold
+                 bg-[var(--surface-2)]
+                 border border-[var(--border)]"
+                    >
+                        {courses.length}
+                    </span>
+                </div>
+
+                {coursesLoading ? (
+                    <div className="py-10">
+                        <Loader />
+                    </div>
+                ) : courses.length === 0 ? (
+                    <div
+                        className="rounded-xl border border-[var(--border)]
+                 bg-[var(--surface-2)]
+                 p-6 text-sm text-[var(--muted-text)]"
+                    >
+                        No courses are currently associated with this department.
+                    </div>
+                ) : (
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {courses.map((course) => (
+                            <InstitutionCoursesCard
+                                key={course._id}
+                                course={{
+                                    ...course,
+                                    department: {
+                                        name: department.name,
+                                        code: department.code,
+                                    },
+                                }}
+                                showEdit={false}
+                                showDelete={false}
+                                showToggleStatus={false}
+                                isStatusUpdating={false}
+                                onEdit={() => { }}
+                                onDelete={() => { }}
+                                onToggleStatus={() => { }}
+                            />
+                        ))}
+
+                    </div>
+                )}
+            </section>
+
+            {/* ===== Confirm Modal ===== */}
+            <ConfirmModal
+                open={confirmState.open}
+                title={
+                    confirmState.type === "assignHod"
+                        ? "Confirm HOD Assignment"
+                        : "Confirm HOD Removal"
+                }
+                message={
+                    confirmState.type === "assignHod"
+                        ? "This will assign or change the Head of Department."
+                        : "This will remove the current Head of Department."
+                }
+                confirmText={
+                    confirmState.type === "assignHod" ? "Assign HOD" : "Remove HOD"
+                }
+                variant={confirmState.type === "assignHod" ? "primary" : "danger"}
+                loading={saving}
+                onClose={closeConfirm}
+                onConfirm={
+                    confirmState.type === "assignHod"
+                        ? assignHodApi
+                        : removeHodApi
+                }
             />
         </div>
     );
 };
+
+const Info = ({ label, value }) => (
+    <div>
+        <p className="text-xs font-bold uppercase text-[var(--muted-text)]">
+            {label}
+        </p>
+        <p className="mt-1 font-semibold">{value || "—"}</p>
+    </div>
+);
 
 export default InstitutionDepartmentProfile;
