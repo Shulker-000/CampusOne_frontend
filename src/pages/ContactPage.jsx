@@ -43,29 +43,35 @@ const ContactPage = () => {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8, ease: "easeOut" }}
                 >
-                    <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
+                    <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-black">
                         Let’s Talk About
                         <br />
                         <span className="text-indigo-600">Your Institution</span>
                     </h1>
 
-                    <p className="mt-6 text-lg text-slate-600 max-w-xl leading-relaxed">
+                    <p className="mt-6 text-lg text-slate-700 max-w-xl leading-relaxed">
                         Whether you want a system walkthrough, academic evaluation, or
                         deployment discussion, reach out with your requirements.
                     </p>
 
-                    <div className="mt-10 space-y-4 text-slate-600">
+                    <div className="mt-10 space-y-4 text-slate-700">
                         <div className="flex items-center gap-3">
                             <Building2 className="w-5 h-5 text-indigo-600" />
-                            <span>Universities and Institutes</span>
+                            <span className="font-medium">
+                                Universities and Institutes
+                            </span>
                         </div>
                         <div className="flex items-center gap-3">
                             <User className="w-5 h-5 text-indigo-600" />
-                            <span>Admins, Faculty, and Review Panels</span>
+                            <span className="font-medium">
+                                Admins, Faculty, and Review Panels
+                            </span>
                         </div>
                         <div className="flex items-center gap-3">
                             <Mail className="w-5 h-5 text-indigo-600" />
-                            <span>Formal communication preferred</span>
+                            <span className="font-medium">
+                                Formal communication preferred
+                            </span>
                         </div>
                     </div>
                 </motion.div>
@@ -75,12 +81,12 @@ const ContactPage = () => {
                     initial={{ opacity: 0, y: 40 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.15, duration: 0.8, ease: "easeOut" }}
-                    className="bg-white/80 backdrop-blur-xl border border-slate-200 rounded-2xl shadow-xl p-8 md:p-10"
+                    className="bg-white/80 backdrop-blur-xl border border-slate-200 rounded-2xl shadow-xl p-8 md:p-10 text-slate-900"
                 >
                     <form ref={formRef} onSubmit={sendEmail} className="space-y-6">
                         {/* SUBJECT TITLE */}
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                            <label className="block text-sm font-medium text-slate-800 mb-1">
                                 Institute / Organization Name
                             </label>
                             <input
@@ -88,13 +94,13 @@ const ContactPage = () => {
                                 name="title"
                                 required
                                 placeholder="e.g. XYZ University"
-                                className="w-full rounded-lg border border-slate-300 px-4 py-3 focus:ring-2 focus:ring-indigo-500"
+                                className="w-full rounded-lg border border-slate-300 bg-white/60 px-4 py-3 text-slate-900 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-indigo-500"
                             />
                         </div>
 
                         {/* FROM NAME */}
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                            <label className="block text-sm font-medium text-slate-800 mb-1">
                                 Your Name
                             </label>
                             <input
@@ -102,13 +108,13 @@ const ContactPage = () => {
                                 name="name"
                                 required
                                 placeholder="John Doe"
-                                className="w-full rounded-lg border border-slate-300 px-4 py-3 focus:ring-2 focus:ring-indigo-500"
+                                className="w-full rounded-lg border border-slate-300 bg-white/60 px-4 py-3 text-slate-900 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-indigo-500"
                             />
                         </div>
 
                         {/* EMAIL */}
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                            <label className="block text-sm font-medium text-slate-800 mb-1">
                                 Official Email Address
                             </label>
                             <input
@@ -116,13 +122,13 @@ const ContactPage = () => {
                                 name="email"
                                 required
                                 placeholder="name@institution.edu"
-                                className="w-full rounded-lg border border-slate-300 px-4 py-3 focus:ring-2 focus:ring-indigo-500"
+                                className="w-full rounded-lg border border-slate-300 bg-white/60 px-4 py-3 text-slate-900 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-indigo-500"
                             />
                         </div>
 
                         {/* MESSAGE */}
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                            <label className="block text-sm font-medium text-slate-800 mb-1">
                                 Message
                             </label>
                             <textarea
@@ -130,7 +136,7 @@ const ContactPage = () => {
                                 name="message"
                                 required
                                 placeholder="Briefly describe your requirement"
-                                className="w-full rounded-lg border border-slate-300 px-4 py-3 resize-none focus:ring-2 focus:ring-indigo-500"
+                                className="w-full rounded-lg border border-slate-300 bg-white/60 px-4 py-3 text-slate-900 placeholder:text-slate-400 resize-none outline-none focus:ring-2 focus:ring-indigo-500"
                             />
                         </div>
 

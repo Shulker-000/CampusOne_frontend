@@ -9,6 +9,8 @@ import {
   ShieldCheck,
   Globe,
   Building2,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
@@ -18,6 +20,7 @@ import Loader from "../../components/Loader.jsx";
 const LoginInstitution = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const institutionAuth = useSelector((s) => s.auth.institution);
   if (!institutionAuth.authChecked) return <Loader />;
@@ -68,11 +71,7 @@ const LoginInstitution = () => {
         return;
       }
 
-      const { accessToken } = data.data;
-
       loginInstitution(data);
-
-
       toast.success("Login successful");
       navigate("/institution/dashboard", { replace: true });
     } catch (err) {
@@ -90,25 +89,25 @@ const LoginInstitution = () => {
       <div className="absolute -bottom-32 -right-32 w-md h-md bg-emerald-200/40 rounded-full blur-3xl" />
 
       <div className="relative z-10 w-full max-w-6xl mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center">
-        {/* LEFT CONTENT (same as register) */}
+        {/* LEFT CONTENT */}
         <motion.div
           initial={{ opacity: 0, x: -40 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.8 }}
           className="hidden lg:block"
         >
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-black">
             Welcome back
             <br />
             <span className="text-indigo-600">Institution Admin</span>
           </h1>
 
-          <p className="mt-6 text-lg text-slate-600 max-w-xl">
+          <p className="mt-6 text-lg text-slate-700 max-w-xl">
             Access your institutional dashboard to manage academics,
             administration, and operations securely.
           </p>
 
-          <div className="mt-10 space-y-6 text-slate-600">
+          <div className="mt-10 space-y-6">
             <Feature
               icon={ShieldCheck}
               text="Secure institution-only access"
@@ -129,7 +128,7 @@ const LoginInstitution = () => {
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15, duration: 0.8 }}
-          className="bg-white/80 backdrop-blur-xl border border-slate-200 rounded-2xl shadow-xl p-6 sm:p-8 w-full max-w-xl mx-auto"
+          className="bg-white/80 backdrop-blur-xl border border-slate-200 rounded-2xl shadow-xl p-6 sm:p-8 w-full max-w-xl mx-auto text-slate-900"
         >
           <div className="mb-8 text-center lg:text-left">
             <img
@@ -140,7 +139,7 @@ const LoginInstitution = () => {
             <h2 className="text-2xl font-bold text-slate-900">
               Institution Login
             </h2>
-            <p className="text-slate-500 text-sm font-medium">
+            <p className="text-sm font-medium text-slate-700">
               Sign in using Email or Institution Code
             </p>
           </div>
@@ -155,13 +154,14 @@ const LoginInstitution = () => {
                 onChange={handleChange}
               />
 
-              <Input
+              <PasswordInput
                 label="Password"
-                icon={Lock}
                 name="password"
-                type="password"
-                placeholder="******"
+                placeholder="********"
+                value={form.password}
                 onChange={handleChange}
+                showPassword={showPassword}
+                setShowPassword={setShowPassword}
               />
 
               <div className="flex justify-end">
@@ -172,7 +172,6 @@ const LoginInstitution = () => {
                   Forgot password?
                 </Link>
               </div>
-
             </Section>
 
             <motion.button
@@ -191,7 +190,7 @@ const LoginInstitution = () => {
               )}
             </motion.button>
 
-            <p className="text-xs text-center text-slate-600">
+            <p className="text-xs text-center text-slate-700">
               New institution?{" "}
               <Link
                 to="/institution/register"
@@ -207,10 +206,10 @@ const LoginInstitution = () => {
   );
 };
 
-/* ---------- Shared UI primitives (same as register) ---------- */
+/* ---------- Shared UI primitives ---------- */
 
 const Feature = ({ icon: Icon, text }) => (
-  <div className="flex items-center gap-3">
+  <div className="flex items-center gap-3 text-slate-700">
     <div className="p-2 bg-indigo-100 rounded-lg">
       <Icon className="w-5 h-5 text-indigo-600" />
     </div>
@@ -220,7 +219,7 @@ const Feature = ({ icon: Icon, text }) => (
 
 const Section = ({ title, children }) => (
   <div className="space-y-3">
-    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 ml-1">
+    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1">
       {title}
     </h3>
     <div className="space-y-4">{children}</div>
@@ -229,15 +228,50 @@ const Section = ({ title, children }) => (
 
 const Input = ({ label, icon: Icon, ...props }) => (
   <div className="space-y-1">
-    <label className="block text-xs font-semibold text-slate-700 ml-1">
+    <label className="block text-xs font-semibold text-slate-800 ml-1">
       {label}
     </label>
     <div className="relative group">
-      <Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
+      <Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-indigo-600 transition-colors" />
       <input
         {...props}
-        className="w-full rounded-xl border border-slate-200 bg-white/50 pl-10 pr-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+        className="w-full rounded-xl border border-slate-200 bg-white/60 pl-10 pr-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
       />
+    </div>
+  </div>
+);
+
+const PasswordInput = ({
+  label,
+  showPassword,
+  setShowPassword,
+  ...props
+}) => (
+  <div className="space-y-1">
+    <label className="block text-xs font-semibold text-slate-800 ml-1">
+      {label}
+    </label>
+    <div className="relative group">
+      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-indigo-600 transition-colors" />
+
+      <input
+        {...props}
+        type={showPassword ? "text" : "password"}
+        className="w-full rounded-xl border border-slate-200 bg-white/60 pl-10 pr-10 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+      />
+
+      <button
+        type="button"
+        onClick={() => setShowPassword((v) => !v)}
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 transition-colors"
+        aria-label={showPassword ? "Hide password" : "Show password"}
+      >
+        {showPassword ? (
+          <EyeOff className="w-4 h-4" />
+        ) : (
+          <Eye className="w-4 h-4" />
+        )}
+      </button>
     </div>
   </div>
 );

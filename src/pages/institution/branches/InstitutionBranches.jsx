@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
-import { useNavigate } from "react-router-dom";
 import { Search, Plus, Loader2, Layers } from "lucide-react";
 
 import Loader from "../../../components/Loader";
@@ -11,7 +10,6 @@ import InstitutionBranchesCard from "./InstitutionBranchesCard";
 import EditModal from "../EditModal";
 
 const InstitutionBranches = () => {
-    const navigate = useNavigate();
     const institutionId = useSelector((s) => s.auth.institution.data?._id);
 
     const [loading, setLoading] = useState(true);
@@ -241,24 +239,39 @@ const InstitutionBranches = () => {
                     </div>
                 </div>
 
-                {/* Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                    {filteredBranches.map((branch) => {
-                        const dept = departmentById.get(String(branch.departmentId));
+                {/* EMPTY STATE */}
+                {filteredBranches.length === 0 && (
+                    <div className="flex flex-col items-center justify-center py-20 text-center text-[var(--muted-text)]">
+                        <Layers className="w-10 h-10 mb-3 opacity-60" />
+                        <p className="text-sm font-semibold">
+                            {query.trim()
+                                ? "No branches match your search"
+                                : "No branches created yet"}
+                        </p>
+                    </div>
+                )}
 
-                        return (
-                            <InstitutionBranchesCard
-                                key={branch._id}
-                                branch={branch}
-                                departmentName={dept?.name}
-                                onEdit={() => openEdit(branch)}
-                                onDelete={() => askDelete(branch)}
-                                onToggleStatus={() => openStatusModal(branch)}
-                                isUpdatingStatus={statusUpdatingId === branch._id}
-                            />
-                        );
-                    })}
-                </div>
+                {/* GRID */}
+                {filteredBranches.length > 0 && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                        {filteredBranches.map((branch) => {
+                            const dept = departmentById.get(String(branch.departmentId));
+
+                            return (
+                                <InstitutionBranchesCard
+                                    key={branch._id}
+                                    branch={branch}
+                                    departmentName={dept?.name}
+                                    onEdit={() => openEdit(branch)}
+                                    onDelete={() => askDelete(branch)}
+                                    onToggleStatus={() => openStatusModal(branch)}
+                                    isUpdatingStatus={statusUpdatingId === branch._id}
+                                />
+                            );
+                        })}
+                    </div>
+                )}
+
             </div>
 
             {/* DELETE MODAL */}

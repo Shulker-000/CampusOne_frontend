@@ -26,11 +26,11 @@ const MobileMenu = ({ open, onClose, links, actions }) => {
         <div className="h-16 px-4 flex items-center justify-between border-b">
           <div className="flex items-center gap-2">
             <img src="/logo.png" className="h-8" alt="CampusOne" />
-            <span className="font-bold text-lg">CampusOne</span>
+            <span className="font-bold text-lg text-black">CampusOne</span>
           </div>
 
           <button onClick={onClose}>
-            <X className="w-6 h-6" />
+            <X className="w-6 h-6 text-black" />
           </button>
         </div>
 
@@ -40,7 +40,7 @@ const MobileMenu = ({ open, onClose, links, actions }) => {
               key={r.to}
               to={r.to}
               onClick={onClose}
-              className="block px-4 py-3 rounded-lg text-gray-800 hover:bg-gray-100"
+              className="block px-4 py-3 rounded-lg text-black hover:bg-gray-100"
             >
               {r.label}
             </Link>
@@ -66,10 +66,9 @@ const MobileMenu = ({ open, onClose, links, actions }) => {
   );
 };
 
-/* ---------------- PUBLIC NAVBAR (hooks live here) ---------------- */
+/* ---------------- PUBLIC NAVBAR ---------------- */
 
 const PublicNavbar = () => {
-  // ✅ hooks are ALWAYS called because this component is only rendered when needed
   const [visible, setVisible] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
@@ -100,7 +99,7 @@ const PublicNavbar = () => {
       label: "Login as Faculty",
       to: "/faculty/login",
       className:
-        "block text-center px-4 py-3 bg-gray-100 rounded-lg font-medium",
+        "block text-center px-4 py-3 bg-gray-100 rounded-lg font-medium text-black",
     },
   ];
 
@@ -116,10 +115,9 @@ const PublicNavbar = () => {
     };
 
     const events = ["mousemove", "scroll", "keydown"];
-
-    events.forEach((e) => {
-      window.addEventListener(e, resetTimer, { passive: true });
-    });
+    events.forEach((e) =>
+      window.addEventListener(e, resetTimer, { passive: true })
+    );
 
     resetTimer();
 
@@ -146,14 +144,17 @@ const PublicNavbar = () => {
         className={`
           fixed top-0 left-0 w-full z-50
           transition-all duration-500 ease-out
-          ${!isMobile && !visible ? "-translate-y-full opacity-0" : "translate-y-0 opacity-100"}
+          ${!isMobile && !visible
+            ? "-translate-y-full opacity-0"
+            : "translate-y-0 opacity-100"
+          }
         `}
       >
-        <div className="h-16 px-6 flex items-center backdrop-blur-xl bg-white/30 border-b border-white/20">
+        <div className="h-16 px-6 flex items-center backdrop-blur-xl bg-white/30 border-b border-white/20 text-black">
           {/* LEFT */}
           <Link to="/" className="flex items-center gap-2">
             <img src="/logo.png" className="h-8" alt="CampusOne" />
-            <span className="font-bold text-lg">CampusOne</span>
+            <span className="font-bold text-lg text-black">CampusOne</span>
           </Link>
 
           {/* CENTER */}
@@ -162,7 +163,7 @@ const PublicNavbar = () => {
               <Link
                 key={r.to}
                 to={r.to}
-                className="text-slate-700 hover:text-indigo-600"
+                className="text-black hover:text-indigo-600"
               >
                 {r.label}
               </Link>
@@ -189,7 +190,7 @@ const PublicNavbar = () => {
                     key={i.to}
                     to={i.to}
                     onClick={() => setAuthOpen(false)}
-                    className="block px-4 py-3 text-sm hover:bg-indigo-50"
+                    className="block px-4 py-3 text-sm text-black hover:bg-indigo-50"
                   >
                     {i.label}
                   </Link>
@@ -200,7 +201,7 @@ const PublicNavbar = () => {
 
           {/* MOBILE */}
           <button
-            className="ml-auto lg:hidden"
+            className="ml-auto lg:hidden text-black"
             onClick={() => setMobileOpen(true)}
           >
             <Menu className="w-6 h-6" />
@@ -218,17 +219,14 @@ const PublicNavbar = () => {
   );
 };
 
-/* ---------------- NAVBAR GATE (NO hooks, only auth logic) ---------------- */
+/* ---------------- NAVBAR GATE ---------------- */
 
 const Navbar = () => {
   const { institution, user } = useSelector((s) => s.auth);
 
   if (!institution.authChecked || !user.authChecked) return null;
-
-  // ✅ as you wanted: logged in -> show nothing
   if (institution.isAuthenticated || user.isAuthenticated) return null;
 
-  // only public users see navbar
   return <PublicNavbar />;
 };
 
