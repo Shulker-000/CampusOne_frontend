@@ -7,22 +7,18 @@ import { motion } from "framer-motion";
 import {
     Search,
     Plus,
-    Loader2,
-    Hash,
-    BookOpen,
     GraduationCap,
-    Trash2,
     Building2,
     Users,
-    BadgeCheck,
-    Ban,
     CheckCircle2,
-    X,
     Trash,
+    Layers,
 } from "lucide-react";
 
 import ConfirmModal from "../../../components/ConfirmModal";
 import Loader from "../../../components/Loader";
+import InstitutionCoursesCard from "./InstitutionCoursesCard";
+import EditModal from "../EditModal";
 
 /**
  * ✅ Small, reusable tab button UI (top-left)
@@ -55,12 +51,6 @@ const ModalTabs = ({ active, onChange, tabs = [] }) => {
     );
 };
 
-/**
- * ✅ One row = one Faculty + one Batch
- * Supports:
- * - Previous tag
- * - Delete (current/previous)
- */
 const FacultyBatchRow = ({
     row,
     busy = false,
@@ -265,6 +255,17 @@ const InstitutionCourses = () => {
     const [deleteAllFacultiesBusy, setDeleteAllFacultiesBusy] = useState(false);
     const [deleteAllStudentsBusy, setDeleteAllStudentsBusy] = useState(false);
 
+    // ========= EDIT COURSE (INLINE) =========
+    const [editCourse, setEditCourse] = useState(null);
+    const [editSaving, setEditSaving] = useState(false);
+
+    const [editForm, setEditForm] = useState({
+        name: "",
+        code: "",
+        departmentId: "",
+    });
+
+
     const closeActionModal = () => {
         // Guard: if delete/status update is running, don't allow closing the modal
         if (isDeletingCourse) return;
@@ -437,6 +438,67 @@ const InstitutionCourses = () => {
             enrollmentNumber: s?.enrollmentNumber || s?.userId?.enrollmentNumber || "N/A",
             isPrev,
         }));
+    };
+
+    // edit Modal
+    const openEditCourse = (course) => {
+        setEditForm({
+            name: course?.name || "",
+            code: course?.code || "",
+            departmentId: course?.departmentId?._id || course?.departmentId || "",
+        });
+        setEditCourse(course);
+    };
+
+    const handleEditChange = (e) => {
+        const { name, value } = e.target;
+        setEditForm((p) => ({ ...p, [name]: value }));
+    };
+
+    const saveEditCourse = async () => {
+        if (!editCourse?._id) return;
+
+        const { name, code, departmentId } = editForm;
+
+        if (!name.trim() || !code.trim() || !departmentId) {
+            toast.error("All fields are required");
+            return;
+        }
+
+        try {
+            setEditSaving(true);
+
+            const res = await fetch(
+                `${import.meta.env.VITE_BACKEND_URL}/api/courses/${editCourse._id}`,
+                {
+                    method: "PUT",
+                    credentials: "include",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        name: name.trim(),
+                        code: code.trim(),
+                        departmentId,
+                    }),
+                }
+            );
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message || "Update failed");
+
+            // update local list ONLY (no refetch)
+            setCourses((prev) =>
+                prev.map((c) => (c._id === data.data._id ? data.data : c))
+            );
+
+            toast.success("Course updated");
+            setEditCourse(null);
+        } catch (err) {
+            toast.error(err.message || "Update failed");
+        } finally {
+            setEditSaving(false);
+        }
     };
 
     // ========= Impact Fetchers =========
@@ -715,53 +777,36 @@ const InstitutionCourses = () => {
     };
 
     const finishAllFaculties = async () => {
+        if (!actionModal.courseId) return;
 
-        if (facultyBatchRows.length === 0) return;
-
-        setFinishAllFacultiesBusy(true);
-
-        const rows = [...facultyBatchRows];
-        let successCount = 0;
+        const departmentId = getDepartmentIdOfCourse(actionModal.courseId);
+        if (!departmentId) {
+            toast.error("Department not found for this course");
+            return;
+        }
 
         try {
-            for (const row of rows) {
-                const stillPending = facultyBatchRows.some((r) => r.key === row.key);
-                if (!stillPending) continue;
+            setFinishAllFacultiesBusy(true);
 
-                setFinishFacultyRowLoading((p) => ({ ...p, [row.key]: true }));
-
-                try {
-                    const res = await fetch(
-                        `${import.meta.env.VITE_BACKEND_URL}/api/faculties/${row.facultyId}/courses/${row.courseId}/finish`,
-                        {
-                            method: "PUT",
-                            credentials: "include",
-                            headers: {
-                                "Content-Type": "application/json",
-                            },
-                            body: JSON.stringify({ batch: row.batch }),
-                        }
-                    );
-
-                    const data = await res.json();
-                    if (!res.ok) throw new Error(data?.message || "Failed to finish faculty course");
-
-                    successCount++;
-                    setFacultyBatchRows((prev) => prev.filter((r) => r.key !== row.key));
-                } catch (err) {
-                    toast.error(`${row.name} (${row.batch}): ${err.message || "Failed"}`);
-                } finally {
-                    setFinishFacultyRowLoading((p) => {
-                        const copy = { ...p };
-                        delete copy[row.key];
-                        return copy;
-                    });
+            const res = await fetch(
+                `${import.meta.env.VITE_BACKEND_URL}/api/courses/faculty/finish-all/${actionModal.courseId}/institution/${institutionId}`,
+                {
+                    method: "GET",
+                    credentials: "include",
                 }
-            }
+            );
 
-            if (successCount > 0) {
-                toast.success(`Finished ${successCount} faculty-batch entries`);
-            }
+            const data = await res.json();
+            if (!res.ok) throw new Error(data?.message || "Failed to finish all faculties");
+
+            // backend already finished everything
+            setFacultyBatchRows([]);
+
+            toast.success(
+                `Finished course for all faculties`
+            );
+        } catch (err) {
+            toast.error(err.message || "Failed to finish all faculties");
         } finally {
             setFinishAllFacultiesBusy(false);
         }
@@ -1157,19 +1202,7 @@ const InstitutionCourses = () => {
                         <h1 className="text-2xl sm:text-3xl font-bold text-[var(--text)]">
                             Courses
                         </h1>
-                        <p className="text-[var(--muted-text)] text-sm mt-1">
-                            Filter department-wise and manage courses.
-                        </p>
                     </div>
-
-                    <button
-                        onClick={() => navigate("/institution/courses/create")}
-                        className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[var(--accent)] text-white rounded-xl text-sm font-semibold hover:opacity-90 transition"
-                        type="button"
-                    >
-                        <Plus size={18} />
-                        Add Course
-                    </button>
                 </div>
 
                 {/* Controls row */}
@@ -1177,7 +1210,7 @@ const InstitutionCourses = () => {
                     {/* Department Filter */}
                     <div className="w-full md:basis-1/2">
                         <label className="text-xs font-semibold text-[var(--muted-text)]">
-                            Department
+                            Department:
                         </label>
 
                         <div className="relative mt-1">
@@ -1251,132 +1284,15 @@ const InstitutionCourses = () => {
                             const isStatusUpdating = !!statusUpdatingMap[course._id];
 
                             return (
-                                <motion.div
-                                    layout
+                                <InstitutionCoursesCard
                                     key={course._id}
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className={`bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5 transition ${course.isOpen ? "hover:shadow-[var(--shadow)]" : "opacity-60"
-                                        }`}
-                                >
-                                    {/* TOP HEADER */}
-                                    <div className="flex items-start justify-between gap-3">
-                                        <div className="min-w-0 flex-1 flex items-start gap-3">
-                                            <div className="h-10 w-10 rounded-xl border border-[var(--border)] bg-[var(--surface-2)] overflow-hidden shrink-0 grid place-items-center">
-                                                <BookOpen size={18} className="text-[var(--muted-text)]" />
-                                            </div>
+                                    course={course}
+                                    isStatusUpdating={isStatusUpdating}
+                                    onToggleStatus={() => openChangeStatusModal(course)}
+                                    onEdit={() => openEditCourse(course)}
+                                    onDelete={() => openDeleteCourseModal(course)}
+                                />
 
-                                            <div className="min-w-0 flex-1">
-                                                <h3 className="text-lg font-semibold truncate text-[var(--text)]">
-                                                    {course.name}
-                                                </h3>
-                                                <p className="text-xs text-[var(--muted-text)] truncate">
-                                                    Code: {course.code}
-                                                </p>
-                                            </div>
-                                        </div>
-
-                                        {/* Toggle (standardized colors - no red/green) */}
-                                        <div className="shrink-0">
-                                            <button
-                                                type="button"
-                                                onClick={() => openChangeStatusModal(course)}
-                                                disabled={isStatusUpdating}
-                                                className={`relative inline-flex h-7 w-12 items-center rounded-full border transition ${isStatusUpdating ? "opacity-60 cursor-not-allowed" : "cursor-pointer"
-                                                    }`}
-                                                style={{
-                                                    background: course.isOpen
-                                                        ? "var(--surface-2)"
-                                                        : "var(--surface-2)",
-                                                    borderColor: course.isOpen
-                                                        ? "var(--accent)"
-                                                        : "var(--border)",
-                                                }}
-                                                title={course.isOpen ? "Open" : "Closed"}
-                                            >
-                                                <span
-                                                    className="inline-block h-5 w-5 transform rounded-full transition"
-                                                    style={{
-                                                        background: "var(--text)",
-                                                        transform: course.isOpen
-                                                            ? "translateX(24px)"
-                                                            : "translateX(4px)",
-                                                    }}
-                                                />
-
-                                                {isStatusUpdating && (
-                                                    <span className="absolute inset-0 flex items-center justify-center">
-                                                        <Loader2 className="w-4 h-4 animate-spin text-[var(--muted-text)]" />
-                                                    </span>
-                                                )}
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    {/* BADGES */}
-                                    <div className="flex flex-wrap items-center gap-2 mt-3">
-                                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold border bg-[var(--surface-2)] text-[var(--text)] border-[var(--border)]">
-                                            <Hash size={14} />
-                                            {course.code || "N/A"}
-                                        </span>
-
-                                        {/* standardized Open/Closed badge (no red/green) */}
-                                        <span
-                                            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold border"
-                                            style={{
-                                                background: "var(--surface-2)",
-                                                color: "var(--text)",
-                                                borderColor: course.isOpen ? "var(--accent)" : "var(--border)",
-                                            }}
-                                        >
-                                            {course.isOpen ? <BadgeCheck size={14} /> : <Ban size={14} />}
-                                            {course.isOpen ? "Open" : "Closed"}
-                                        </span>
-
-                                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold border bg-[var(--surface-2)] text-[var(--text)] border-[var(--border)]">
-                                            <GraduationCap size={14} />
-                                            Sem: {course.semester ?? "N/A"}
-                                        </span>
-                                    </div>
-
-                                    {/* DETAILS */}
-                                    <div className="mt-4 space-y-2 text-sm">
-                                        <div className="flex items-center gap-2 text-[var(--muted-text)]">
-                                            <BookOpen size={16} />
-                                            <span className="font-semibold text-[var(--text)]">Credits:</span>
-                                            <span>{course.credits ?? "N/A"}</span>
-                                        </div>
-
-                                        <div className="flex items-center gap-2 text-[var(--muted-text)]">
-                                            <GraduationCap size={16} />
-                                            <span className="font-semibold text-[var(--text)]">Semester:</span>
-                                            <span>{course.semester ?? "N/A"}</span>
-                                        </div>
-                                    </div>
-
-                                    {/* ACTIONS */}
-                                    <div className="flex items-center gap-2 mt-5">
-                                        <button
-                                            onClick={() => navigate(`/institution/courses/edit/${course._id}`)}
-                                            className="flex-1 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface-2)]
-                        hover:bg-[var(--text)] hover:text-[var(--bg)] transition font-semibold text-sm"
-                                            type="button"
-                                        >
-                                            Edit Course
-                                        </button>
-
-                                        {/* standardized delete button (no red hover) */}
-                                        <button
-                                            onClick={() => openDeleteCourseModal(course)}
-                                            className="p-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface-2)]
-                        hover:opacity-90 text-[var(--muted-text)] transition"
-                                            title="Delete"
-                                            type="button"
-                                        >
-                                            <Trash2 size={18} />
-                                        </button>
-                                    </div>
-                                </motion.div>
                             );
                         })}
                     </div>
@@ -1959,6 +1875,54 @@ const InstitutionCourses = () => {
                 )}
             </ConfirmModal>
 
+            <EditModal
+                open={!!editCourse}
+                title="Edit Course"
+                confirmText="Save Changes"
+                loading={editSaving}
+                onClose={() => !editSaving && setEditCourse(null)}
+                onConfirm={saveEditCourse}
+            >
+                <div className="grid sm:grid-cols-2 gap-4">
+                    <Field
+                        label="Course Name"
+                        name="name"
+                        value={editForm.name}
+                        onChange={handleEditChange}
+                    />
+
+                    <Field
+                        label="Course Code"
+                        name="code"
+                        value={editForm.code}
+                        onChange={handleEditChange}
+                    />
+
+                    <div className="sm:col-span-2 space-y-1">
+                        <label className="text-xs font-bold uppercase text-[var(--muted-text)]">
+                            Department
+                        </label>
+
+                        <div className="relative">
+                            <Layers className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" />
+                            <select
+                                name="departmentId"
+                                value={editForm.departmentId}
+                                onChange={handleEditChange}
+                                className="w-full rounded-xl border pl-10 pr-4 py-3 bg-[var(--surface-2)]"
+                            >
+                                <option value="">Select department</option>
+                                {departments.map((d) => (
+                                    <option key={d._id} value={d._id}>
+                                        {d.name} ({d.code})
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </EditModal>
+
             {/* Patch: When delete modal is open, confirm should be blocked until empty lists */}
             {actionModal.type === "delete" && (
                 <style>
@@ -1968,7 +1932,21 @@ const InstitutionCourses = () => {
                 </style>
             )}
         </div>
+
     );
 };
+
+const Field = ({ label, ...props }) => (
+    <div className="space-y-1">
+        <label className="text-xs font-bold uppercase text-[var(--muted-text)]">
+            {label}
+        </label>
+        <input
+            {...props}
+            className="w-full rounded-xl border px-3 py-3 bg-[var(--surface-2)]"
+        />
+    </div>
+);
+
 
 export default InstitutionCourses;

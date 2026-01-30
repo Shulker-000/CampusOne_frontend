@@ -1,4 +1,3 @@
-// src/pages/institution/departments/EditDepartment.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -9,7 +8,7 @@ import { ArrowLeft, Save, Loader2, Users, UserRoundCog, XCircle, User2 } from "l
 import Loader from "../../../components/Loader";
 import ConfirmModal from "../../../components/ConfirmModal";
 
-const EditDepartment = () => {
+const InstitutionDepartmentProfile = () => {
     const navigate = useNavigate();
     const { departmentId } = useParams();
 
@@ -494,4 +493,4 @@ const Field = ({ label, ...props }) => {
     );
 };
 
-export default EditDepartment;
+export default InstitutionDepartmentProfile;

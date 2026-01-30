@@ -1,4 +1,3 @@
-// src/pages/institution/courses/EditCourse.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -16,7 +15,7 @@ import {
 } from "lucide-react";
 import Loader from "../../../components/Loader";
 
-const EditCourse = () => {
+const InstitutionCourseProfile = () => {
   const navigate = useNavigate();
   const { courseId } = useParams();
 
@@ -205,10 +204,7 @@ const EditCourse = () => {
           transition={{ duration: 0.2 }}
           className="w-full"
         >
-          <h1 className="text-xl font-bold text-[var(--text)]">Edit Course</h1>
-          <p className="text-sm text-[var(--muted-text)] mt-1">
-            Update course details.
-          </p>
+          <h1 className="text-xl font-bold text-[var(--text)]">Course Profile</h1>
 
           {/* FORM */}
           <div className="mt-6 grid sm:grid-cols-2 gap-4 max-w-5xl">
@@ -323,4 +319,4 @@ const Field = ({ label, icon: Icon, ...props }) => {
   );
 };
 
-export default EditCourse;
+export default InstitutionCourseProfile;

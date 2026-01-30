@@ -46,11 +46,17 @@ const CreateFaculty = () => {
     });
 
     // Step-2 form (Faculty)
+    const getToday = () => {
+        const d = new Date();
+        return d.toISOString().split("T")[0]; // YYYY-MM-DD
+    };
+
     const [facultyForm, setFacultyForm] = useState({
         departmentId: "",
         designation: "",
-        dateOfJoining: "",
+        dateOfJoining: getToday(),
     });
+
 
     const canProceedToFaculty = useMemo(() => {
         const { name, email, phone, password } = userForm;
@@ -261,9 +267,6 @@ const CreateFaculty = () => {
                     <h1 className="text-2xl font-bold text-[var(--text)]">
                         Create Faculty
                     </h1>
-                    <p className="text-sm text-[var(--muted-text)] mt-1">
-                        Create user first, then create faculty profile.
-                    </p>
 
                     {/* STEPPER */}
                     <div className="mt-6 max-w-3xl">
@@ -275,10 +278,10 @@ const CreateFaculty = () => {
                     </div>
 
                     {/* STEP CONTENT */}
-                    <div className="mt-6 max-w-3xl">
+                    <div className="mt-6">
                         {/* STEP 1 CARD */}
                         {step === 1 && (
-                            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow)] p-5">
+                            <div className="rounded-2xl p-5">
                                 <h2 className="text-lg font-bold flex items-center gap-2">
                                     <UserPlus className="w-5 h-5 text-[var(--muted-text)]" />
                                     User Details
@@ -354,7 +357,7 @@ const CreateFaculty = () => {
 
                         {/* STEP 2 CARD */}
                         {step === 2 && (
-                            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow)] p-5">
+                            <div className="p-5">
                                 <h2 className="text-lg font-bold flex items-center gap-2">
                                     <BadgeCheck className="w-5 h-5 text-[var(--muted-text)]" />
                                     Faculty Details
@@ -362,7 +365,7 @@ const CreateFaculty = () => {
 
                                 <div className="mt-3 rounded-xl border border-[var(--border)] bg-[var(--surface-2)] p-3">
                                     <p className="text-sm font-semibold text-[var(--text)]">
-                                        Linked User:
+                                        User Details:
                                     </p>
                                     <p className="text-sm text-[var(--muted-text)] mt-1">
                                         {createdUser?.name || "Faculty User"} - {createdUser?.email || "N/A"} - {createdUser?.phone || "N/A"}

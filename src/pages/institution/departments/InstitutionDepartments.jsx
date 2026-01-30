@@ -2,27 +2,14 @@ import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
-import { useNavigate } from "react-router-dom";
-import {
-    Mail,
-    Hash,
-    Pencil,
-    Trash2,
-    Search,
-    User2,
-    BadgeCheck,
-    Plus,
-    ArrowRight,
-    Loader2,
-    Building2,
-    Building,
-} from "lucide-react";
+import { Search, Plus } from "lucide-react";
+
 import ConfirmModal from "../../../components/ConfirmModal";
-import Loader from "./../../../components/Loader.jsx"
+import Loader from "../../../components/Loader";
+import InstitutionDepartmentsCard from "./InstitutionDepartmentsCard";
+import EditModal from "../EditModal";
 
 const InstitutionDepartments = () => {
-    const navigate = useNavigate();
-
     const institutionId = useSelector((s) => s.auth.institution.data?._id);
 
     const [loading, setLoading] = useState(true);
@@ -30,6 +17,7 @@ const InstitutionDepartments = () => {
     const [faculties, setFaculties] = useState([]);
     const [query, setQuery] = useState("");
 
+    // delete state
     const [confirmState, setConfirmState] = useState({
         open: false,
         departmentId: null,
@@ -37,9 +25,25 @@ const InstitutionDepartments = () => {
     });
     const [deleting, setDeleting] = useState(false);
 
+    // edit modal state
+    const [editDept, setEditDept] = useState(null);
+    const [saving, setSaving] = useState(false);
+    const [form, setForm] = useState({
+        name: "",
+        code: "",
+        contactEmail: "",
+    });
+
+    // live code check state
+    const [codeStatus, setCodeStatus] = useState({
+        checking: false,
+        exists: false,
+        checked: false,
+    });
+
+    // ---------- fetch ----------
     const fetchDepartments = async () => {
         if (!institutionId) return;
-
         try {
             setLoading(true);
             const res = await fetch(
@@ -47,10 +51,10 @@ const InstitutionDepartments = () => {
                 { credentials: "include" }
             );
             const data = await res.json();
-            if (!res.ok) throw new Error(data.message || "Failed to fetch departments");
+            if (!res.ok) throw new Error(data.message);
             setDepartments(Array.isArray(data.data) ? data.data : []);
-        } catch (err) {
-            toast.error(err.message || "Failed to fetch departments");
+        } catch (e) {
+            toast.error(e.message || "Failed to fetch departments");
         } finally {
             setLoading(false);
         }
@@ -65,8 +69,8 @@ const InstitutionDepartments = () => {
             );
             const data = await res.json();
             setFaculties(Array.isArray(data.data) ? data.data : []);
-        } catch (err) {
-            console.error("Faculty fetch error", err);
+        } catch {
+            console.error("Faculty fetch failed");
         }
     };
 
@@ -75,6 +79,7 @@ const InstitutionDepartments = () => {
         fetchFaculties();
     }, [institutionId]);
 
+    // ---------- helpers ----------
     const facultyById = useMemo(() => {
         const map = new Map();
         faculties.forEach((f) => map.set(f._id, f));
@@ -85,18 +90,19 @@ const InstitutionDepartments = () => {
         const q = query.trim().toLowerCase();
         if (!q) return departments;
         return departments.filter((d) => {
-            const hodFacultyId = d?.headOfDepartment?._id || d?.headOfDepartment || null;
-            const hodFaculty = hodFacultyId ? facultyById.get(hodFacultyId) : null;
-            const hodUser = hodFaculty?.userId;
+            const hodId = d?.headOfDepartment?._id || d?.headOfDepartment;
+            const hodUser = hodId ? facultyById.get(hodId)?.userId : null;
+
             return (
-                (d?.name || "").toLowerCase().includes(q) ||
-                (d?.code || "").toLowerCase().includes(q) ||
-                (d?.contactEmail || "").toLowerCase().includes(q) ||
-                (hodUser?.name || "").toLowerCase().includes(q)
+                d.name?.toLowerCase().includes(q) ||
+                d.code?.toLowerCase().includes(q) ||
+                d.contactEmail?.toLowerCase().includes(q) ||
+                hodUser?.name?.toLowerCase().includes(q)
             );
         });
     }, [departments, query, facultyById]);
 
+    // ---------- delete ----------
     const askDeleteDepartment = (dept) => {
         setConfirmState({
             open: true,
@@ -107,37 +113,121 @@ const InstitutionDepartments = () => {
 
     const deleteDepartment = async () => {
         if (!confirmState.departmentId) return;
-
         try {
             setDeleting(true);
-
             const res = await fetch(
                 `${import.meta.env.VITE_BACKEND_URL}/api/departments/delete-department/${confirmState.departmentId}`,
-                {
-                    method: "DELETE",
-                    credentials: "include",
-                }
+                { method: "DELETE", credentials: "include" }
             );
-
             const data = await res.json();
-            if (!res.ok) throw new Error(data.message || "Delete failed");
-
+            if (!res.ok) throw new Error(data.message);
             toast.success("Department removed");
-            setDepartments((prev) => prev.filter((d) => d._id !== confirmState.departmentId));
-
+            setDepartments((p) =>
+                p.filter((d) => d._id !== confirmState.departmentId)
+            );
             setConfirmState({ open: false, departmentId: null, departmentName: "" });
-        } catch (err) {
-            toast.error(err.message || "Delete failed");
+        } catch (e) {
+            toast.error(e.message || "Delete failed");
         } finally {
             setDeleting(false);
         }
     };
 
-    if (loading) {
-        return (
-            <Loader />
-        );
-    }
+    // ---------- edit ----------
+    const openEdit = (dept) => {
+        setForm({
+            name: dept.name || "",
+            code: dept.code || "",
+            contactEmail: dept.contactEmail || "",
+        });
+
+        // reset status to avoid stale UI
+        setCodeStatus({ checking: false, exists: false, checked: false });
+        setEditDept(dept);
+    };
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setForm((p) => ({ ...p, [name]: value }));
+
+        if (name === "code") {
+            setCodeStatus({ checking: false, exists: false, checked: false });
+        }
+    };
+
+    // live availability check (onBlur)
+    const checkDepartmentCode = async (code) => {
+        if (!code.trim()) return;
+
+        if (editDept && code === editDept.code) {
+            setCodeStatus({ checking: false, exists: false, checked: true });
+            return;
+        }
+
+        try {
+            setCodeStatus({ checking: true, exists: false, checked: false });
+
+            const params = new URLSearchParams({
+                code: code.trim(),
+            });
+
+            const res = await fetch(
+                `${import.meta.env.VITE_BACKEND_URL}/api/departments/code-exists?${params.toString()}`,
+                { credentials: "include" }
+            );
+
+            const data = await res.json();
+
+            setCodeStatus({
+                checking: false,
+                exists: data?.data?.exists === true,
+                checked: true,
+            });
+        } catch {
+            setCodeStatus({ checking: false, exists: false, checked: false });
+        }
+    };
+
+    const saveEdit = async () => {
+        const { name, code, contactEmail } = form;
+
+        if (codeStatus.exists) {
+            toast.error("Department code already exists");
+            return;
+        }
+
+        if (!name || !code || !contactEmail) {
+            toast.error("All fields are required");
+            return;
+        }
+
+        try {
+            setSaving(true);
+            const res = await fetch(
+                `${import.meta.env.VITE_BACKEND_URL}/api/departments/update-department/${editDept._id}`,
+                {
+                    method: "PUT",
+                    credentials: "include",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(form),
+                }
+            );
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message);
+
+            toast.success("Department updated");
+            setDepartments((p) =>
+                p.map((d) => (d._id === editDept._id ? { ...d, ...form } : d))
+            );
+            setEditDept(null);
+        } catch (e) {
+            toast.error(e.message || "Update failed");
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    if (loading) return <Loader />;
 
     return (
         <div className="min-h-screen bg-[var(--bg)] text-[var(--text)]">
@@ -146,192 +236,54 @@ const InstitutionDepartments = () => {
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                     <div>
                         <h1 className="text-2xl sm:text-3xl font-bold">Departments</h1>
-                        <p className="text-[var(--muted-text)] text-sm mt-1">
-                            View and manage your institution departments.
-                        </p>
                     </div>
 
                     <div className="flex flex-col sm:flex-row gap-3">
                         <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--muted-text)]" />
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" />
                             <input
                                 value={query}
                                 onChange={(e) => setQuery(e.target.value)}
                                 placeholder="Search departments..."
-                                className="pl-10 pr-4 py-2.5 w-full sm:w-72 bg-[var(--surface-2)] border border-[var(--border)] rounded-xl outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 transition text-sm text-[var(--text)]"
+                                className="pl-10 pr-4 py-2.5 w-full sm:w-72 bg-[var(--surface-2)] border border-[var(--border)] rounded-xl"
                             />
                         </div>
 
-                        <button
-                            onClick={() => navigate("/institution/departments/create")}
-                            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[var(--accent)] text-white rounded-xl text-sm font-semibold hover:opacity-90 transition"
-                            type="button"
-                        >
-                            <Plus size={18} />
-                            Add Department
-                        </button>
                     </div>
                 </div>
 
-                {/* Empty State */}
+                {/* Grid */}
                 {filteredDepartments.length === 0 ? (
-                    <div className="border border-[var(--border)] rounded-2xl p-10 text-center bg-[var(--surface-2)]">
-                        <h3 className="text-lg font-semibold text-[var(--text)]">No departments found</h3>
-                        <p className="text-[var(--muted-text)] text-sm mt-1">
-                            Try a different search keyword.
-                        </p>
+                    <div className="border rounded-2xl p-10 text-center bg-[var(--surface-2)]">
+                        No departments found
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                         {filteredDepartments.map((dept) => {
-                            const hodId = dept?.headOfDepartment?._id || dept?.headOfDepartment;
-                            const hod = facultyById.get(hodId);
-                            const user = hod?.userId;
-
+                            const hodId =
+                                dept?.headOfDepartment?._id || dept?.headOfDepartment;
+                            const hodUser = hodId
+                                ? facultyById.get(hodId)
+                                : null;
                             return (
-                                <motion.div
-                                    layout
+                                <InstitutionDepartmentsCard
                                     key={dept._id}
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5 transition hover:shadow-[var(--shadow)]"
-                                >
-                                    {/* TOP HEADER */}
-                                    <div className="flex items-start justify-between gap-3">
-                                        {/* Left: Department Icon + Name */}
-                                        <div className="min-w-0 flex-1 flex items-start gap-3">
-                                            <div className="h-10 w-10 rounded-xl border border-[var(--border)] bg-[var(--surface-2)] overflow-hidden shrink-0 grid place-items-center">
-                                                <Building size={18} className="text-[var(--muted-text)]" />
-                                            </div>
-
-                                            <div className="min-w-0 flex-1">
-                                                <h3 className="text-lg font-semibold truncate text-[var(--text)]">
-                                                    {dept.name}
-                                                </h3>
-
-                                                <p className="text-xs text-[var(--muted-text)] truncate">
-                                                    Code: {dept.code}
-                                                </p>
-                                            </div>
-                                        </div>
-
-                                        {/* Right: Actions */}
-                                        <div className="flex items-center gap-2 shrink-0">
-                                            <button
-                                                onClick={() => navigate(`/institution/departments/edit/${dept._id}`)}
-                                                className="p-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface-2)]
-                                          hover:bg-[var(--text)] hover:text-[var(--bg)] transition"
-                                                title="Edit"
-                                                type="button"
-                                            >
-                                                <Pencil size={18} />
-                                            </button>
-
-                                            {/* standardized delete (no red/green) */}
-                                            <button
-                                                onClick={() => askDeleteDepartment(dept)}
-                                                className="p-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface-2)]
-                                          hover:opacity-90 text-[var(--muted-text)] transition"
-                                                title="Delete"
-                                                type="button"
-                                            >
-                                                <Trash2 size={18} />
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    {/* BADGES */}
-                                    <div className="flex flex-wrap items-center gap-2 mt-3">
-                                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold border bg-[var(--surface-2)] text-[var(--text)] border-[var(--border)]">
-                                            <Hash size={14} />
-                                            {dept.code}
-                                        </span>
-
-                                        {/* standardized status badge (no red/green) */}
-                                        <span
-                                            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold border"
-                                            style={{
-                                                background: "var(--surface-2)",
-                                                borderColor: user ? "var(--accent)" : "var(--border)",
-                                                color: "var(--text)",
-                                            }}
-                                            title={user ? "HOD Assigned" : "No HOD Assigned"}
-                                        >
-                                            <BadgeCheck size={14} className="text-[var(--muted-text)]" />
-                                            {user ? "HOD Assigned" : "No HOD"}
-                                        </span>
-                                    </div>
-
-                                    {/* DETAILS */}
-                                    <div className="mt-4 space-y-2 text-sm">
-                                        <div className="flex items-center gap-2 text-[var(--muted-text)]">
-                                            <Mail size={16} />
-                                            <span className="truncate">{dept.contactEmail}</span>
-                                        </div>
-                                    </div>
-
-                                    {/* HOD SECTION */}
-                                    <div className="mt-4 p-3 flex items-center gap-3 rounded-xl bg-[var(--surface-2)] border border-[var(--border)]">
-                                        {user?.avatar ? (
-                                            <img
-                                                src={user.avatar}
-                                                className="w-10 h-10 rounded-xl object-cover border border-[var(--border)]"
-                                                alt=""
-                                                onError={(e) => {
-                                                    e.currentTarget.src = "/user.png";
-                                                }}
-                                            />
-                                        ) : (
-                                            <div className="w-10 h-10 rounded-xl bg-[var(--surface)] border border-[var(--border)] flex items-center justify-center text-[var(--muted-text)]">
-                                                <User2 size={18} />
-                                            </div>
-                                        )}
-
-                                        <div className="min-w-0 flex-1">
-                                            <p className="text-[11px] text-[var(--muted-text)] font-semibold">HOD</p>
-                                            <p className="text-sm font-semibold truncate text-[var(--text)]">
-                                                {user?.name || "Not Assigned"}
-                                            </p>
-                                        </div>
-
-                                        {/* neutral assigned tag */}
-                                        {user && (
-                                            <span
-                                                className="inline-flex items-center px-2 py-1 rounded-lg text-[10px] font-bold border"
-                                                style={{
-                                                    background: "var(--surface)",
-                                                    borderColor: "var(--border)",
-                                                    color: "var(--muted-text)",
-                                                }}
-                                            >
-                                                Assigned
-                                            </span>
-                                        )}
-                                    </div>
-
-                                    {/* ACTIONS (remove duplicate delete button) */}
-                                    <div className="flex items-center gap-2 mt-5">
-                                        <button
-                                            onClick={() => navigate(`/institution/departments/edit/${dept._id}`)}
-                                            className="w-full py-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface-2)]
-                                        hover:bg-[var(--text)] hover:text-[var(--bg)] transition font-semibold text-sm flex items-center justify-center gap-2"
-                                            type="button"
-                                        >
-                                            Edit Details
-                                            <ArrowRight size={16} />
-                                        </button>
-                                    </div>
-                                </motion.div>
+                                    dept={dept}
+                                    faculty={hodUser}
+                                    onEdit={() => openEdit(dept)}
+                                    onDelete={() => askDeleteDepartment(dept)}
+                                />
                             );
                         })}
                     </div>
                 )}
             </div>
 
+            {/* Delete confirm */}
             <ConfirmModal
                 open={confirmState.open}
                 title="Delete Department?"
-                message={`This will permanently delete "${confirmState.departmentName}". This action cannot be undone.`}
+                message={`This will permanently delete "${confirmState.departmentName}".`}
                 confirmText="Yes, Delete"
                 cancelText="Cancel"
                 variant="danger"
@@ -343,8 +295,68 @@ const InstitutionDepartments = () => {
                 onConfirm={deleteDepartment}
             />
 
+            {/* Edit modal */}
+            <EditModal
+                open={!!editDept}
+                title="Edit Department"
+                confirmText="Save Changes"
+                loading={saving}
+                onClose={() => setEditDept(null)}
+                onConfirm={saveEdit}
+            >
+                <div className="grid sm:grid-cols-2 gap-4">
+                    <Field
+                        label="Department Name"
+                        name="name"
+                        value={form.name}
+                        onChange={handleChange}
+                    />
+
+                    <div>
+                        <Field
+                            label="Department Code"
+                            name="code"
+                            value={form.code}
+                            onChange={handleChange}
+                            onBlur={(e) => checkDepartmentCode(e.target.value)}
+                        />
+
+                        {codeStatus.checked && (
+                            <p
+                                className={`text-xs mt-1 ${codeStatus.exists ? "text-red-500" : "text-green-600"
+                                    }`}
+                            >
+                                {codeStatus.checking
+                                    ? "Checking availability..."
+                                    : codeStatus.exists
+                                        ? "Department code already exists"
+                                        : "Department code available"}
+                            </p>
+                        )}
+                    </div>
+
+                    <Field
+                        label="Contact Email"
+                        name="contactEmail"
+                        value={form.contactEmail}
+                        onChange={handleChange}
+                    />
+                </div>
+            </EditModal>
         </div>
     );
 };
+
+const Field = ({ label, ...props }) => (
+    <div className="space-y-1">
+        <label className="text-xs font-bold text-[var(--muted-text)] uppercase">
+            {label}
+        </label>
+        <input
+            {...props}
+            className="w-full rounded-xl border px-3 py-3 bg-[var(--surface-2)]"
+        />
+    </div>
+);
 
 export default InstitutionDepartments;

@@ -1,4 +1,3 @@
-// src/pages/institution/faculty/EditFaculty.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -23,10 +22,10 @@ import {
   ToggleRight,
   ToggleLeft,
 } from "lucide-react";
-import Loader from "./../../../components/Loader.jsx";
+import Loader from "../../../components/Loader.jsx";
 import ConfirmModal from "../../../components/ConfirmModal.jsx";
 
-const EditFaculty = () => {
+const InstitutionFacultyProfile = () => {
   const navigate = useNavigate();
   const { facultyId } = useParams();
 
@@ -831,10 +830,7 @@ const EditFaculty = () => {
           transition={{ duration: 0.2 }}
           className="w-full"
         >
-          <h1 className="text-xl font-bold text-[var(--text)]">Edit Faculty</h1>
-          <p className="text-sm text-[var(--muted-text)] mt-1">
-            Update designation, joining date, department, courses and status.
-          </p>
+          <h1 className="text-xl font-bold text-[var(--text)]">Faculty Profile</h1>
 
           <div className="mt-6 grid gap-4 max-w-5xl sm:grid-cols-2 lg:grid-cols-3">
             <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-2)] p-4">
@@ -1378,4 +1374,4 @@ const ToggleCard = ({ title, subtitle, value, onToggle }) => {
   );
 };
 
-export default EditFaculty;
+export default InstitutionFacultyProfile;
