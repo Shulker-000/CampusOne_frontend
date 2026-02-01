@@ -41,6 +41,10 @@ const InstitutionDepartments = () => {
         checked: false,
     });
 
+    const [showValidity, setShowValidity] = useState(false);
+
+    const lastCheckedRef = React.useRef({ code: null });
+
     // ---------- fetch ----------
     const fetchDepartments = async () => {
         if (!institutionId) return;
@@ -78,6 +82,17 @@ const InstitutionDepartments = () => {
         fetchDepartments();
         fetchFaculties();
     }, [institutionId]);
+
+    useEffect(() => {
+        if (!editDept) return;
+        const code = form.code.trim();
+        if (!code || !institutionId) return;
+
+        if (lastCheckedRef.current.code === code) return;
+
+        lastCheckedRef.current = { code };
+        checkDepartmentCode(code);
+    }, [form.code]);
 
     // ---------- helpers ----------
     const facultyById = useMemo(() => {
@@ -141,10 +156,13 @@ const InstitutionDepartments = () => {
             contactEmail: dept.contactEmail || "",
         });
 
-        // reset status to avoid stale UI
         setCodeStatus({ checking: false, exists: false, checked: false });
+        setShowValidity(false);
+        lastCheckedRef.current = { code: null };
+
         setEditDept(dept);
     };
+
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -152,10 +170,12 @@ const InstitutionDepartments = () => {
 
         if (name === "code") {
             setCodeStatus({ checking: false, exists: false, checked: false });
+            setShowValidity(false);
         }
+
     };
 
-    // live availability check (onBlur)
+    // live availability check
     const checkDepartmentCode = async (code) => {
         const trimmed = code.trim();
         if (!trimmed || !institutionId) return;
@@ -163,6 +183,7 @@ const InstitutionDepartments = () => {
         // Editing same code - skip check
         if (editDept && trimmed === editDept.code) {
             setCodeStatus({ checking: false, exists: false, checked: true });
+            setShowValidity(true);
             return;
         }
 
@@ -190,6 +211,7 @@ const InstitutionDepartments = () => {
                 exists: Boolean(data?.data?.exists),
                 checked: true,
             });
+            setShowValidity(true);
         } catch (e) {
             console.error(e);
             setCodeStatus({ checking: false, exists: false, checked: false });
@@ -328,10 +350,10 @@ const InstitutionDepartments = () => {
                             name="code"
                             value={form.code}
                             onChange={handleChange}
-                            onBlur={(e) => checkDepartmentCode(e.target.value)}
                         />
 
-                        {codeStatus.checked && (
+                        {showValidity && (codeStatus.checked || codeStatus.checking) && (
+
                             <p
                                 className={`text-xs mt-1 ${codeStatus.exists ? "text-red-500" : "text-green-600"
                                     }`}
