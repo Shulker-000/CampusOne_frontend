@@ -31,6 +31,14 @@ const CreateCourse = () => {
     semester: "",
   });
 
+  const [showValidity, setShowValidity] = useState(false);
+
+  const [courseCodeStatus, setCourseCodeStatus] = useState({
+    checking: false,
+    exists: false,
+    checked: false,
+  });
+
   // ========= FETCH DEPARTMENTS =========
   const fetchDepartments = async () => {
     if (!institutionId) return;
@@ -58,8 +66,81 @@ const CreateCourse = () => {
     fetchDepartments();
   }, [institutionId]);
 
-  const handleChange = (e) =>
-    setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
+  const lastCheckedRef = React.useRef({ code: null, departmentId: null });
+
+  useEffect(() => {
+    const code = form.code.trim();
+    const dept = form.departmentId;
+
+    if (!code || !dept) return;
+
+    if (
+      lastCheckedRef.current.code === code &&
+      lastCheckedRef.current.departmentId === dept
+    ) {
+      return;
+    }
+
+    lastCheckedRef.current = { code, departmentId: dept };
+    checkCourseCode();
+  }, [form.code, form.departmentId]);
+
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    setForm((p) => ({
+      ...p,
+      [name]: name === "code" ? value.toUpperCase() : value,
+    }));
+    // reset code validity when inputs affecting uniqueness change
+    if (name === "code" || name === "departmentId") {
+      setCourseCodeStatus({
+        checking: false,
+        exists: false,
+        checked: false,
+      });
+      setShowValidity(false);
+    }
+  };
+
+  // ========= Check Code =========
+  const checkCourseCode = async () => {
+    const { code, departmentId } = form;
+    const trimmed = code.trim();
+
+    if (!trimmed || !departmentId) return;
+
+    try {
+      setCourseCodeStatus({ checking: true, exists: false, checked: false });
+
+      const res = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/api/courses/code-exists`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            departmentId,
+            code: trimmed,
+          }),
+        }
+      );
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+
+      setCourseCodeStatus({
+        checking: false,
+        exists: Boolean(data?.data?.exists),
+        checked: true,
+      });
+      setShowValidity(true);
+    } catch {
+      setCourseCodeStatus({ checking: false, exists: false, checked: false });
+    }
+  };
+
 
   // ========= SUBMIT =========
   const handleSubmit = async (e) => {
@@ -179,14 +260,30 @@ const CreateCourse = () => {
             />
 
             <div className="grid sm:grid-cols-2 gap-4">
-              <Input
-                label="Course Code"
-                icon={Hash}
-                name="code"
-                value={form.code}
-                onChange={handleChange}
-                placeholder="e.g. CSE201"
-              />
+              <div>
+                <Input
+                  label="Course Code"
+                  icon={Hash}
+                  name="code"
+                  value={form.code}
+                  onChange={handleChange}
+                  placeholder="e.g. CSE201"
+                />
+
+                {showValidity && (courseCodeStatus.checked || courseCodeStatus.checking) && (
+                  <p
+                    className={`text-xs mt-1 ${courseCodeStatus.exists ? "text-red-500" : "text-green-600"
+                      }`}
+                  >
+                    {courseCodeStatus.checking
+                      ? "Checking availability..."
+                      : courseCodeStatus.exists
+                        ? "Course code already exists"
+                        : "Course code available"}
+                  </p>
+                )}
+              </div>
+
 
               <Input
                 label="Credits"
@@ -209,7 +306,7 @@ const CreateCourse = () => {
             />
 
             <button
-              disabled={loading}
+              disabled={loading || courseCodeStatus.exists || courseCodeStatus.checking}
               className="w-full sm:w-1/2 md:w-1/3 py-3 rounded-xl bg-[var(--accent)] text-white font-semibold hover:opacity-90 transition disabled:opacity-60 inline-flex items-center justify-center gap-2"
               type="submit"
             >

@@ -28,6 +28,10 @@ const CreateDepartment = () => {
         checked: false,
     });
 
+    const [showValidity, setShowValidity] = useState(false);
+    const lastCheckedRef = React.useRef({ code: null });
+
+
     const fetchFaculties = async () => {
         if (!institutionId) return;
 
@@ -80,6 +84,8 @@ const CreateDepartment = () => {
                 exists: Boolean(data?.data?.exists),
                 checked: true,
             });
+            setShowValidity(true);
+
         } catch {
             setCodeStatus({ checking: false, exists: false, checked: false });
         }
@@ -89,12 +95,28 @@ const CreateDepartment = () => {
         fetchFaculties();
     }, [institutionId]);
 
+    useEffect(() => {
+        const code = form.code.trim();
+        if (!code || !institutionId) return;
+
+        if (lastCheckedRef.current.code === code) return;
+
+        lastCheckedRef.current = { code };
+        checkDepartmentCode(code);
+    }, [form.code]);
+
+
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setForm((p) => ({ ...p, [name]: value }));
+        setForm((p) => ({
+            ...p,
+            [name]: name === "code" ? value.toUpperCase() : value,
+        }));
 
         if (name === "code") {
             setCodeStatus({ checking: false, exists: false, checked: false });
+            setShowValidity(false);
+            lastCheckedRef.current = { code: null };
         }
     };
 
@@ -185,11 +207,10 @@ const CreateDepartment = () => {
                                     name="code"
                                     value={form.code}
                                     onChange={handleChange}
-                                    onBlur={(e) => checkDepartmentCode(e.target.value)}
                                     placeholder="e.g. CSE"
                                 />
 
-                                {(codeStatus.checked || codeStatus.checking) && (
+                                {showValidity && (codeStatus.checked || codeStatus.checking) && (
                                     <p
                                         className={`text-xs mt-1 ${codeStatus.exists ? "text-red-500" : "text-green-600"
                                             }`}

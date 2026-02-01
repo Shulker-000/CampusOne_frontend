@@ -40,6 +40,17 @@ const InstitutionBranches = () => {
         departmentId: "",
     });
 
+    // code validity
+    const [codeStatus, setCodeStatus] = useState({
+        checking: false,
+        exists: false,
+        checked: false,
+    });
+
+    const [showValidity, setShowValidity] = useState(false);
+    const lastCheckedRef = React.useRef({ code: null });
+
+
     // ================= FETCH =================
     const fetchData = async () => {
         if (!institutionId) return;
@@ -76,6 +87,19 @@ const InstitutionBranches = () => {
     useEffect(() => {
         fetchData();
     }, [institutionId]);
+
+    useEffect(() => {
+        if (!editBranch) return;
+
+        const code = form.code.trim();
+        if (!code || !institutionId) return;
+
+        if (lastCheckedRef.current.code === code) return;
+
+        lastCheckedRef.current = { code };
+        checkBranchCode(code);
+    }, [form.code]);
+
 
     // ================= HELPERS =================
     const departmentById = useMemo(() => {
@@ -173,11 +197,24 @@ const InstitutionBranches = () => {
             departmentId: branch.departmentId || "",
         });
         setEditBranch(branch);
+        setCodeStatus({ checking: false, exists: false, checked: false });
+        setShowValidity(false);
+        lastCheckedRef.current = { code: null };
     };
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setForm((p) => ({ ...p, [name]: value }));
+        setForm((p) => ({
+            ...p,
+            [name]: name === "code" ? value.toUpperCase() : value,
+        }));
+
+        if (name === "code") {
+            setCodeStatus({ checking: false, exists: false, checked: false });
+            setShowValidity(false);
+            lastCheckedRef.current = { code: null };
+        }
+
     };
 
     const saveEdit = async () => {
@@ -185,6 +222,11 @@ const InstitutionBranches = () => {
 
         if (!name || !code || !departmentId) {
             toast.error("All fields are required");
+            return;
+        }
+
+        if (codeStatus.exists) {
+            toast.error("Branch code already exists");
             return;
         }
 
@@ -216,6 +258,48 @@ const InstitutionBranches = () => {
             setSaving(false);
         }
     };
+
+    const checkBranchCode = async (code) => {
+        const trimmed = code.trim();
+        if (!trimmed || !institutionId) return;
+
+        // editing same code → skip
+        if (editBranch && trimmed === editBranch.code) {
+            setCodeStatus({ checking: false, exists: false, checked: true });
+            setShowValidity(true);
+            return;
+        }
+
+        try {
+            setCodeStatus({ checking: true, exists: false, checked: false });
+
+            const res = await fetch(
+                `${import.meta.env.VITE_BACKEND_URL}/api/branches/code-exists`,
+                {
+                    method: "POST",
+                    credentials: "include",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        institutionId,
+                        code: trimmed,
+                    }),
+                }
+            );
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message);
+
+            setCodeStatus({
+                checking: false,
+                exists: Boolean(data?.data?.exists),
+                checked: true,
+            });
+            setShowValidity(true);
+        } catch {
+            setCodeStatus({ checking: false, exists: false, checked: false });
+        }
+    };
+
 
     if (loading) return <Loader />;
 
@@ -307,12 +391,34 @@ const InstitutionBranches = () => {
                 title="Edit Branch"
                 confirmText="Save Changes"
                 loading={saving}
+                disabled={codeStatus.exists || codeStatus.checking}
                 onClose={() => setEditBranch(null)}
                 onConfirm={saveEdit}
             >
                 <div className="grid sm:grid-cols-2 gap-4">
                     <Field label="Branch Name" name="name" value={form.name} onChange={handleChange} />
-                    <Field label="Branch Code" name="code" value={form.code} onChange={handleChange} />
+
+                    <div>
+                        <Field
+                            label="Branch Code"
+                            name="code"
+                            value={form.code}
+                            onChange={handleChange}
+                        />
+
+                        {showValidity && (codeStatus.checked || codeStatus.checking) && (
+                            <p
+                                className={`text-xs mt-1 ${codeStatus.exists ? "text-red-500" : "text-green-600"
+                                    }`}
+                            >
+                                {codeStatus.checking
+                                    ? "Checking availability..."
+                                    : codeStatus.exists
+                                        ? "Branch code already exists"
+                                        : "Branch code available"}
+                            </p>
+                        )}
+                    </div>
 
                     <div className="sm:col-span-2 space-y-1">
                         <label className="text-xs font-bold uppercase text-[var(--muted-text)]">

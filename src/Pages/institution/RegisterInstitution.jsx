@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -35,16 +35,54 @@ const RegisterInstitution = () => {
     type: "",
   });
 
-  const handleChange = (e) =>
-    setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
+  const [codeStatus, setCodeStatus] = useState({
+    checking: false,
+    exists: false,
+    checked: false,
+  });
+
+  const [showValidity, setShowValidity] = useState(false);
+  const lastCheckedRef = useRef(null);
+
+  const abortRef = useRef(null);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm((p) => ({
+      ...p,
+      [name]: name === "code" ? value.toUpperCase() : value,
+    }));
+
+    if (name === "code") {
+  if (value.trim().length < 2) {
+    setCodeStatus({ checking: false, exists: false, checked: false });
+    lastCheckedRef.current = null;
+  }
+}
+  };
 
   const validateStep = () => {
+
     if (step === 1) {
+      // 1. enforce code check completion
+      if (!codeStatus.checked) {
+        toast.warn("Please wait for institution code validation");
+        return false;
+      }
+
+      // 2. enforce uniqueness
+      if (codeStatus.exists) {
+        toast.warn("Institution code already exists");
+        return false;
+      }
+
       const { name, code, address, establishedYear, type } = form;
+
       if (!name.trim() || !code.trim() || !address.trim() || !type.trim()) {
         toast.warn("Complete all institution details");
         return false;
       }
+
       const y = Number(establishedYear);
       const currentYear = new Date().getFullYear();
       if (!y || y < 1800 || y > currentYear) {
@@ -121,6 +159,80 @@ const RegisterInstitution = () => {
     }
   };
 
+const checkInstitutionCode = async (code) => {
+  const trimmed = code.trim();
+  if (!trimmed) return;
+
+  if (lastCheckedRef.current === trimmed) return;
+  lastCheckedRef.current = trimmed;
+
+
+    // cancel previous request
+    if (abortRef.current) {
+      abortRef.current.abort();
+    }
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    setCodeStatus({ checking: true, exists: false, checked: false });
+
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/api/institutions/code-exists`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: trimmed }),
+          signal: controller.signal,
+        }
+      );
+
+      const data = await res.json();
+
+      // stale response guard
+      if (form.code.trim() !== trimmed) return;
+
+      if (!res.ok) {
+        setCodeStatus({ checking: false, exists: false, checked: false });
+        return;
+      }
+
+      setCodeStatus({
+        checking: false,
+        exists: Boolean(data?.data?.exists),
+        checked: true,
+      });
+      setShowValidity(true);
+
+    } catch (err) {
+      if (err.name === "AbortError") return;
+      setCodeStatus({ checking: false, exists: false, checked: false });
+    } finally {
+  abortRef.current = null;
+}
+
+  };
+
+
+  useEffect(() => {
+    const code = form.code.trim();
+
+   if (code.length < 2) {
+  lastCheckedRef.current = null;
+  setCodeStatus({ checking: false, exists: false, checked: false });
+  setShowValidity(false);
+  return;
+}
+
+
+    checkInstitutionCode(code);
+
+    return () => {
+      if (abortRef.current) abortRef.current.abort();
+    };
+  }, [form.code]);
+
   return (
     <section className="relative min-h-screen flex items-center bg-linear-to-br from-indigo-50 via-white to-emerald-50 py-12">
       <div className="absolute -top-32 -left-32 w-md h-md bg-indigo-200/40 rounded-full blur-3xl" />
@@ -186,14 +298,30 @@ const RegisterInstitution = () => {
                         placeholder="Name"
                       />
 
-                      <Input
-                        label="Institution Code"
-                        icon={Hash}
-                        name="code"
-                        value={form.code}
-                        onChange={handleChange}
-                        placeholder="CODE"
-                      />
+                      <div>
+                        <Input
+                          label="Institution Code"
+                          icon={Hash}
+                          name="code"
+                          value={form.code}
+                          onChange={handleChange}
+                          placeholder="CODE"
+                        />
+
+                        {showValidity && (codeStatus.checking || codeStatus.checked) && (
+                          <p
+                            className={`text-xs mt-1 ${codeStatus.exists ? "text-red-500" : "text-green-600"
+                              }`}
+                          >
+                            {codeStatus.checking
+                              ? "Checking availability..."
+                              : codeStatus.exists
+                                ? "Institution code already exists"
+                                : "Institution code available"}
+                          </p>
+                        )}
+
+                      </div>
 
                       <Input
                         label="Address"
@@ -231,27 +359,27 @@ const RegisterInstitution = () => {
                   <Section title="Official Contact">
                     <div className="grid sm:grid-cols-2 gap-4">
                       <Input
-  label="Contact Email"
-  icon={Mail}
-  name="contactEmail"
-  value={form.contactEmail}
-  onChange={handleChange}
-  placeholder="admin@abc.edu"
-/>
+                        label="Contact Email"
+                        icon={Mail}
+                        name="contactEmail"
+                        value={form.contactEmail}
+                        onChange={handleChange}
+                        placeholder="admin@abc.edu"
+                      />
 
-<Input
-  label="Contact Phone"
-  icon={Phone}
-  name="contactPhone"
-  value={form.contactPhone}
-  onChange={(e) =>
-    setForm((p) => ({
-      ...p,
-      contactPhone: e.target.value.replace(/\D/g, "").slice(0, 10),
-    }))
-  }
-  placeholder="9876543210"
-/>
+                      <Input
+                        label="Contact Phone"
+                        icon={Phone}
+                        name="contactPhone"
+                        value={form.contactPhone}
+                        onChange={(e) =>
+                          setForm((p) => ({
+                            ...p,
+                            contactPhone: e.target.value.replace(/\D/g, "").slice(0, 10),
+                          }))
+                        }
+                        placeholder="9876543210"
+                      />
 
                     </div>
                   </Section>
@@ -262,14 +390,14 @@ const RegisterInstitution = () => {
                 <Step>
                   <Section title="Security">
                     <PasswordInput
-  label="Set Password"
-  name="password"
-  value={form.password}
-  onChange={handleChange}
-  showPassword={showPassword}
-  setShowPassword={setShowPassword}
-  placeholder="Minimum 6 characters"
-/>
+                      label="Set Password"
+                      name="password"
+                      value={form.password}
+                      onChange={handleChange}
+                      showPassword={showPassword}
+                      setShowPassword={setShowPassword}
+                      placeholder="Minimum 6 characters"
+                    />
 
                   </Section>
                 </Step>
@@ -291,14 +419,22 @@ const RegisterInstitution = () => {
                 <button
                   type="button"
                   onClick={nextStep}
-                  className="w-full py-3 rounded-xl bg-indigo-600 text-white font-semibold"
+                  disabled={
+  codeStatus.checking ||
+  (showValidity && !codeStatus.checked) ||
+  codeStatus.exists
+}
+
+                  className="w-full py-3 rounded-xl bg-indigo-600 text-white font-semibold disabled:opacity-60"
                 >
                   Next
                 </button>
+
+
               ) : (
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={codeStatus.exists || codeStatus.checking}
                   className="w-full py-3 rounded-xl bg-indigo-600 text-white font-semibold disabled:opacity-60"
                 >
                   {loading ? (
