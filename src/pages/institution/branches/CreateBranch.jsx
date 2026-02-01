@@ -131,7 +131,7 @@ const CreateBranch = () => {
             setLoading(true);
 
             const res = await fetch(
-                `${import.meta.env.VITE_BACKEND_URL}/api/branches/institutions/${institutionId}/branches`,
+                `${import.meta.env.VITE_BACKEND_URL}/api/branches/institutions/${institutionId}`,
                 {
                     method: "POST",
                     credentials: "include",

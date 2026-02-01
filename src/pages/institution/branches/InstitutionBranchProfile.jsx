@@ -1,51 +1,37 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
-import { motion } from "framer-motion";
-import { ArrowLeft, Save, Loader2, Layers } from "lucide-react";
-import Loader from "../../../components/Loader.jsx"
+import { ArrowLeft } from "lucide-react";
+
+import Loader from "../../../components/Loader";
 
 const InstitutionBranchProfile = () => {
     const navigate = useNavigate();
     const { branchId } = useParams();
 
-    const institutionId = useSelector((s) => s.auth.institution.data?._id);
-
     const [loading, setLoading] = useState(true);
-    const [saving, setSaving] = useState(false);
-
     const [branch, setBranch] = useState(null);
+    const [department, setDepartment] = useState(null);
 
-    const [departments, setDepartments] = useState([]);
-    const [departmentsLoading, setDepartmentsLoading] = useState(true);
-
-    const [form, setForm] = useState({
-        name: "",
-        code: "",
-        departmentId: "",
-    });
+    /* ================= FETCH ================= */
 
     const fetchBranch = async () => {
         try {
             setLoading(true);
 
             const res = await fetch(
-                `${import.meta.env.VITE_BACKEND_URL}/api/branches/branches/${branchId}`,
+                `${import.meta.env.VITE_BACKEND_URL}/api/branches/${branchId}`,
                 { credentials: "include" }
             );
 
             const data = await res.json();
             if (!res.ok) throw new Error(data.message || "Failed to fetch branch");
 
-            const b = data.data;
-            setBranch(b);
+            setBranch(data.data);
 
-            setForm({
-                name: b?.name || "",
-                code: b?.code || "",
-                departmentId: b?.departmentId || "",
-            });
+            if (data.data?.departmentId) {
+                fetchDepartment(data.data.departmentId);
+            }
         } catch (err) {
             toast.error(err.message || "Failed to load branch");
         } finally {
@@ -53,189 +39,151 @@ const InstitutionBranchProfile = () => {
         }
     };
 
-    const fetchDepartments = async () => {
-        if (!institutionId) return;
-
+    const fetchDepartment = async (departmentId) => {
         try {
-            setDepartmentsLoading(true);
-
             const res = await fetch(
-                `${import.meta.env.VITE_BACKEND_URL}/api/departments/institution/${institutionId}`,
+                `${import.meta.env.VITE_BACKEND_URL}/api/departments/${departmentId}`,
                 { credentials: "include" }
             );
 
             const data = await res.json();
-            setDepartments(Array.isArray(data.data) ? data.data : []);
+            if (!res.ok) throw new Error(data.message);
+
+            setDepartment(data.data);
         } catch (err) {
-            toast.error("Failed to fetch departments");
-        } finally {
-            setDepartmentsLoading(false);
+            toast.error(err.message || "Failed to load department");
         }
     };
 
     useEffect(() => {
         if (!branchId) return;
         fetchBranch();
-        fetchDepartments();
-    }, [branchId, institutionId]);
+    }, [branchId]);
 
-    const departmentById = useMemo(() => {
-        const map = new Map();
-        departments.forEach((d) => map.set(d._id, d));
-        return map;
-    }, [departments]);
-
-    const currentDept = form.departmentId ? departmentById.get(form.departmentId) : null;
-
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-
-        setForm((p) => ({
-            ...p,
-            [name]: name === "code" ? value.toUpperCase() : value,
-        }));
-    };
-
-    const handleSave = async () => {
-        const { name, code, departmentId } = form;
-
-        if (!name.trim() || !code.trim() || !departmentId) {
-            toast.error("All fields are required");
-            return;
-        }
-
-        try {
-            setSaving(true);
-
-            const res = await fetch(
-                `${import.meta.env.VITE_BACKEND_URL}/api/branches/branches/${branchId}`,
-                {
-                    method: "PUT",
-                    credentials: "include",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        name: name.trim(),
-                        code: code.trim(),
-                        departmentId,
-                    }),
-                }
-            );
-
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.message || "Update failed");
-
-            toast.success("Branch updated");
-            navigate("/institution/branches", { replace: true });
-        } catch (err) {
-            toast.error(err.message || "Update failed");
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    if (loading) {
-        return (
-            <Loader />
-        );
-    }
-
+    if (loading) return <Loader />;
     if (!branch) return null;
 
+    /* ================= UI ================= */
+
     return (
-        <div className="min-h-screen w-full bg-[var(--bg)] text-[var(--text)] px-4 sm:px-6 lg:px-10 py-8">
-            <div className="w-full">
-                {/* Top Bar */}
-                <div className="flex items-center justify-between gap-4 mb-6">
-                    <button
-                        onClick={() => navigate(-1)}
-                        className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--text)] hover:opacity-80 transition"
-                        type="button"
-                    >
-                        <ArrowLeft size={18} />
-                        Back
-                    </button>
+        <div className="px-6 py-8 max-w-6xl">
 
-                    <button
-                        onClick={handleSave}
-                        disabled={saving}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--accent)] text-white font-semibold hover:opacity-90 transition disabled:opacity-60"
-                        type="button"
-                    >
-                        {saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
-                        Save Changes
-                    </button>
-                </div>
-
-                <motion.div
-                    initial={{ opacity: 0, y: 14 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="w-full"
+            {/* ===== Header ===== */}
+            <div className="mb-8">
+                <button
+                    onClick={() => navigate(-1)}
+                    className="flex items-center gap-2 text-sm font-semibold text-[var(--muted-text)] hover:text-[var(--text)]"
                 >
-                    <h1 className="text-xl font-bold text-[var(--text)]">Branch Profile</h1>
+                    <ArrowLeft size={18} />
+                    Back
+                </button>
 
-                    <div className="mt-6 grid sm:grid-cols-2 gap-4 max-w-4xl">
-                        <Field label="Branch Name" name="name" value={form.name} onChange={handleChange} />
-                        <Field label="Branch Code" name="code" value={form.code} onChange={handleChange} />
+                <h1 className="mt-4 text-3xl font-bold">
+                    {branch.name}
+                </h1>
 
-                        {/* Department Select */}
-                        <div className="sm:col-span-2 space-y-1">
-                            <label className="text-xs font-bold text-[var(--muted-text)] uppercase tracking-wider">
-                                Department
-                            </label>
+            </div>
 
-                            <div className="relative">
-                                <Layers className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--muted-text)]" />
+            {/* ===== Branch Overview ===== */}
+            <section className="border-t border-[var(--border)] pt-8 pb-10">
+                <div
+                    className="
+                        relative bg-[var(--surface)]
+                        border border-[var(--border)]
+                        rounded-2xl px-6 py-7
+                    "
+                >
+                    {/* accent rail (same language as dept) */}
+                    <div className="absolute left-0 top-0 h-full w-[3px] bg-[var(--accent)] rounded-l-2xl" />
 
-                                <select
-                                    name="departmentId"
-                                    value={form.departmentId}
-                                    onChange={handleChange}
-                                    disabled={departmentsLoading}
-                                    className="w-full rounded-xl border border-[var(--border)] pl-10 pr-4 py-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500 bg-[var(--surface-2)] text-[var(--text)] disabled:opacity-60"
-                                >
-                                    <option value="">
-                                        {departmentsLoading ? "Loading departments..." : "Select department"}
-                                    </option>
+                    {/* Header */}
+                    <div className="mb-6 pl-3">
+                        <h2 className="text-base font-bold text-[var(--text)]">
+                            Branch Overview:
+                        </h2>
+                    </div>
 
-                                    {departments.map((d) => (
-                                        <option key={d._id} value={d._id}>
-                                            {d.name} ({d.code})
-                                        </option>
-                                    ))}
-                                </select>
+                    {/* ===== Info Grid ===== */}
+                    <div className="relative pl-3">
+                        <div className="grid sm:grid-cols-2 gap-x-10 gap-y-6">
+
+                            {/* vertical divider */}
+                            <div
+                                className="
+                                    hidden sm:block
+                                    absolute
+                                    left-1/2
+                                    top-1
+                                    bottom-1
+                                    w-[2px]
+                                    bg-[var(--text)]
+                                "
+                            />
+
+                            {/* Branch Code */}
+                            <div className="pr-8">
+                                <Info
+                                    label="Branch Code"
+                                    value={branch.code}
+                                />
                             </div>
 
-                            {currentDept && (
-                                <p className="text-[11px] text-[var(--muted-text)]">
-                                    Current department:{" "}
-                                    <span className="font-semibold text-[var(--text)]">
-                                        {currentDept.name}
-                                    </span>
+                            {/* Department */}
+                            <div className="sm:pl-8">
+                                <p className="text-xs uppercase tracking-wider text-[var(--muted-text)] font-semibold">
+                                    Department
                                 </p>
-                            )}
+
+                                {department ? (
+                                    <button
+                                        onClick={() =>
+                                            navigate(
+                                                `/institution/departments/profile/${department._id}`
+                                            )
+                                        }
+                                        className="
+                                            mt-1.5 text-lg font-bold
+                                            text-[var(--accent)]
+                                            hover:underline
+                                            underline-offset-4
+                                        "
+                                    >
+                                        {department.name}
+                                    </button>
+                                ) : (
+                                    <p className="mt-1.5 text-lg font-bold text-[var(--muted-text)]">
+                                        Loading...
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Status */}
+                            <div className="pr-8">
+                                <Info
+                                    label="Status"
+                                    value={branch.isOpen ? "Open" : "Closed"}
+                                />
+                            </div>
+
                         </div>
                     </div>
-                </motion.div>
-            </div>
+                </div>
+            </section>
         </div>
     );
 };
 
-const Field = ({ label, ...props }) => {
-    return (
-        <div className="space-y-1">
-            <label className="text-xs font-bold text-[var(--muted-text)] uppercase tracking-wider">
-                {label}
-            </label>
-            <input
-                {...props}
-                className="w-full rounded-xl border border-[var(--border)] px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500 bg-[var(--surface-2)] text-[var(--text)] placeholder:text-[var(--muted-text)]"
-            />
-        </div>
-    );
-};
+/* ================= Small Info Component ================= */
+
+const Info = ({ label, value }) => (
+    <div>
+        <p className="text-xs uppercase tracking-wider text-[var(--muted-text)] font-semibold">
+            {label}
+        </p>
+        <p className="mt-1.5 text-lg font-bold text-[var(--text)]">
+            {value || "—"}
+        </p>
+    </div>
+);
 
 export default InstitutionBranchProfile;
