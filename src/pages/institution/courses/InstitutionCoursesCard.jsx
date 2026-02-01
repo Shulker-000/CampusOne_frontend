@@ -8,6 +8,7 @@ import {
     Ban,
     Loader2,
     Pencil,
+    CheckCircle2,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -15,11 +16,15 @@ const InstitutionCoursesCard = ({
     course,
     onEdit,
     onDelete,
+    onFinish,
     onToggleStatus,
     isStatusUpdating,
     showEdit = true,
     showDelete = true,
     showToggleStatus = true,
+    showFinish = false,
+    batch,
+    showBatch = false,
 }) => {
     const navigate = useNavigate();
 
@@ -58,6 +63,18 @@ const InstitutionCoursesCard = ({
                     className="flex items-center gap-2"
                     onClick={(e) => e.stopPropagation()}
                 >
+                    {showFinish && (
+                        <button
+                            onClick={onFinish}
+                            className="p-2 rounded-xl border
+                            bg-[var(--surface-2)]
+                            hover:opacity-80"
+                            title="Finish course"
+                        >
+                            <CheckCircle2 size={16} />
+                        </button>
+                    )}
+
                     {/* STATUS TOGGLE */}
                     {showToggleStatus && <button
                         type="button"
@@ -141,6 +158,13 @@ const InstitutionCoursesCard = ({
                     {course.isOpen ? <BadgeCheck size={14} /> : <Ban size={14} />}
                     {course.isOpen ? "Open" : "Closed"}
                 </span>
+                {showBatch && <span
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded-lg
+                text-xs font-bold border bg-[var(--surface-2)]
+                border-[var(--border)]"
+                >
+                    Batch: {course.batch || "N/A"}
+                </span>}
 
                 <span
                     className="inline-flex items-center gap-1 px-2 py-1 rounded-lg
@@ -150,6 +174,7 @@ const InstitutionCoursesCard = ({
                     <GraduationCap size={14} />
                     Sem: {course.semester ?? "N/A"}
                 </span>
+
             </div>
 
             {/* DETAILS */}
