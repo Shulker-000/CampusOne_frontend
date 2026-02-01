@@ -11,6 +11,7 @@ import {
   GraduationCap,
   Building2,
   Loader2,
+  Plus,
 } from "lucide-react";
 
 const CreateCourse = () => {
@@ -29,7 +30,14 @@ const CreateCourse = () => {
     code: "",
     credits: "",
     semester: "",
+    evaluationScheme: "",
+    components: [],
   });
+
+  const SCHEME_EXAMS = {
+    MID_END: ["MID", "INTERNALS", "END"],
+    CT_END: ["CT1", "CT2", "INTERNALS", "END"],
+  };
 
   const [showValidity, setShowValidity] = useState(false);
 
@@ -141,15 +149,69 @@ const CreateCourse = () => {
     }
   };
 
+  const addComponent = (exam, type) => {
+    setForm((p) => {
+      const exists = p.components.some(
+        (c) => c.name === exam && c.type === type
+      );
+      if (exists) return p;
+
+      return {
+        ...p,
+        components: [
+          ...p.components,
+          { name: exam, type, maxMarks: "", weightage: "" },
+        ],
+      };
+    });
+  };
+
+  const updateComponent = (exam, type, key, value) => {
+    setForm((p) => ({
+      ...p,
+      components: p.components.map((c) =>
+        c.name === exam && c.type === type ? { ...c, [key]: value } : c
+      ),
+    }));
+  };
+
+  const removeComponent = (exam, type) => {
+    setForm((p) => ({
+      ...p,
+      components: p.components.filter(
+        (c) => !(c.name === exam && c.type === type)
+      ),
+    }));
+  };
+
 
   // ========= SUBMIT =========
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const { departmentId, name, code, credits, semester } = form;
+    const {
+      departmentId,
+      name,
+      code,
+      credits,
+      semester,
+      evaluationScheme,
+      components,
+    } = form;
 
-    if (!departmentId || !name.trim() || !code.trim() || credits === "" || !semester.trim()) {
+    if (
+      !departmentId ||
+      !name.trim() ||
+      !code.trim() ||
+      credits === "" ||
+      !semester.trim()
+    ) {
       toast.error("All fields are required");
+      return;
+    }
+
+    if (!evaluationScheme) {
+      toast.error("Select evaluation scheme");
       return;
     }
 
@@ -158,6 +220,45 @@ const CreateCourse = () => {
       toast.error("Credits must be a valid non-negative number");
       return;
     }
+
+    // Optional but strongly recommended
+    if (components.length === 0) {
+      toast.error("Add at least one evaluation component");
+      return;
+    }
+
+    const totalWeightage = components.reduce(
+      (sum, c) => sum + Number(c.weightage || 0),
+      0
+    );
+
+    if (totalWeightage !== 100) {
+      toast.error("Total weightage must be exactly 100%");
+      return;
+    }
+
+    for (const c of components) {
+      if (!c.maxMarks || Number(c.maxMarks) <= 0) {
+        toast.error(`Invalid max marks for ${c.name} (${c.type})`);
+        return;
+      }
+    }
+
+
+    const payload = {
+      departmentId,
+      name: name.trim(),
+      code: code.trim(),
+      credits: creditsNum,
+      semester: semester.trim(),
+      evaluationScheme,
+      components: components.map((c) => ({
+        name: c.name,
+        type: c.type,
+        maxMarks: Number(c.maxMarks),
+        weightage: Number(c.weightage),
+      })),
+    };
 
     try {
       setLoading(true);
@@ -170,13 +271,7 @@ const CreateCourse = () => {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            departmentId,
-            name: name.trim(),
-            code: code.trim(),
-            credits: creditsNum,
-            semester: semester.trim(),
-          }),
+          body: JSON.stringify(payload),
         }
       );
 
@@ -304,6 +399,117 @@ const CreateCourse = () => {
               onChange={handleChange}
               placeholder="e.g. 3"
             />
+
+            {/* Evaluation Scheme */}
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-[var(--muted-text)]">
+                Evaluation Scheme
+              </label>
+
+              <select
+                value={form.evaluationScheme}
+                onChange={(e) =>
+                  setForm((p) => ({
+                    ...p,
+                    evaluationScheme: e.target.value,
+                    components: [],
+                  }))
+                }
+                className="w-full rounded-xl border border-[var(--border)] px-4 py-2.5 text-sm outline-none
+    focus:ring-2 focus:ring-indigo-500 bg-[var(--surface-2)] text-[var(--text)]"
+              >
+                <option value="">Select</option>
+                <option value="MID_END">Mid Sem</option>
+                <option value="CT_END">CT End</option>
+              </select>
+            </div>
+
+            {form.evaluationScheme &&
+              SCHEME_EXAMS[form.evaluationScheme].map((exam) => {
+                const theory = form.components.find(
+                  (c) => c.name === exam && c.type === "THEORY"
+                );
+                const lab = form.components.find(
+                  (c) => c.name === exam && c.type === "LAB"
+                );
+
+                return (
+                  <div key={exam} className="space-y-2 border border-[var(--border)] rounded-xl p-4">
+                    <div className="text-sm font-semibold text-[var(--text)]">
+                      {exam}
+                    </div>
+
+                    {!theory && (
+                      <button
+                        type="button"
+                        onClick={() => addComponent(exam, "THEORY")}
+                        className="text-xs text-indigo-400 flex items-center gap-1"
+                      >
+                        <Plus size={12} />
+                        Add Theory
+                      </button>
+
+                    )}
+
+                    {theory && (
+                      <div className="grid grid-cols-2 gap-3">
+                        <input
+                          type="number"
+                          placeholder="Theory max marks"
+                          value={theory.maxMarks}
+                          onChange={(e) =>
+                            updateComponent(exam, "THEORY", "maxMarks", e.target.value)
+                          }
+                          className="rounded-lg bg-[var(--surface-2)] px-3 py-2 text-sm"
+                        />
+                        <input
+                          type="number"
+                          placeholder="Theory weightage %"
+                          value={theory.weightage}
+                          onChange={(e) =>
+                            updateComponent(exam, "THEORY", "weightage", e.target.value)
+                          }
+                          className="rounded-lg bg-[var(--surface-2)] px-3 py-2 text-sm"
+                        />
+                      </div>
+                    )}
+
+                    {!lab && (
+                      <button
+                        type="button"
+                        onClick={() => addComponent(exam, "LAB")}
+                       className="text-xs text-indigo-400 flex items-center gap-1"
+                      >
+                        <Plus size={12} />
+                        Add Lab
+                      </button>
+                    )}
+
+                    {lab && (
+                      <div className="grid grid-cols-2 gap-3">
+                        <input
+                          type="number"
+                          placeholder="Lab max marks"
+                          value={lab.maxMarks}
+                          onChange={(e) =>
+                            updateComponent(exam, "LAB", "maxMarks", e.target.value)
+                          }
+                          className="rounded-lg bg-[var(--surface-2)] px-3 py-2 text-sm"
+                        />
+                        <input
+                          type="number"
+                          placeholder="Lab weightage %"
+                          value={lab.weightage}
+                          onChange={(e) =>
+                            updateComponent(exam, "LAB", "weightage", e.target.value)
+                          }
+                          className="rounded-lg bg-[var(--surface-2)] px-3 py-2 text-sm"
+                        />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
 
             <button
               disabled={loading || courseCodeStatus.exists || courseCodeStatus.checking}
