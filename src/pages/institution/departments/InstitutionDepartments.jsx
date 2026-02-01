@@ -157,9 +157,11 @@ const InstitutionDepartments = () => {
 
     // live availability check (onBlur)
     const checkDepartmentCode = async (code) => {
-        if (!code.trim()) return;
+        const trimmed = code.trim();
+        if (!trimmed || !institutionId) return;
 
-        if (editDept && code === editDept.code) {
+        // Editing same code - skip check
+        if (editDept && trimmed === editDept.code) {
             setCodeStatus({ checking: false, exists: false, checked: true });
             return;
         }
@@ -167,26 +169,33 @@ const InstitutionDepartments = () => {
         try {
             setCodeStatus({ checking: true, exists: false, checked: false });
 
-            const params = new URLSearchParams({
-                code: code.trim(),
-            });
-
             const res = await fetch(
-                `${import.meta.env.VITE_BACKEND_URL}/api/departments/code-exists?${params.toString()}`,
-                { credentials: "include" }
+                `${import.meta.env.VITE_BACKEND_URL}/api/departments/code-exists`,
+                {
+                    method: "POST",
+                    credentials: "include",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        institutionId,
+                        code: trimmed,
+                    }),
+                }
             );
 
             const data = await res.json();
+            if (!res.ok) throw new Error(data.message);
 
             setCodeStatus({
                 checking: false,
-                exists: data?.data?.exists === true,
+                exists: Boolean(data?.data?.exists),
                 checked: true,
             });
-        } catch {
+        } catch (e) {
+            console.error(e);
             setCodeStatus({ checking: false, exists: false, checked: false });
         }
     };
+
 
     const saveEdit = async () => {
         const { name, code, contactEmail } = form;
@@ -301,6 +310,7 @@ const InstitutionDepartments = () => {
                 title="Edit Department"
                 confirmText="Save Changes"
                 loading={saving}
+                disabled={codeStatus.exists || codeStatus.checking}
                 onClose={() => setEditDept(null)}
                 onConfirm={saveEdit}
             >

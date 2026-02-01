@@ -6,6 +6,7 @@ const EditModal = ({
   title,
   confirmText,
   loading,
+  disabled,
   onClose,
   onConfirm,
   children,
@@ -39,9 +40,13 @@ const EditModal = ({
 
           <button
             onClick={onConfirm}
-            disabled={loading}
-            className="px-4 py-2 rounded-xl bg-[var(--accent)] text-white font-semibold flex items-center gap-2"
+            disabled={loading || disabled}
+            className={`px-4 py-2 rounded-xl font-semibold flex items-center gap-2 ${loading || disabled
+                        ? "opacity-50 cursor-not-allowed"
+                        : "bg-[var(--accent)] text-white"}
+                      `}
           >
+
             {loading && <Loader2 size={16} className="animate-spin" />}
             {confirmText}
           </button>
