@@ -250,7 +250,7 @@ const InstitutionDepartmentProfile = () => {
                         </p>
                     </div>
 
-                    {/* Info grid */}
+                    {/* ===== Primary Info Grid ===== */}
                     <div className="relative pl-3">
                         <div className="grid sm:grid-cols-2 gap-x-10 gap-y-6">
                             {/* vertical divider */}
@@ -266,8 +266,7 @@ const InstitutionDepartmentProfile = () => {
                                     "
                             />
 
-
-                            {/* Code */}
+                            {/* Department Code */}
                             <div className="pr-8">
                                 <p className="text-xs uppercase tracking-wider text-[var(--muted-text)] font-semibold">
                                     Department Code
@@ -277,8 +276,8 @@ const InstitutionDepartmentProfile = () => {
                                 </p>
                             </div>
 
-                            {/* Email */}
-                            <div className="pl-8">
+                            {/* Contact Email */}
+                            <div className="sm:pl-8">
                                 <p className="text-xs uppercase tracking-wider text-[var(--muted-text)] font-semibold">
                                     Contact Email
                                 </p>
@@ -288,10 +287,54 @@ const InstitutionDepartmentProfile = () => {
                             </div>
                         </div>
                     </div>
+
+                    {/* ===== Secondary Stats ===== */}
+                    <div className="mt-8 border-t border-[var(--border)] pt-6 pl-3">
+                        <p className="text-xs uppercase tracking-wider text-[var(--muted-text)] font-semibold mb-4">
+                            Department Stats
+                        </p>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                            <div className="bg-[var(--surface-2)] border border-[var(--border)] rounded-xl p-4">
+                                <p className="text-xs text-[var(--muted-text)] font-semibold">
+                                    Branches
+                                </p>
+                                <p className="mt-1 text-xl font-bold text-[var(--text)]">
+                                    {branches.length ?? 0}
+                                </p>
+                            </div>
+
+                            <div className="bg-[var(--surface-2)] border border-[var(--border)] rounded-xl p-4">
+                                <p className="text-xs text-[var(--muted-text)] font-semibold">
+                                    Faculties
+                                </p>
+                                <p className="mt-1 text-xl font-bold text-[var(--text)]">
+                                    {faculties.length ?? 0 ?? 0}
+                                </p>
+                            </div>
+
+                            <div className="bg-[var(--surface-2)] border border-[var(--border)] rounded-xl p-4">
+                                <p className="text-xs text-[var(--muted-text)] font-semibold">
+                                    Students
+                                </p>
+                                <p className="mt-1 text-xl font-bold text-[var(--text)]">
+                                    {department.totalStudents ?? 0}
+                                    {/* ======== ToDo ======== */}
+                                </p>
+                            </div>
+
+                            <div className="bg-[var(--surface-2)] border border-[var(--border)] rounded-xl p-4">
+                                <p className="text-xs text-[var(--muted-text)] font-semibold">
+                                    Courses
+                                </p>
+                                <p className="mt-1 text-xl font-bold text-[var(--text)]">
+                                    {courses.length ?? 0}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
-
-
 
 
             {/* ===== HOD ===== */}

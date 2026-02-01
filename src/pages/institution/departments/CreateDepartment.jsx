@@ -22,6 +22,12 @@ const CreateDepartment = () => {
         headOfDepartment: "", // optional
     });
 
+    const [codeStatus, setCodeStatus] = useState({
+        checking: false,
+        exists: false,
+        checked: false,
+    });
+
     const fetchFaculties = async () => {
         if (!institutionId) return;
 
@@ -46,11 +52,51 @@ const CreateDepartment = () => {
         }
     };
 
+    const checkDepartmentCode = async (code) => {
+        const trimmed = code.trim();
+        if (!trimmed || !institutionId) return;
+
+        try {
+            setCodeStatus({ checking: true, exists: false, checked: false });
+
+            const res = await fetch(
+                `${import.meta.env.VITE_BACKEND_URL}/api/departments/code-exists`,
+                {
+                    method: "POST",
+                    credentials: "include",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        institutionId,
+                        code: trimmed,
+                    }),
+                }
+            );
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message);
+
+            setCodeStatus({
+                checking: false,
+                exists: Boolean(data?.data?.exists),
+                checked: true,
+            });
+        } catch {
+            setCodeStatus({ checking: false, exists: false, checked: false });
+        }
+    };
+
     useEffect(() => {
         fetchFaculties();
     }, [institutionId]);
 
-    const handleChange = (e) => setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setForm((p) => ({ ...p, [name]: value }));
+
+        if (name === "code") {
+            setCodeStatus({ checking: false, exists: false, checked: false });
+        }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -132,14 +178,30 @@ const CreateDepartment = () => {
                                 placeholder="e.g. Computer Science"
                             />
 
-                            <Input
-                                label="Department Code"
-                                icon={Hash}
-                                name="code"
-                                value={form.code}
-                                onChange={handleChange}
-                                placeholder="e.g. CSE"
-                            />
+                            <div>
+                                <Input
+                                    label="Department Code"
+                                    icon={Hash}
+                                    name="code"
+                                    value={form.code}
+                                    onChange={handleChange}
+                                    onBlur={(e) => checkDepartmentCode(e.target.value)}
+                                    placeholder="e.g. CSE"
+                                />
+
+                                {(codeStatus.checked || codeStatus.checking) && (
+                                    <p
+                                        className={`text-xs mt-1 ${codeStatus.exists ? "text-red-500" : "text-green-600"
+                                            }`}
+                                    >
+                                        {codeStatus.checking
+                                            ? "Checking availability..."
+                                            : codeStatus.exists
+                                                ? "Department code already exists"
+                                                : "Department code available"}
+                                    </p>
+                                )}
+                            </div>
                         </div>
 
                         <Input
@@ -189,10 +251,11 @@ const CreateDepartment = () => {
                         </div>
 
                         <button
-                            disabled={loading}
-                            className="w-full mt-6 sm:w-1/2 md:w-1/3 py-3 rounded-xl bg-[var(--accent)] text-white font-semibold hover:opacity-90 transition disabled:opacity-60"
                             type="submit"
+                            disabled={loading || codeStatus.exists || codeStatus.checking}
+                            className="w-full mt-6 sm:w-1/2 md:w-1/3 py-3 rounded-xl bg-[var(--accent)] text-white font-semibold hover:opacity-90 transition disabled:opacity-60"
                         >
+
                             {loading ? "Creating..." : "Create Department"}
                         </button>
                     </form>
