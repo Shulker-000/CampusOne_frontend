@@ -21,6 +21,16 @@ const CreateBranch = () => {
         departmentId: "",
     });
 
+    const [codeStatus, setCodeStatus] = useState({
+        checking: false,
+        exists: false,
+        checked: false,
+    });
+
+    const [showValidity, setShowValidity] = useState(false);
+    const lastCheckedRef = React.useRef({ code: null });
+
+
     const fetchDepartments = async () => {
         if (!institutionId) return;
 
@@ -43,12 +53,66 @@ const CreateBranch = () => {
         }
     };
 
+    const checkBranchCode = async (code) => {
+        const trimmed = code.trim();
+        if (!trimmed || !institutionId) return;
+
+        try {
+            setCodeStatus({ checking: true, exists: false, checked: false });
+
+            const res = await fetch(
+                `${import.meta.env.VITE_BACKEND_URL}/api/branches/code-exists`,
+                {
+                    method: "POST",
+                    credentials: "include",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        institutionId,
+                        code: trimmed,
+                    }),
+                }
+            );
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message);
+
+            setCodeStatus({
+                checking: false,
+                exists: Boolean(data?.data?.exists),
+                checked: true,
+            });
+            setShowValidity(true);
+        } catch {
+            setCodeStatus({ checking: false, exists: false, checked: false });
+        }
+    };
+
+
     useEffect(() => {
         fetchDepartments();
     }, [institutionId]);
 
-    const handleChange = (e) =>
-        setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
+    useEffect(() => {
+        const code = form.code.trim();
+        if (!code || !institutionId) return;
+
+        if (lastCheckedRef.current.code === code) return;
+
+        lastCheckedRef.current = { code };
+        checkBranchCode(code);
+    }, [form.code]);
+
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setForm((p) => ({ ...p, [name]: value }));
+
+        if (name === "code") {
+            setCodeStatus({ checking: false, exists: false, checked: false });
+            setShowValidity(false);
+            lastCheckedRef.current = { code: null };
+        }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -124,14 +188,30 @@ const CreateBranch = () => {
                                 placeholder="e.g. Information Technology"
                             />
 
-                            <Input
-                                label="Branch Code"
-                                icon={Hash}
-                                name="code"
-                                value={form.code}
-                                onChange={handleChange}
-                                placeholder="e.g. IT"
-                            />
+                            <div>
+                                <Input
+                                    label="Branch Code"
+                                    icon={Hash}
+                                    name="code"
+                                    value={form.code}
+                                    onChange={handleChange}
+                                    placeholder="e.g. IT"
+                                />
+
+                                {showValidity && (codeStatus.checked || codeStatus.checking) && (
+                                    <p
+                                        className={`text-xs mt-1 ${codeStatus.exists ? "text-red-500" : "text-green-600"
+                                            }`}
+                                    >
+                                        {codeStatus.checking
+                                            ? "Checking availability..."
+                                            : codeStatus.exists
+                                                ? "Branch code already exists"
+                                                : "Branch code available"}
+                                    </p>
+                                )}
+                            </div>
+
                         </div>
 
                         {/* Department (required) */}
@@ -168,7 +248,7 @@ const CreateBranch = () => {
                         </div>
 
                         <button
-                            disabled={loading}
+                            disabled={loading || codeStatus.exists || codeStatus.checking}
                             className="w-full sm:w-1/2 md:w-1/3 py-3 rounded-xl bg-[var(--accent)] text-white font-semibold hover:opacity-90 transition disabled:opacity-60"
                             type="submit"
                         >
