@@ -60,7 +60,7 @@ const InstitutionBranches = () => {
 
             const [branchRes, deptRes] = await Promise.all([
                 fetch(
-                    `${import.meta.env.VITE_BACKEND_URL}/api/branches/institutions/${institutionId}/branches`,
+                    `${import.meta.env.VITE_BACKEND_URL}/api/branches/institutions/${institutionId}`,
                     { credentials: "include" }
                 ),
                 fetch(
@@ -134,7 +134,7 @@ const InstitutionBranches = () => {
             setDeleting(true);
 
             const res = await fetch(
-                `${import.meta.env.VITE_BACKEND_URL}/api/branches/branches/${confirmState.branch._id}`,
+                `${import.meta.env.VITE_BACKEND_URL}/api/branches/${confirmState.branch._id}`,
                 { method: "DELETE", credentials: "include" }
             );
 
@@ -164,7 +164,7 @@ const InstitutionBranches = () => {
             setStatusUpdatingId(branch._id);
 
             const res = await fetch(
-                `${import.meta.env.VITE_BACKEND_URL}/api/branches/branches/${branch._id}/status`,
+                `${import.meta.env.VITE_BACKEND_URL}/api/branches/${branch._id}/status`,
                 {
                     method: "PATCH",
                     credentials: "include",
@@ -234,7 +234,7 @@ const InstitutionBranches = () => {
             setSaving(true);
 
             const res = await fetch(
-                `${import.meta.env.VITE_BACKEND_URL}/api/branches/branches/${editBranch._id}`,
+                `${import.meta.env.VITE_BACKEND_URL}/api/branches/${editBranch._id}`,
                 {
                     method: "PUT",
                     credentials: "include",

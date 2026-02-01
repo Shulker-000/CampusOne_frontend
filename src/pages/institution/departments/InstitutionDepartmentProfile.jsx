@@ -73,7 +73,7 @@ const InstitutionDepartmentProfile = () => {
         try {
             setBranchesLoading(true);
             const res = await fetch(
-                `${import.meta.env.VITE_BACKEND_URL}/api/branches/departments/${departmentId}/branches`,
+                `${import.meta.env.VITE_BACKEND_URL}/api/branches/departments/${departmentId}`,
                 { credentials: "include" }
             );
             const data = await res.json();
@@ -223,9 +223,6 @@ const InstitutionDepartmentProfile = () => {
                 <h1 className="mt-4 text-3xl font-bold">
                     {department.name}
                 </h1>
-                <p className="text-sm text-[var(--muted-text)]">
-                    Department Profile
-                </p>
             </div>
 
             {/* ===== Department Info ===== */}
@@ -245,9 +242,6 @@ const InstitutionDepartmentProfile = () => {
                         <h2 className="text-base font-bold text-[var(--text)]">
                             Department Overview
                         </h2>
-                        <p className="text-sm text-[var(--muted-text)]">
-                            Core identity and official contact
-                        </p>
                     </div>
 
                     {/* ===== Primary Info Grid ===== */}
@@ -418,7 +412,7 @@ const InstitutionDepartmentProfile = () => {
                             <option value="">Select faculty</option>
                             {faculties.map((f) => (
                                 <option key={f._id} value={f._id}>
-                                    {f.userId?.name} - {f.designation || "N/A"}
+                                    {f.designation || "N/A"} {f.userId?.name}
                                 </option>
                             ))}
                         </select>
@@ -446,11 +440,8 @@ const InstitutionDepartmentProfile = () => {
                 <div className="flex items-center justify-between mb-4">
                     <div>
                         <h2 className="text-lg font-bold text-[var(--text)]">
-                            Integrated Branches
+                            Branches:
                         </h2>
-                        <p className="text-sm text-[var(--muted-text)]">
-                            All branches operating under this department
-                        </p>
                     </div>
 
                     {/* COUNT */}
@@ -497,11 +488,8 @@ const InstitutionDepartmentProfile = () => {
                 <div className="flex items-center justify-between mb-4">
                     <div>
                         <h2 className="text-lg font-bold text-[var(--text)]">
-                            Integrated Faculties
+                            Faculties:
                         </h2>
-                        <p className="text-sm text-[var(--muted-text)]">
-                            All faculties associated with this department
-                        </p>
                     </div>
 
                     {/* COUNT */}
@@ -548,11 +536,8 @@ const InstitutionDepartmentProfile = () => {
                 <div className="flex items-center justify-between mb-4">
                     <div>
                         <h2 className="text-lg font-bold text-[var(--text)]">
-                            Integrated Courses
+                            Courses:
                         </h2>
-                        <p className="text-sm text-[var(--muted-text)]">
-                            All courses offered under this department
-                        </p>
                     </div>
 
                     {/* COUNT */}
