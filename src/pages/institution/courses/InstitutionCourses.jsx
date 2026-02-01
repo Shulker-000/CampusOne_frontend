@@ -1,5 +1,5 @@
 // src/pages/institution/courses/InstitutionCourses.jsx
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
@@ -265,6 +265,17 @@ const InstitutionCourses = () => {
         departmentId: "",
     });
 
+    const [courseCodeStatus, setCourseCodeStatus] = useState({
+        checking: false,
+        exists: false,
+        checked: false,
+    });
+    const [showValidity, setShowValidity] = useState(true);
+    const lastCheckedRef = useRef({
+        code: null,
+        departmentId: null,
+    });
+
 
     const closeActionModal = () => {
         // Guard: if delete/status update is running, don't allow closing the modal
@@ -362,6 +373,23 @@ const InstitutionCourses = () => {
         fetchCoursesByInstitution();
     }, [institutionId]);
 
+    useEffect(() => {
+        const code = editForm.code.trim();
+        const dept = editForm.departmentId;
+
+        if (!code || !dept) return;
+
+        if (
+            lastCheckedRef.current.code === code &&
+            lastCheckedRef.current.departmentId === dept
+        ) {
+            return; // already validated
+        }
+
+        lastCheckedRef.current = { code, departmentId: dept };
+        checkCourseCode();
+    }, [editForm.code, editForm.departmentId]);
+
     // ========= Filtering =========
     const visibleCourses = useMemo(() => {
         const q = searchQuery.trim().toLowerCase();
@@ -453,7 +481,66 @@ const InstitutionCourses = () => {
     const handleEditChange = (e) => {
         const { name, value } = e.target;
         setEditForm((p) => ({ ...p, [name]: value }));
+
+        if (name === "code" || name === "departmentId") {
+            setCourseCodeStatus({ checking: false, exists: false, checked: false });
+        }
     };
+
+    const checkCourseCode = async () => {
+        const { code, departmentId } = editForm;
+
+        const trimmed = code.trim();
+        if (!trimmed || !departmentId) return;
+
+        // editing same code in same department
+        const originalDeptId =
+            editCourse?.departmentId?._id || editCourse?.departmentId;
+
+        if (
+            editCourse &&
+            trimmed === editCourse.code &&
+            String(departmentId) === String(originalDeptId)
+        ) {
+            setCourseCodeStatus({
+                checking: false,
+                exists: false,
+                checked: true,
+            });
+            return;
+        }
+
+
+        try {
+            setCourseCodeStatus({ checking: true, exists: false, checked: false });
+
+            const res = await fetch(
+                `${import.meta.env.VITE_BACKEND_URL}/api/courses/code-exists`,
+                {
+                    method: "POST",
+                    credentials: "include",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        departmentId,
+                        code: trimmed,
+                    }),
+                }
+            );
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message);
+
+            setCourseCodeStatus({
+                checking: false,
+                exists: Boolean(data?.data?.exists),
+                checked: true,
+            });
+            setShowValidity(true);
+        } catch {
+            setCourseCodeStatus({ checking: false, exists: false, checked: false });
+        }
+    };
+
 
     const saveEditCourse = async () => {
         if (!editCourse?._id) return;
@@ -489,8 +576,16 @@ const InstitutionCourses = () => {
 
             // update local list ONLY (no refetch)
             setCourses((prev) =>
-                prev.map((c) => (c._id === data.data._id ? data.data : c))
+                prev.map((c) =>
+                    c._id === data.data._id
+                        ? {
+                            ...c,        // keeps populated department
+                            ...data.data // updates name, code, departmentId, etc
+                        }
+                        : c
+                )
             );
+
 
             toast.success("Course updated");
             setEditCourse(null);
@@ -1880,9 +1975,11 @@ const InstitutionCourses = () => {
                 title="Edit Course"
                 confirmText="Save Changes"
                 loading={editSaving}
+                disabled={courseCodeStatus.exists || courseCodeStatus.checking}
                 onClose={() => !editSaving && setEditCourse(null)}
                 onConfirm={saveEditCourse}
             >
+
                 <div className="grid sm:grid-cols-2 gap-4">
                     <Field
                         label="Course Name"
@@ -1891,12 +1988,28 @@ const InstitutionCourses = () => {
                         onChange={handleEditChange}
                     />
 
-                    <Field
-                        label="Course Code"
-                        name="code"
-                        value={editForm.code}
-                        onChange={handleEditChange}
-                    />
+                    <div>
+                        <Field
+                            label="Course Code"
+                            name="code"
+                            value={editForm.code}
+                            onChange={handleEditChange}
+                        />
+
+                        {(courseCodeStatus.checked || courseCodeStatus.checking || showValidity) && (
+                            <p
+                                className={`text-xs mt-1 ${courseCodeStatus.exists ? "text-red-500" : "text-green-600"
+                                    }`}
+                            >
+                                {courseCodeStatus.checking
+                                    ? "Checking availability..."
+                                    : courseCodeStatus.exists
+                                        ? "Course code already exists"
+                                        : "Course code available"}
+                            </p>
+                        )}
+                    </div>
+
 
                     <div className="sm:col-span-2 space-y-1">
                         <label className="text-xs font-bold uppercase text-[var(--muted-text)]">
@@ -1911,7 +2024,6 @@ const InstitutionCourses = () => {
                                 onChange={handleEditChange}
                                 className="w-full rounded-xl border pl-10 pr-4 py-3 bg-[var(--surface-2)]"
                             >
-                                <option value="">Select department</option>
                                 {departments.map((d) => (
                                     <option key={d._id} value={d._id}>
                                         {d.name} ({d.code})
