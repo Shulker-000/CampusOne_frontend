@@ -108,7 +108,10 @@ const CreateDepartment = () => {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setForm((p) => ({ ...p, [name]: value }));
+        setForm((p) => ({
+            ...p,
+            [name]: name === "code" ? value.toUpperCase() : value,
+        }));
 
         if (name === "code") {
             setCodeStatus({ checking: false, exists: false, checked: false });

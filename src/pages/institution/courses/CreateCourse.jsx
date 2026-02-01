@@ -89,8 +89,10 @@ const CreateCourse = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    setForm((p) => ({ ...p, [name]: value }));
-
+    setForm((p) => ({
+      ...p,
+      [name]: name === "code" ? value.toUpperCase() : value,
+    }));
     // reset code validity when inputs affecting uniqueness change
     if (name === "code" || name === "departmentId") {
       setCourseCodeStatus({

@@ -204,7 +204,10 @@ const InstitutionBranches = () => {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setForm((p) => ({ ...p, [name]: value }));
+        setForm((p) => ({
+            ...p,
+            [name]: name === "code" ? value.toUpperCase() : value,
+        }));
 
         if (name === "code") {
             setCodeStatus({ checking: false, exists: false, checked: false });
@@ -394,7 +397,7 @@ const InstitutionBranches = () => {
             >
                 <div className="grid sm:grid-cols-2 gap-4">
                     <Field label="Branch Name" name="name" value={form.name} onChange={handleChange} />
-                    
+
                     <div>
                         <Field
                             label="Branch Code"

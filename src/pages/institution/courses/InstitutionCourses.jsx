@@ -480,8 +480,10 @@ const InstitutionCourses = () => {
 
     const handleEditChange = (e) => {
         const { name, value } = e.target;
-        setEditForm((p) => ({ ...p, [name]: value }));
-
+        setEditForm((p) => ({
+            ...p,
+            [name]: name === "code" ? value.toUpperCase() : value,
+        }));
         if (name === "code" || name === "departmentId") {
             setCourseCodeStatus({ checking: false, exists: false, checked: false });
         }

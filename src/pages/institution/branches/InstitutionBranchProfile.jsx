@@ -32,7 +32,7 @@ const InstitutionBranchProfile = () => {
 
             const res = await fetch(
                 `${import.meta.env.VITE_BACKEND_URL}/api/branches/branches/${branchId}`,
-                { credentials: "include"}
+                { credentials: "include" }
             );
 
             const data = await res.json();
@@ -87,8 +87,14 @@ const InstitutionBranchProfile = () => {
 
     const currentDept = form.departmentId ? departmentById.get(form.departmentId) : null;
 
-    const handleChange = (e) =>
-        setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+
+        setForm((p) => ({
+            ...p,
+            [name]: name === "code" ? value.toUpperCase() : value,
+        }));
+    };
 
     const handleSave = async () => {
         const { name, code, departmentId } = form;
