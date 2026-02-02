@@ -59,7 +59,7 @@ export default function InstitutionProfile() {
     const navigate = useNavigate();
     const fileInputRef = useRef(null);
 
-    const { tokens, logoutInstitution } = useAuth();
+    const { logoutInstitution } = useAuth();
 
     const [institution, setInstitution] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -79,12 +79,6 @@ export default function InstitutionProfile() {
     useEffect(() => {
         const fetchInstitution = async () => {
             try {
-                if (!tokens.institutionToken) {
-                    setLoading(false);
-                    toast.error("Not logged in");
-                    navigate("/institution/login", { replace: true });
-                    return;
-                }
 
                 const res = await fetch(
                     `${import.meta.env.VITE_BACKEND_URL}/api/institutions/current-institution`,
@@ -112,7 +106,7 @@ export default function InstitutionProfile() {
         };
 
         fetchInstitution();
-    }, [navigate, tokens.institutionToken, logoutInstitution]);
+    }, [navigate, logoutInstitution]);
 
     /* ================= CLOCK ================= */
 
@@ -138,12 +132,7 @@ export default function InstitutionProfile() {
     const handleSendVerificationEmail = async () => {
         setIsVerifying(true);
         try {
-            if (!tokens.institutionToken) {
-                toast.error("Not logged in");
-                return;
-            }
-
-            const res = await fetch(
+         const res = await fetch(
                 `${import.meta.env.VITE_BACKEND_URL}/api/institutions/send-email-verification`,
                 {
                     method: "POST",
@@ -178,11 +167,6 @@ export default function InstitutionProfile() {
 
     const onCropSave = async () => {
         try {
-            if (!tokens.institutionToken) {
-                toast.error("Not logged in");
-                return;
-            }
-
             setIsAvatarUpdating(true);
             const blob = await getCroppedImage(imageSrc, croppedAreaPixels);
             const fd = new FormData();
