@@ -12,6 +12,8 @@ import {
   Building2,
   Loader2,
   Plus,
+  Cross,
+  X,
 } from "lucide-react";
 
 const CreateCourse = () => {
@@ -33,11 +35,6 @@ const CreateCourse = () => {
     evaluationScheme: "",
     components: [],
   });
-
-  const SCHEME_EXAMS = {
-    MID_END: ["MID", "INTERNALS", "END"],
-    CT_END: ["CT1", "CT2", "INTERNALS", "END"],
-  };
 
   const [showValidity, setShowValidity] = useState(false);
 
@@ -149,40 +146,41 @@ const CreateCourse = () => {
     }
   };
 
-  const addComponent = (exam, type) => {
-    setForm((p) => {
-      const exists = p.components.some(
-        (c) => c.name === exam && c.type === type
-      );
-      if (exists) return p;
-
-      return {
-        ...p,
-        components: [
-          ...p.components,
-          { name: exam, type, maxMarks: "", weightage: "" },
-        ],
-      };
-    });
-  };
-
-  const updateComponent = (exam, type, key, value) => {
-    setForm((p) => ({
+  const addComponent = () => {
+    setForm(p => ({
       ...p,
-      components: p.components.map((c) =>
-        c.name === exam && c.type === type ? { ...c, [key]: value } : c
-      ),
+      components: [
+        ...p.components,
+        { name: "", type: "THEORY", maxMarks: "", weightage: "" }
+      ]
     }));
   };
 
-  const removeComponent = (exam, type) => {
-    setForm((p) => ({
+  const updateComponent = (index, key, value) => {
+    setForm(p => ({
       ...p,
-      components: p.components.filter(
-        (c) => !(c.name === exam && c.type === type)
-      ),
+      components: p.components.map((c, i) =>
+        i === index
+          ? {
+            ...c,
+            [key]:
+              key === "name"
+                ? value.toUpperCase()
+                : value
+          }
+          : c
+      )
     }));
   };
+
+
+  const removeComponent = (index) => {
+    setForm(p => ({
+      ...p,
+      components: p.components.filter((_, i) => i !== index)
+    }));
+  };
+
 
 
   // ========= SUBMIT =========
@@ -215,6 +213,21 @@ const CreateCourse = () => {
       return;
     }
 
+    const duplicate = components.some(
+      (c, i) =>
+        components.findIndex(
+          x =>
+            x.name.trim().toUpperCase() === c.name.trim().toUpperCase() &&
+            x.type === c.type
+        ) !== i
+    );
+
+    if (duplicate) {
+      toast.error("Duplicate component name with same type not allowed");
+      return;
+    }
+
+
     const creditsNum = Number(credits);
     if (Number.isNaN(creditsNum) || creditsNum < 0) {
       toast.error("Credits must be a valid non-negative number");
@@ -238,8 +251,18 @@ const CreateCourse = () => {
     }
 
     for (const c of components) {
+      if (!c.name.trim()) {
+        toast.error("Component name is required");
+        return;
+      }
+
       if (!c.maxMarks || Number(c.maxMarks) <= 0) {
         toast.error(`Invalid max marks for ${c.name} (${c.type})`);
+        return;
+      }
+
+      if (!c.weightage || Number(c.weightage) <= 0) {
+        toast.error(`Invalid weightage for ${c.name} (${c.type})`);
         return;
       }
     }
@@ -253,7 +276,7 @@ const CreateCourse = () => {
       semester: semester.trim(),
       evaluationScheme,
       components: components.map((c) => ({
-        name: c.name,
+        name: c.name.trim().toUpperCase(),
         type: c.type,
         maxMarks: Number(c.maxMarks),
         weightage: Number(c.weightage),
@@ -412,9 +435,9 @@ const CreateCourse = () => {
                   setForm((p) => ({
                     ...p,
                     evaluationScheme: e.target.value,
-                    components: [],
                   }))
                 }
+
                 className="w-full rounded-xl border border-[var(--border)] px-4 py-2.5 text-sm outline-none
     focus:ring-2 focus:ring-indigo-500 bg-[var(--surface-2)] text-[var(--text)]"
               >
@@ -422,94 +445,83 @@ const CreateCourse = () => {
                 <option value="MID_END">Mid Sem</option>
                 <option value="CT_END">CT End</option>
               </select>
-            </div>
 
-            {form.evaluationScheme &&
-              SCHEME_EXAMS[form.evaluationScheme].map((exam) => {
-                const theory = form.components.find(
-                  (c) => c.name === exam && c.type === "THEORY"
-                );
-                const lab = form.components.find(
-                  (c) => c.name === exam && c.type === "LAB"
-                );
+              <div className={`space-y-5 mt-4  ${!form.evaluationScheme ? "hidden" : ""}`}>
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold">Evaluation Components</p>
 
-                return (
-                  <div key={exam} className="space-y-2 border border-[var(--border)] rounded-xl p-4">
-                    <div className="text-sm font-semibold text-[var(--text)]">
-                      {exam}
-                    </div>
+                  <button
+                    type="button"
+                    onClick={addComponent}
+                    disabled={!form.evaluationScheme}
+                    className={`text-sm text-indigo-400 flex items-center gap-1`}
+                  >
+                    <Plus size={14} />
+                    Add Component
+                  </button>
+                </div>
 
-                    {!theory && (
-                      <button
-                        type="button"
-                        onClick={() => addComponent(exam, "THEORY")}
-                        className="text-xs text-indigo-400 flex items-center gap-1"
-                      >
-                        <Plus size={12} />
-                        Add Theory
-                      </button>
+                {form.components.length === 0 && (
+                  <p className="text-xs text-[var(--muted-text)]">
+                    No components added yet
+                  </p>
+                )}
 
-                    )}
+                {form.components.map((c, idx) => (
+                  <div
+                    key={idx}
+                    className="grid grid-cols-5 gap-3 border border-[var(--border)] rounded-xl p-3"
+                  >
+                    <input
+                      placeholder="Name (CT1, CT2, MID, END)"
+                      value={c.name}
+                      onChange={(e) => updateComponent(idx, "name", e.target.value)}
+                      className="col-span-2 rounded-lg bg-[var(--surface-2)] px-3 py-2 text-sm"
+                    />
 
-                    {theory && (
-                      <div className="grid grid-cols-2 gap-3">
-                        <input
-                          type="number"
-                          placeholder="Theory max marks"
-                          value={theory.maxMarks}
-                          onChange={(e) =>
-                            updateComponent(exam, "THEORY", "maxMarks", e.target.value)
-                          }
-                          className="rounded-lg bg-[var(--surface-2)] px-3 py-2 text-sm"
-                        />
-                        <input
-                          type="number"
-                          placeholder="Theory weightage %"
-                          value={theory.weightage}
-                          onChange={(e) =>
-                            updateComponent(exam, "THEORY", "weightage", e.target.value)
-                          }
-                          className="rounded-lg bg-[var(--surface-2)] px-3 py-2 text-sm"
-                        />
-                      </div>
-                    )}
+                    <select
+                      value={c.type}
+                      onChange={(e) => updateComponent(idx, "type", e.target.value)}
+                      className="rounded-lg bg-[var(--surface-2)] px-2 py-2 text-sm"
+                    >
+                      <option value="THEORY">Theory</option>
+                      <option value="LAB">Lab</option>
+                    </select>
 
-                    {!lab && (
-                      <button
-                        type="button"
-                        onClick={() => addComponent(exam, "LAB")}
-                       className="text-xs text-indigo-400 flex items-center gap-1"
-                      >
-                        <Plus size={12} />
-                        Add Lab
-                      </button>
-                    )}
+                    <input
+                      type="number"
+                      placeholder="Max"
+                      value={c.maxMarks}
+                      min={1}
+                      max={100}
+                      onChange={(e) => updateComponent(idx, "maxMarks", e.target.value)}
+                      className="rounded-lg bg-[var(--surface-2)] px-2 py-2 text-sm"
+                    />
 
-                    {lab && (
-                      <div className="grid grid-cols-2 gap-3">
-                        <input
-                          type="number"
-                          placeholder="Lab max marks"
-                          value={lab.maxMarks}
-                          onChange={(e) =>
-                            updateComponent(exam, "LAB", "maxMarks", e.target.value)
-                          }
-                          className="rounded-lg bg-[var(--surface-2)] px-3 py-2 text-sm"
-                        />
-                        <input
-                          type="number"
-                          placeholder="Lab weightage %"
-                          value={lab.weightage}
-                          onChange={(e) =>
-                            updateComponent(exam, "LAB", "weightage", e.target.value)
-                          }
-                          className="rounded-lg bg-[var(--surface-2)] px-3 py-2 text-sm"
-                        />
-                      </div>
-                    )}
+                    <input
+                      type="number"
+                      placeholder="Weightage (%)"
+                      value={c.weightage}
+                      min={0}
+                      max={100}
+                      onChange={(e) => updateComponent(idx, "weightage", e.target.value)}
+                      className="rounded-lg bg-[var(--surface-2)] px-2 py-2 text-sm"
+                    />
+
+                    <button
+                      type="button"
+                      onClick={() => removeComponent(idx)}
+                      className="flex items-center gap-1 text-red-500 text-sm hover:text-red-600"
+                    >
+                      <X size={12} />
+                      <span>Remove</span>
+                    </button>
+
                   </div>
-                );
-              })}
+                ))}
+              </div>
+
+            </div>
 
             <button
               disabled={loading || courseCodeStatus.exists || courseCodeStatus.checking}
