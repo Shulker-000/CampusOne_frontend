@@ -17,6 +17,7 @@ import Admin from "./../assets/landingPage/admin.png";
 import Hostel from "./../assets/landingPage/hostel.png";
 import Security from "./../assets/landingPage/security.png";
 import Certificates from "./../assets/landingPage/certificate.png";
+import Admission from "./../assets/landingPage/admission.png";
 
 const sectionVariants = {
   hidden: { opacity: 0, y: 40 },
@@ -154,10 +155,124 @@ const LandingPage = () => {
         </div>
       </section>
 
+      {/* ================= MODULES ================= */}
+      <section
+        id="modules"
+        className="min-h-screen md:h-screen bg-gradient-to-br from-white to-slate-50 flex flex-col overflow-hidden"
+      >
+        <div className="pt-14 pb-8 px-6 text-center shrink-0">
+          <motion.div
+            variants={sectionVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            className="max-w-3xl mx-auto"
+          >
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
+              Workflow-Driven Modules
+            </h2>
+            <p className="text-slate-500 mt-3">
+              Standardized automation across all university stakeholders.
+            </p>
+          </motion.div>
+        </div>
+
+        <div className="flex-1 max-w-7xl mx-auto w-full px-6 pb-12 flex gap-8">
+          {/* LEFT */}
+          <div className="w-1/4 hidden md:block">
+            {modules.map((m, i) => (
+              <button
+                key={m.title}
+                onClick={() => setActive(i)}
+                className={`w-full mb-3 p-4 rounded-xl flex items-center gap-3 transition ${active === i
+                  ? "bg-white shadow-md border border-slate-200"
+                  : "hover:bg-white/70"
+                  }`}
+              >
+                <div className={`p-2 rounded-lg ${m.bg}`}>
+                  <m.icon className={`w-5 h-5 ${m.color}`} />
+                </div>
+                <span className="font-medium text-slate-900">{m.title}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* RIGHT */}
+          <div className="flex-1 bg-white rounded-3xl shadow-xl border mb-9 border-slate-200 overflow-hidden">
+            <img
+              src={modules[active].image}
+              alt={modules[active].alt}
+              className="w-full h-80 object-contain bg-slate-50"
+            />
+            <div className="p-8">
+              <p className="text-slate-600 text-lg leading-relaxed">
+                {modules[active].description}
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ================= STUDENT Admissions ================= */}
+      <section
+        id="admissions"
+        className="relative min-h-screen flex items-center overflow-hidden bg-gradient-to-br from-slate-50 to-white"
+      >
+        <div className="absolute -top-24 -right-24 w-96 h-96 bg-emerald-200/30 rounded-full blur-3xl" />
+        <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-indigo-200/30 rounded-full blur-3xl" />
+
+        <div className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-10 py-16 grid lg:grid-cols-2 gap-14 items-center">
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.98 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true, amount: 0.25 }}
+            transition={{ duration: 0.75, ease: "easeOut", delay: 0.05 }}
+            className="hidden lg:block"
+          >
+            <div className="bg-white/70 border border-slate-200 rounded-3xl shadow-xl p-6">
+              <img
+                src={Admission}
+                alt="Student and faculty portal view"
+                className="w-full max-h-[62vh] object-contain rounded-2xl"
+              />
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 35 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.25 }}
+            transition={{ duration: 0.75, ease: "easeOut" }}
+          >
+
+            <h2 className="mt-6 text-4xl md:text-5xl font-bold tracking-tight">
+              <span className="text-emerald-600">Student Admissions</span>
+            </h2>
+
+            <p className="mt-7 text-lg text-slate-600 max-w-xl leading-relaxed">
+              Apply directly to your institution with a simple, guided admission process.
+              No middlemen. No confusion. Just verified details and faster submissions.
+            </p>
+
+            <div className="mt-10 flex flex-col sm:flex-row gap-4">
+              <a
+                href="/admission"
+                className="px-9 py-4 rounded-xl bg-emerald-600 text-white font-medium shadow-md hover:shadow-xl hover:bg-emerald-700 transition inline-flex items-center justify-center gap-2"
+              >
+                Start Admission Process <ArrowRight className="w-5 h-5" />
+              </a>
+            </div>
+
+          </motion.div>
+
+        </div>
+      </section>
+
       {/* ================= STUDENT / FACULTY LOGIN ================= */}
       <section
         id="user-login"
-        className="relative min-h-screen flex items-center overflow-hidden bg-gradient-to-br from-white to-slate-50"
+        className="relative min-h-screen flex items-center overflow-hidden bg-gradient-to-br from-slate-50 to-white"
       >
         <div className="absolute -top-24 -right-24 w-96 h-96 bg-emerald-200/30 rounded-full blur-3xl" />
         <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-indigo-200/30 rounded-full blur-3xl" />
@@ -213,65 +328,6 @@ const LandingPage = () => {
               />
             </div>
           </motion.div>
-        </div>
-      </section>
-
-      {/* ================= MODULES ================= */}
-      <section
-        id="modules"
-        className="min-h-screen md:h-screen bg-gradient-to-br from-slate-50 to-white flex flex-col overflow-hidden"
-      >
-        <div className="pt-14 pb-8 px-6 text-center shrink-0">
-          <motion.div
-            variants={sectionVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            className="max-w-3xl mx-auto"
-          >
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
-              Workflow-Driven Modules
-            </h2>
-            <p className="text-slate-500 mt-3">
-              Standardized automation across all university stakeholders.
-            </p>
-          </motion.div>
-        </div>
-
-        <div className="flex-1 max-w-7xl mx-auto w-full px-6 pb-12 flex gap-8">
-          {/* LEFT */}
-          <div className="w-1/4 hidden md:block">
-            {modules.map((m, i) => (
-              <button
-                key={m.title}
-                onClick={() => setActive(i)}
-                className={`w-full mb-3 p-4 rounded-xl flex items-center gap-3 transition ${
-                  active === i
-                    ? "bg-white shadow-md border border-slate-200"
-                    : "hover:bg-white/70"
-                }`}
-              >
-                <div className={`p-2 rounded-lg ${m.bg}`}>
-                  <m.icon className={`w-5 h-5 ${m.color}`} />
-                </div>
-                <span className="font-medium text-slate-900">{m.title}</span>
-              </button>
-            ))}
-          </div>
-
-          {/* RIGHT */}
-          <div className="flex-1 bg-white rounded-3xl shadow-xl border mb-9 border-slate-200 overflow-hidden">
-            <img
-              src={modules[active].image}
-              alt={modules[active].alt}
-              className="w-full h-80 object-contain bg-slate-50"
-            />
-            <div className="p-8">
-              <p className="text-slate-600 text-lg leading-relaxed">
-                {modules[active].description}
-              </p>
-            </div>
-          </div>
         </div>
       </section>
 

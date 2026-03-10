@@ -25,10 +25,6 @@ const LoginInstitution = () => {
   const institutionAuth = useSelector((s) => s.auth.institution);
   if (!institutionAuth.authChecked) return <Loader />;
 
-  if (institutionAuth.isAuthenticated) {
-    return <Navigate to="/institution/dashboard" replace />;
-  }
-
   const { loginInstitution } = useAuth();
 
   const [form, setForm] = useState({
@@ -54,29 +50,13 @@ const LoginInstitution = () => {
         ? { contactEmail: form.identifier, password: form.password }
         : { code: form.identifier, password: form.password };
 
-      const res = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/institutions/login`,
-        {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }
-      );
+      // SINGLE SOURCE OF TRUTH
+      await loginInstitution(payload);
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        toast.error(data.message || "Login failed");
-        return;
-      }
-
-      loginInstitution(data);
       toast.success("Login successful");
       navigate("/institution/dashboard", { replace: true });
     } catch (err) {
-      console.error(err);
-      toast.error("Network error");
+      toast.error(err.message || "Login failed");
     } finally {
       setLoading(false);
     }

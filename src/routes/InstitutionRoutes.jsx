@@ -126,7 +126,7 @@ const InstitutionRoutes = () => {
 
         <Route path="faculties/create" element={<CreateFaculty />} />
         <Route path="faculties" element={<InstitutionFaculties />} />
-        <Route path="/faculties/profile/:facultyId" element={<InstitutionFacultyProfile />} />
+        <Route path="faculties/profile/:facultyId" element={<InstitutionFacultyProfile />} />
 
       </Route>
 
