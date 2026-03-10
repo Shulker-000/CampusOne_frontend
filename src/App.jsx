@@ -10,6 +10,7 @@ import Navbar from "./components/Navbar";
 import Loader from "./components/Loader.jsx";
 
 import InstitutionRoutes from "./routes/InstitutionRoutes";
+import Admission from "./pages/Admission.jsx";
 // import UserRoutes from "./routes/UserRoutes";
 
 const App = () => {
@@ -43,6 +44,7 @@ const App = () => {
         />
 
         <Route path="/about" element={<AboutPage />} />
+        <Route path="/admission" element={<Admission />} />
         <Route path="/contact" element={<ContactPage />} />
 
         <Route path="/institution/*" element={<InstitutionRoutes />} />

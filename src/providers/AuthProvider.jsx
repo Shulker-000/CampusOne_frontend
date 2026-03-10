@@ -18,6 +18,11 @@ let isRefreshing = false;
 let refreshPromise = null;
 let redirecting = false;
 
+const authExcludedRoutes = [
+  "/refresh",
+  "/login",
+];
+
 const refreshAccessToken = async (refreshUrl) => {
   if (!refreshPromise) {
     refreshPromise = originalFetch(
@@ -41,46 +46,49 @@ const refreshAccessToken = async (refreshUrl) => {
   return refreshPromise;
 };
 
-window.fetch = async (...args) => {
-  let res = await originalFetch(...args);
+if (!window.__FETCH_INTERCEPTOR__) {
+  window.__FETCH_INTERCEPTOR__ = true;
 
-  if (res.status !== 401) {
-    return res;
-  }
+  window.fetch = async (...args) => {
+    let res = await originalFetch(...args);
 
-  const url = typeof args[0] === "string" ? args[0] : args[0].url;
-
-  if (url.includes("/refresh")) {
-    return res;
-  }
-
-  try {
-    const refreshUrl = "/api/institutions/refresh";
-
-    if (!isRefreshing) {
-      await refreshAccessToken(refreshUrl);
-    } else {
-      await refreshPromise;
+    if (res.status !== 401) {
+      return res;
     }
 
-    res = await originalFetch(...args);
-    return res;
-  } catch {
-    if (!redirecting) {
-      redirecting = true;
+    const url = args[0]?.url || args[0];
 
-      const currentPath = window.location.pathname;
+    if (authExcludedRoutes.some((route) => url?.includes(route))) {
+      return res;
+    }
 
-      if (currentPath !== "/") {
-        toast.error("Session Expired, login again")
-        window.location.href = "/";
+    try {
+      const refreshUrl = "/api/institutions/refresh";
+
+      if (!isRefreshing) {
+        await refreshAccessToken(refreshUrl);
+      } else {
+        await refreshPromise;
       }
+
+      res = await originalFetch(...args);
+      return res;
+    } catch {
+      if (!redirecting) {
+        redirecting = true;
+
+        const currentPath = window.location.pathname;
+
+        if (currentPath !== "/") {
+          toast.error("Session Expired, login again")
+          window.location.href = "/";
+        }
+      }
+
+      return res;
     }
-
-    return res;
-  }
+  };
 };
-
 export const AuthProvider = ({ children }) => {
   const dispatch = useDispatch();
 
