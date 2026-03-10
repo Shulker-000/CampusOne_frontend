@@ -16,7 +16,7 @@ export default function VerifyInstitutionEmail() {
         const data = await res.json();
         if (!res.ok) throw new Error(data.message);
 
-        toast.success("Email verified. Please login.");
+        toast.success("Email verified.");
         setTimeout(() => navigate("/institution/login"), 2500);
       } catch (err) {
         toast.error(err.message);
