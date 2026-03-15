@@ -7,6 +7,9 @@ import {
   userLoginSuccess,
   userLogout,
   userAuthChecked,
+  admissionLoginSuccess,
+  admissionLogout,
+  admissionAuthChecked
 } from "../features/authSlice";
 import { toast } from "react-toastify";
 
@@ -58,6 +61,9 @@ if (!window.__FETCH_INTERCEPTOR__) {
 
     const url = args[0]?.url || args[0];
 
+    if (url?.includes("/api/admissions")) {
+      return res;
+    }
     if (authExcludedRoutes.some((route) => url?.includes(route))) {
       return res;
     }
@@ -217,11 +223,89 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+
+  /* ================= ADMISSION ================= */
+
+  const loginAdmission = async (payload) => {
+
+    const res = await fetch(
+      `${import.meta.env.VITE_BACKEND_URL}/api/admissions/login`,
+      {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.message || "Login failed");
+    }
+
+    await verifyAdmission();
+  };
+
+  const logoutAdmission = async () => {
+
+    try {
+
+      await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/api/admissions/logout`,
+        {
+          method: "POST",
+          credentials: "include",
+        }
+      );
+
+    } finally {
+
+      dispatch(admissionLogout());
+
+    }
+
+  };
+
+  const verifyAdmission = async () => {
+
+    try {
+
+      const res = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/api/admissions/me`,
+        {
+          credentials: "include",
+        }
+      );
+
+      if (!res.ok) {
+
+        dispatch(admissionAuthChecked());
+        return;
+
+      }
+
+      const data = await res.json();
+
+      dispatch(
+        admissionLoginSuccess({
+          application: data.data,
+        })
+      );
+
+    } catch {
+
+      dispatch(admissionAuthChecked());
+
+    }
+
+  };
+
   /* ================= INITIAL SYNC ================= */
 
   useEffect(() => {
     verifyInstitution();
     verifyUser();
+    verifyAdmission();
   }, []);
 
   return (
@@ -231,6 +315,9 @@ export const AuthProvider = ({ children }) => {
         loginUser,
         logoutInstitution,
         logoutUser,
+
+        loginAdmission,
+        logoutAdmission
       }}
     >
       {children}

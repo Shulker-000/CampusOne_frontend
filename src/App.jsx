@@ -11,6 +11,8 @@ import Loader from "./components/Loader.jsx";
 
 import InstitutionRoutes from "./routes/InstitutionRoutes";
 import Admission from "./pages/Admission.jsx";
+import AdmissionsLogin from "./pages/AdmissionLogin.jsx";
+import AdmissionsDashboard from "./pages/AdmissionsDashboard.jsx";
 // import UserRoutes from "./routes/UserRoutes";
 
 const App = () => {
@@ -44,7 +46,20 @@ const App = () => {
         />
 
         <Route path="/about" element={<AboutPage />} />
-        <Route path="/admission" element={<Admission />} />
+
+        {/* admission routes */}
+        <Route
+          path="/admissions/*"
+          element={
+            <Routes>
+              <Route path="" element={<Admission />} />
+              <Route path="login" element={<AdmissionsLogin />} />
+              <Route path="dashboard" element={<AdmissionsDashboard />} />
+            </Routes>
+          }
+        />
+
+
         <Route path="/contact" element={<ContactPage />} />
 
         <Route path="/institution/*" element={<InstitutionRoutes />} />
