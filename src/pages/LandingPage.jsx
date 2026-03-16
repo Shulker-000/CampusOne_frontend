@@ -258,11 +258,11 @@ const LandingPage = () => {
 
             <div className="mt-10 flex flex-col sm:flex-row gap-4">
               <Link
- to="/admissions"
- className="px-9 py-4 rounded-xl bg-emerald-600 text-white font-medium"
->
-Start Admission Process
-</Link>
+                to="/admission"
+                className="px-9 py-4 rounded-xl bg-emerald-600 text-white font-medium"
+              >
+                Start Admission Process
+              </Link>
             </div>
 
           </motion.div>

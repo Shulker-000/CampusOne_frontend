@@ -79,7 +79,7 @@ const StartScreen = ({ setMode }) => {
                 </button>
 
                 <button
-                    onClick={() => navigate("/admissions/login")}
+                    onClick={() => navigate("/admission/login")}
                     className="w-full py-3 rounded-xl border border-slate-300 text-slate-800 font-semibold hover:bg-slate-50 transition flex items-center justify-center gap-2"
                 >
                     <LogIn size={18} />
@@ -378,7 +378,7 @@ const AdmissionRegister = () => {
                     onClick={() => {
                         navigator.clipboard.writeText(result.applicationNumber);
                         toast.success("Application number copied");
-                        navigate("/admissions/login")
+                        navigate("/admission/login")
                     }}
                     className="mt-6 px-5 py-2 bg-indigo-600 text-white rounded-lg"
                 >

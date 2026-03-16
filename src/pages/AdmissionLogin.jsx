@@ -25,6 +25,10 @@ const AdmissionsLogin = () => {
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
+    const [forgotOpen, setForgotOpen] = useState(false);
+    const [forgotEmail, setForgotEmail] = useState("");
+    const [forgotLoading, setForgotLoading] = useState(false);
+
     const handleChange = (e) => {
 
         const { name, value } = e.target;
@@ -53,7 +57,7 @@ const AdmissionsLogin = () => {
 
             toast.success("Login successful");
 
-            navigate("/admissions/dashboard");
+            navigate("/admission/dashboard");
 
         } catch (err) {
 
@@ -62,6 +66,47 @@ const AdmissionsLogin = () => {
         } finally {
 
             setLoading(false);
+
+        }
+
+    };
+
+    const handleForgotPassword = async () => {
+
+        if (!forgotEmail) {
+            toast.warn("Enter your registered email");
+            return;
+        }
+
+        try {
+
+            setForgotLoading(true);
+
+            const res = await fetch(
+                `${import.meta.env.VITE_BACKEND_URL}/api/admissions/forgot-password`,
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email: forgotEmail })
+                }
+            );
+
+            const data = await res.json();
+
+            if (!res.ok) throw new Error(data.message);
+
+            toast.success("Password reset email sent");
+
+            setForgotOpen(false);
+            setForgotEmail("");
+
+        } catch (err) {
+
+            toast.error(err.message || "Request failed");
+
+        } finally {
+
+            setForgotLoading(false);
 
         }
 
@@ -146,6 +191,16 @@ const AdmissionsLogin = () => {
 
                         </div>
 
+                        <div className="text-right">
+                            <button
+                                type="button"
+                                onClick={() => setForgotOpen(true)}
+                                className="text-xs font-semibold text-indigo-600 hover:underline"
+                            >
+                                Forgot Password?
+                            </button>
+                        </div>
+
                     </div>
 
                     <button
@@ -174,6 +229,57 @@ const AdmissionsLogin = () => {
 
             </motion.div>
 
+            {forgotOpen && (
+
+                <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+
+                    <div className="bg-white rounded-2xl p-6 w-full max-w-sm">
+
+                        <h3 className="text-lg text-black font-semibold mb-2">
+                            Reset Password
+                        </h3>
+
+                        <p className="text-sm text-slate-600 mb-4">
+                            Enter the email used in your admission application.
+                        </p>
+
+                        <input
+                            value={forgotEmail}
+                            onChange={(e) => setForgotEmail(e.target.value)}
+                            placeholder="Enter your email"
+                            className="w-full border border-slate-200 text-black rounded-xl px-3 py-2 mb-4"
+                        />
+
+                        <div className="flex justify-end gap-2">
+
+                            <button
+                                onClick={() => setForgotOpen(false)}
+                                className="px-4 py-2 text-sm text-black"
+                            >
+                                Cancel
+                            </button>
+
+                            <button
+                                onClick={handleForgotPassword}
+                                disabled={forgotLoading}
+                                className="px-4 py-2 bg-indigo-600 text-white rounded-lg flex items-center gap-2"
+                            >
+
+                                {forgotLoading ? (
+                                    <Loader2 className="animate-spin" size={16} />
+                                ) : (
+                                    "Send Reset Link"
+                                )}
+
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            )}
         </section>
 
     );

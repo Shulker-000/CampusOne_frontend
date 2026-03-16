@@ -26,15 +26,13 @@ const AdmissionDashboard = () => {
   const isDraft = application?.formStatus === "DRAFT";
 
   /* ================= AUTH GUARD ================= */
+useEffect(() => {
+  if (!admissionAuth.authChecked) return;
 
-  useEffect(() => {
-
-    if (admissionAuth.authChecked && !admissionAuth.isAuthenticated) {
-      navigate("/admissions/login");
-    }
-
-  }, [admissionAuth.authChecked, admissionAuth.isAuthenticated]);
-
+  if (!admissionAuth.isAuthenticated) {
+    navigate("/admission/login");
+  }
+}, [admissionAuth]);
 
   /* ================= FETCH APPLICATION ================= */
 
@@ -270,7 +268,6 @@ const AdmissionDashboard = () => {
       );
 
       const data = await res.json();
-console.log("Data : " , data);
 
       if (!res.ok) {
         toast.error(data.message);
@@ -328,11 +325,38 @@ console.log("Data : " , data);
 
       await logoutAdmission();
 
-      navigate("/admissions/login");
+      navigate("/admission/login");
 
     } catch {
 
       toast.error("Logout failed");
+
+    }
+
+  };
+
+
+  /* ================= Send Verification Email ================= */
+
+  const sendVerificationEmail = async () => {
+
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/api/admissions/send-verification-email`,
+        {
+          method: "POST",
+          credentials: "include"
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.message);
+        return;
+      }
+      toast.success("Verification email sent");
+
+    } catch {
+      toast.error("Failed to send email");
 
     }
 
@@ -453,9 +477,38 @@ console.log("Data : " , data);
         </div>
 
 
+        {/* Email Verified */}
+        {!application.isEmailVerified && (
+
+          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 flex justify-between items-center">
+
+            <div>
+
+              <p className="font-semibold text-yellow-800">
+                Email not verified
+              </p>
+
+              <p className="text-sm text-yellow-700">
+                You must verify your email before uploading documents.
+              </p>
+
+            </div>
+
+            <button
+              onClick={sendVerificationEmail}
+              className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg"
+            >
+              Send Verification Email
+            </button>
+
+          </div>
+
+        )}
+
+
         {/* DOCUMENTS */}
 
-        <div className="bg-white border rounded-xl p-6 shadow-sm">
+        {application.isEmailVerified && <div className="bg-white border rounded-xl p-6 shadow-sm">
 
           <h2 className="text-lg text-black font-semibold mb-5">
             Documents
@@ -498,7 +551,7 @@ console.log("Data : " , data);
                   </div>
 
                   <div className="flex gap-2">
-                    {doc && canUpload(doc) && (
+                   {application.isEmailVerified && doc && canUpload(doc) && (
                       <button
                         onClick={() => removeDocument(doc)}
                         className="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg"
@@ -506,7 +559,7 @@ console.log("Data : " , data);
                         <Trash2 size={16} />
                       </button>
                     )}
-                    {canUpload(doc) && (
+                    {application.isEmailVerified && canUpload(doc) && (
                       <label className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 cursor-pointer">
                         {uploadingDoc === docType.key
                           ? <Loader2 className="animate-spin w-4 h-4" />
@@ -529,7 +582,7 @@ console.log("Data : " , data);
               );
             })}
           </div>
-        </div>
+        </div>}
 
         {/* SUBMIT */}
 
