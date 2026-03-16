@@ -24,6 +24,10 @@ let redirecting = false;
 const authExcludedRoutes = [
   "/refresh",
   "/login",
+  "/reset-password",
+  "/verify-email",
+  "/admissions/reset-password",
+  "/admissions/verify-email"
 ];
 
 const refreshAccessToken = async (refreshUrl) => {
@@ -61,15 +65,25 @@ if (!window.__FETCH_INTERCEPTOR__) {
 
     const url = args[0]?.url || args[0];
 
-    if (url?.includes("/api/admissions")) {
-      return res;
-    }
+    if (url?.includes("/api/admissions/reset-password")) return res;
+    if (url?.includes("/api/admissions/verify-email")) return res;
+
     if (authExcludedRoutes.some((route) => url?.includes(route))) {
       return res;
     }
 
     try {
-      const refreshUrl = "/api/institutions/refresh";
+
+      let refreshUrl = null;
+
+      if (url?.includes("/api/users")) {
+        refreshUrl = "/api/users/refresh";
+      }
+      else if (url?.includes("/api/institutions")) {
+        refreshUrl = "/api/institutions/refresh";
+      }
+
+      if (!refreshUrl) return res;
 
       if (!isRefreshing) {
         await refreshAccessToken(refreshUrl);
@@ -85,8 +99,21 @@ if (!window.__FETCH_INTERCEPTOR__) {
 
         const currentPath = window.location.pathname;
 
-        if (currentPath !== "/") {
-          toast.error("Session Expired, login again")
+        const publicRoutes = [
+          "/",
+          "/about",
+          "/contact",
+          "/admission/login",
+          "/admission/reset-password",
+          "/admission/verify-email"
+        ];
+
+        const isPublic = publicRoutes.some((route) =>
+          currentPath.startsWith(route)
+        );
+
+        if (!isPublic) {
+          toast.error("Session Expired, login again");
           window.location.href = "/";
         }
       }
@@ -297,15 +324,26 @@ export const AuthProvider = ({ children }) => {
       dispatch(admissionAuthChecked());
 
     }
-
+    
   };
 
   /* ================= INITIAL SYNC ================= */
 
   useEffect(() => {
+
+    const path = window.location.pathname;
+
+    const isAdmissionPublicPage =
+      path.startsWith("/admission/reset-password") ||
+      path.startsWith("/admission/verify-email");
+
     verifyInstitution();
     verifyUser();
-    verifyAdmission();
+
+    if (!isAdmissionPublicPage) {
+      verifyAdmission();
+    }
+
   }, []);
 
   return (
