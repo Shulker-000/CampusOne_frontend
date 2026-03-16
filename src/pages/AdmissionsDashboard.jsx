@@ -26,13 +26,13 @@ const AdmissionDashboard = () => {
   const isDraft = application?.formStatus === "DRAFT";
 
   /* ================= AUTH GUARD ================= */
-useEffect(() => {
-  if (!admissionAuth.authChecked) return;
+  useEffect(() => {
+    if (!admissionAuth.authChecked) return;
 
-  if (!admissionAuth.isAuthenticated) {
-    navigate("/admission/login");
-  }
-}, [admissionAuth]);
+    if (!admissionAuth.isAuthenticated) {
+      navigate("/admission/login");
+    }
+  }, [admissionAuth]);
 
   /* ================= FETCH APPLICATION ================= */
 
@@ -208,7 +208,7 @@ useEffect(() => {
     try {
 
       const res = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/admissions/${application._id}/document/${doc._id}`,
+        `${import.meta.env.VITE_BACKEND_URL}/api/admissions/${application._id}/document/${encodeURIComponent(doc.publicId)}`,
         {
           method: "DELETE",
           credentials: "include"
@@ -224,15 +224,14 @@ useEffect(() => {
 
       setApplication(prev => ({
         ...prev,
-        documents: prev.documents.filter(d => d._id !== doc._id)
+        documents: prev.documents.filter(d => d.publicId !== doc.publicId)
       }));
 
       toast.success("Document removed");
 
-    } catch {
-
+    } catch (err) {
+      console.error("DELETE ERROR:", err);
       toast.error("Delete failed");
-
     }
 
   };
@@ -243,8 +242,6 @@ useEffect(() => {
 
     if (!file) return;
 
-    /* STRICT PDF CHECK */
-
     if (file.type !== "application/pdf") {
       toast.error("Only PDF files are allowed");
       return;
@@ -253,6 +250,30 @@ useEffect(() => {
     setUploadingDoc(type);
 
     try {
+
+      /* 1 - DELETE OLD DOCUMENT FIRST */
+
+      if (existingDoc?.publicId) {
+
+        const delRes = await fetch(
+          `${import.meta.env.VITE_BACKEND_URL}/api/admissions/${application._id}/document/${encodeURIComponent(existingDoc.publicId)}`,
+          {
+            method: "DELETE",
+            credentials: "include"
+          }
+        );
+
+        const delData = await delRes.json();
+
+        if (!delRes.ok) {
+          toast.error(delData.message || "Old document deletion failed");
+          setUploadingDoc(null);
+          return;
+        }
+
+      }
+
+      /* 2 - UPLOAD NEW DOCUMENT */
 
       const formData = new FormData();
       formData.append("document", file);
@@ -274,25 +295,9 @@ useEffect(() => {
         return;
       }
 
-      /* delete old doc AFTER new upload */
-
-      if (existingDoc?._id) {
-
-        const delRes = await fetch(
-          `${import.meta.env.VITE_BACKEND_URL}/api/admissions/${application._id}/document/${existingDoc._id}`,
-          {
-            method: "DELETE",
-            credentials: "include"
-          }
-        );
-
-        if (!delRes.ok) {
-          toast.error("Old document deletion failed");
-        }
-
-      }
-
       toast.success("Document uploaded");
+
+      /* 3 - REFRESH APPLICATION */
 
       const refreshed = await fetch(
         `${import.meta.env.VITE_BACKEND_URL}/api/admissions/me`,
@@ -551,7 +556,7 @@ useEffect(() => {
                   </div>
 
                   <div className="flex gap-2">
-                   {application.isEmailVerified && doc && canUpload(doc) && (
+                    {application.isEmailVerified && doc && canUpload(doc) && (
                       <button
                         onClick={() => removeDocument(doc)}
                         className="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg"

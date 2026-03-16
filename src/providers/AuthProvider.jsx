@@ -26,8 +26,8 @@ const authExcludedRoutes = [
   "/login",
   "/reset-password",
   "/verify-email",
-  "/admissions/reset-password",
-  "/admissions/verify-email"
+  "/admission/reset-password",
+  "/admission/verify-email"
 ];
 
 const refreshAccessToken = async (refreshUrl) => {

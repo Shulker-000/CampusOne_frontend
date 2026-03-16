@@ -219,7 +219,7 @@ const AdmissionsLogin = () => {
 
                     <button
                         type="button"
-                        onClick={() => navigate("/admissions")}
+                        onClick={() => navigate("/admission")}
                         className="w-full text-sm text-indigo-600 font-semibold mt-2"
                     >
                         Back to Admissions
