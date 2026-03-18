@@ -127,10 +127,12 @@ const AdmissionRegister = () => {
 
         tenthMarks: "",
         tenthBoard: "",
+        tenthRollNumber: "",
         tenthPassingYear: "",
 
         twelfthMarks: "",
         twelfthBoard: "",
+        twelfthRollNumber: "",
         twelfthPassingYear: "",
 
         aadharNo: "",
@@ -175,6 +177,10 @@ const AdmissionRegister = () => {
 
         if (name === "tenthBoard" || name === "twelfthBoard")
             value = value.toUpperCase();
+
+        if (name === "tenthRollNumber" || name === "twelfthRollNumber") {
+            value = value.toUpperCase().replace(/[^A-Z0-9/-]/g, "");
+        }
 
         if (name === "phone")
             value = value.replace(/\D/g, "").slice(0, 10);
@@ -255,9 +261,12 @@ const AdmissionRegister = () => {
                 form.tenthMarks === "" ||
                 !form.tenthBoard ||
                 !form.tenthPassingYear ||
+                !form.tenthRollNumber ||
+
                 form.twelfthMarks === "" ||
                 !form.twelfthBoard ||
-                !form.twelfthPassingYear
+                !form.twelfthPassingYear ||
+                !form.twelfthRollNumber
             ) {
                 toast.warn("Complete academic details");
                 return false;
@@ -505,15 +514,96 @@ const AdmissionRegister = () => {
 
                         <Step>
 
-                            <div className="grid md:grid-cols-2 gap-4">
+                            <div className="space-y-6">
 
-                                <Input label="10th Marks (%)" name="tenthMarks" value={form.tenthMarks} type="number" min="0" max="100" placeholder="10th Marks %" onChange={handleChange} />
-                                <Input label="10th Board" name="tenthBoard" value={form.tenthBoard} placeholder="10th Board" onChange={handleChange} />
-                                <Input label="10th Passing Year" name="tenthPassingYear" value={form.tenthPassingYear} type="number" placeholder="YYYY" onChange={handleChange} />
+                                {/* -------- 10th Section -------- */}
+                                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
 
-                                <Input label="12th Marks (%)" name="twelfthMarks" value={form.twelfthMarks} type="number" min="0" max="100" placeholder="12th Marks %" onChange={handleChange} />
-                                <Input label="12th Board" name="twelfthBoard" value={form.twelfthBoard} placeholder="12th Board" onChange={handleChange} />
-                                <Input label="12th Passing Year" name="twelfthPassingYear" value={form.twelfthPassingYear} type="number" placeholder="YYYY" onChange={handleChange} />
+                                    <h3 className="text-sm font-semibold text-slate-700 mb-3">
+                                        10th Academic Details
+                                    </h3>
+
+                                    <div className="grid md:grid-cols-2 gap-4">
+
+                                        <Input
+                                            label="Marks (%)"
+                                            name="tenthMarks"
+                                            value={form.tenthMarks}
+                                            type="number"
+                                            onChange={handleChange}
+                                        />
+
+                                        <Input
+                                            label="Board"
+                                            name="tenthBoard"
+                                            value={form.tenthBoard}
+                                            onChange={handleChange}
+                                        />
+
+                                        <Input
+                                            label="Roll Number"
+                                            name="tenthRollNumber"
+                                            value={form.tenthRollNumber}
+                                            placeholder="Roll No"
+                                            onChange={handleChange}
+                                        />
+
+                                        <Input
+                                            label="Passing Year"
+                                            name="tenthPassingYear"
+                                            value={form.tenthPassingYear}
+                                            type="number"
+                                            onChange={handleChange}
+                                        />
+
+                                    </div>
+
+                                </div>
+
+
+                                {/* -------- 12th Section -------- */}
+                                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+
+                                    <h3 className="text-sm font-semibold text-slate-700 mb-3">
+                                        12th Academic Details
+                                    </h3>
+
+                                    <div className="grid md:grid-cols-2 gap-4">
+
+                                        <Input
+                                            label="Marks (%)"
+                                            name="twelfthMarks"
+                                            value={form.twelfthMarks}
+                                            type="number"
+                                            onChange={handleChange}
+                                        />
+
+                                        <Input
+                                            label="Board"
+                                            name="twelfthBoard"
+                                            value={form.twelfthBoard}
+                                            onChange={handleChange}
+                                        />
+
+                                        <Input
+                                            label="Roll Number"
+                                            name="twelfthRollNumber"
+                                            value={form.twelfthRollNumber}
+                                            placeholder="Roll No"
+                                            onChange={handleChange}
+                                        />
+
+                                        <Input
+                                            label="Passing Year"
+                                            name="twelfthPassingYear"
+                                            value={form.twelfthPassingYear}
+                                            type="number"
+                                            onChange={handleChange}
+                                        />
+
+                                    </div>
+
+                                </div>
 
                             </div>
 
