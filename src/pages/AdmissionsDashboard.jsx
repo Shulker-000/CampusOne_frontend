@@ -136,37 +136,88 @@ const AdmissionDashboard = () => {
 
   /* ================= SUBMIT APPLICATION ================= */
 
-  const submitApplication = async () => {
+const submitApplication = async () => {
 
-    try {
+  if (!areRequiredDocsUploaded()) {
+    toast.error("Please upload all required documents before submitting");
+    return;
+  }
 
-      const res = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/admissions/submit`,
-        {
-          method: "POST",
-          credentials: "include"
-        }
-      );
+  if (isAIProcessing()) {
+    toast.error("Documents are still being verified");
+    return;
+  }
 
-      const data = await res.json();
+  try {
 
-      if (!res.ok) {
-        toast.error(data.message);
-        return;
+    // STEP 1 - submit application
+    const res = await fetch(
+      `${import.meta.env.VITE_BACKEND_URL}/api/admissions/submit`,
+      {
+        method: "POST",
+        credentials: "include"
       }
+    );
 
-      setApplication(data.data);
+    const data = await res.json();
 
-      toast.success("Application submitted");
-
-    } catch {
-
-      toast.error("Network error");
-
+    if (!res.ok) {
+      toast.error(data.message);
+      return;
     }
 
-  };
+    // STEP 2 - compute AI result
+    const requiredDocs = DOCUMENT_TYPES.filter(d => d.required);
 
+    let isRejected = false;
+
+    for (const docType of requiredDocs) {
+      const doc = getDoc(docType.key);
+
+      if (!doc || doc.verifiedStatus === "REJECTED") {
+        isRejected = true;
+        break;
+      }
+    }
+
+    const aiStatus = isRejected ? "AI_REJECTED" : "AI_APPROVED";
+
+    // STEP 3 - update form status (THIS is your required route)
+    const statusRes = await fetch(
+      `${import.meta.env.VITE_BACKEND_URL}/api/admissions/${application._id}/form-status`,
+      {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ formStatus: aiStatus })
+      }
+    );
+
+    const statusData = await statusRes.json();
+
+    if (!statusRes.ok) {
+      toast.error(statusData.message || "Failed to update form status");
+      return;
+    }
+
+    // STEP 4 - refresh
+    const refreshed = await fetch(
+      `${import.meta.env.VITE_BACKEND_URL}/api/admissions/me`,
+      { credentials: "include" }
+    );
+
+    const refreshedData = await refreshed.json();
+
+    if (refreshed.ok) {
+      setApplication(refreshedData.data);
+    }
+
+    toast.success("Application submitted");
+
+  } catch {
+    toast.error("Network error");
+  }
+};
 
   /* ================= DOCUMENT HELPERS ================= */
 
@@ -177,6 +228,15 @@ const AdmissionDashboard = () => {
     return docs[docs.length - 1];
   };
 
+  const areRequiredDocsUploaded = () => {
+    return DOCUMENT_TYPES
+      .filter(doc => doc.required)
+      .every(docType => {
+        const doc = getDoc(docType.key);
+        return !!doc;
+      });
+  };
+
   const getStatus = (doc) => {
 
     if (!doc) return "NOT_UPLOADED";
@@ -185,21 +245,36 @@ const AdmissionDashboard = () => {
 
   };
 
-  const canUpload = (doc) => {
-
-    if (!doc) return true;
-
-    if (
-      doc.verifiedStatus === "REJECTED" &&
-      application.formStatus !== "FINAL_REJECTED"
-    ) {
-      return false;
-    }
-
-    return true;
-
+  const showDocStatus = () => {
+    return application.formStatus === "MANUAL_REVIEW";
   };
 
+  const canUploadNew = () => {
+    return application.formStatus === "DRAFT";
+  };
+
+  const canReplace = (doc) => {
+    if (!doc) return false;
+
+    return (
+      application.formStatus === "DRAFT" ||
+      (application.formStatus === "MANUAL_REVIEW" &&
+        doc.verifiedStatus === "REJECTED")
+    );
+  };
+
+  const canDelete = () => {
+    return application.formStatus === "DRAFT";
+  };
+
+const isAIProcessing = () => {
+  const requiredDocs = DOCUMENT_TYPES.filter(d => d.required);
+
+  return requiredDocs.some(docType => {
+    const doc = getDoc(docType.key);
+    return !doc || !["VERIFIED", "REJECTED"].includes(doc.verifiedStatus);
+  });
+};
 
   /* ================= REMOVE DOCUMENT ================= */
 
@@ -292,6 +367,7 @@ const AdmissionDashboard = () => {
           "name",
           "father_name",
           "mother_name",
+          "dob",
           "roll_number_12th",
           "board"
         ],
@@ -337,6 +413,7 @@ const AdmissionDashboard = () => {
       }
 
       toast.success("Document uploaded");
+      setUploadingDoc(null);
 
       /* ===== AI VERIFICATION ===== */
 
@@ -348,7 +425,6 @@ const AdmissionDashboard = () => {
 
         aiForm.append("documents", file);
         aiForm.append("doc_types", type);
-        console.log("Application: ", application);
 
         const inputFields = {
           name: application.fullName,
@@ -409,7 +485,6 @@ const AdmissionDashboard = () => {
       );
 
       if (aiResult && newDoc) {
-        console.log("application id: ", application._id);
 
         await fetch(
           `${import.meta.env.VITE_BACKEND_URL}/api/admissions/${application._id}/update-document/${encodeURIComponent(newDoc.publicId)}`,
@@ -432,10 +507,6 @@ const AdmissionDashboard = () => {
     } catch {
 
       toast.error("Upload failed");
-
-    } finally {
-
-      setUploadingDoc(null);
 
     }
 
@@ -512,458 +583,6 @@ const AdmissionDashboard = () => {
 
   /* ================= DASHBOARD ================= */
 
-  // return (
-
-  //   <div className="min-h-screen bg-[#f8fafc]">
-
-  //     <div className="max-w-5xl mx-auto py-10 px-6 space-y-8">
-
-  //       {/* STATUS */}
-
-  //       <div className="bg-white border rounded-xl p-6 shadow-sm">
-
-  //         <h2 className="text-lg text-black font-semibold mb-4">
-  //           Application Status
-  //         </h2>
-
-  //         <p className="text-slate-700">
-  //           Application Number:
-  //           <span className="ml-2 font-semibold">
-  //             {application.applicationNumber}
-  //           </span>
-  //         </p>
-
-  //         <p className="text-slate-700">
-  //           Status:
-  //           <span className="ml-2 font-semibold text-indigo-600">
-  //             {application.formStatus}
-  //           </span>
-  //         </p>
-
-  //       </div>
-
-
-  //       {/* PERSONAL DETAILS */}
-
-  //       <div className="bg-white border rounded-xl p-6 shadow-sm">
-
-  //         <h2 className="text-lg text-black font-semibold mb-6">
-  //           Personal Details
-  //         </h2>
-
-  //         <div className="grid md:grid-cols-2 gap-5">
-
-  //           {[
-  //             ["fullName", "Full Name"],
-  //             ["fatherName", "Father Name"],
-  //             ["motherName", "Mother Name"],
-  //             ["phone", "Phone"],
-  //             ["address", "Address"],
-  //             ["city", "City"],
-  //             ["state", "State"],
-  //             ["pincode", "Pincode"]
-  //           ].map(([key, label]) => (
-
-  //             <div key={key}>
-
-  //               <label className="text-sm text-slate-700">
-  //                 {label}
-  //               </label>
-
-  //               <input
-  //                 name={key}
-  //                 value={application[key] || ""}
-  //                 disabled={!isDraft}
-  //                 onChange={handleChange}
-  //                 placeholder={label}
-  //                 className="mt-1 w-full border border-slate-300 rounded-lg px-3 py-2
-  //             focus:ring-2 focus:ring-indigo-500 outline-none
-  //             placeholder:text-slate-700 text-slate-900"
-  //               />
-
-  //             </div>
-
-  //           ))}
-
-  //         </div>
-
-  //         {isDraft && (
-
-  //           <button
-  //             onClick={saveDetails}
-  //             className="mt-6 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-lg"
-  //           >
-  //             Save Changes
-  //           </button>
-
-  //         )}
-
-  //       </div>
-
-
-  //       {/* Email Verified */}
-  //       {!application.isEmailVerified && (
-
-  //         <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 flex justify-between items-center">
-
-  //           <div>
-
-  //             <p className="font-semibold text-yellow-800">
-  //               Email not verified
-  //             </p>
-
-  //             <p className="text-sm text-yellow-700">
-  //               You must verify your email before uploading documents.
-  //             </p>
-
-  //           </div>
-
-  //           <button
-  //             onClick={sendVerificationEmail}
-  //             className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg"
-  //           >
-  //             Send Verification Email
-  //           </button>
-
-  //         </div>
-
-  //       )}
-
-
-  //       {/* DOCUMENTS */}
-
-  //       {application.isEmailVerified && <div className="bg-white border rounded-xl p-6 shadow-sm">
-
-  //         <h2 className="text-lg text-black font-semibold mb-5">
-  //           Documents
-  //         </h2>
-
-  //         <div className="space-y-4">
-
-  //           {DOCUMENT_TYPES.map(docType => {
-
-  //             const doc = getDoc(docType.key);
-  //             const status = getStatus(doc);
-
-  //             return (
-
-  //               <div
-  //                 key={docType.key}
-  //                 className="flex justify-between items-center border rounded-lg p-4 bg-slate-50"
-  //               >
-  //                 <div>
-
-  //                   <p className="font-medium text-slate-800">
-  //                     {docType.label}
-  //                   </p>
-
-  //                   <p className="text-sm text-slate-500">
-  //                     {status}
-  //                     {doc?.verifiedPercentage ? ` (${doc.verifiedPercentage}%)` : ""}
-  //                   </p>
-
-  //                   {doc?.fileUrl && (
-  //                     <a
-  //                       href={doc.fileUrl}
-  //                       target="_blank"
-  //                       rel="noreferrer"
-  //                       className="text-sm text-indigo-600 hover:underline"
-  //                     >
-  //                       View Document
-  //                     </a>
-  //                   )}
-  //                 </div>
-
-  //                 <div className="flex gap-2">
-  //                   {application.isEmailVerified && doc && canUpload(doc) && (
-  //                     <button
-  //                       onClick={() => removeDocument(doc)}
-  //                       className="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg"
-  //                     >
-  //                       <Trash2 size={16} />
-  //                     </button>
-  //                   )}
-  //                   {application.isEmailVerified && canUpload(doc) && (
-  //                     <label className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 cursor-pointer">
-  //                       {uploadingDoc === docType.key
-  //                         ? <Loader2 className="animate-spin w-4 h-4" />
-  //                         : <Upload className="w-4 h-4" />}
-
-  //                       {doc ? "Replace" : "Upload"}
-
-  //                       <input
-  //                         type="file"
-  //                         accept="application/pdf"
-  //                         hidden
-  //                         onChange={(e) =>
-  //                           uploadDocument(docType.key, e.target.files[0], doc)
-  //                         }
-  //                       />
-  //                     </label>
-  //                   )}
-  //                 </div>
-  //               </div>
-  //             );
-  //           })}
-  //         </div>
-  //       </div>}
-
-  //       {/* SUBMIT */}
-
-  //       {isDraft && (
-  //         <div className="flex justify-end">
-  //           <button
-  //             onClick={submitApplication}
-  //             className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg"
-  //           >
-  //             <Send size={18} />
-  //             Submit Application
-  //           </button>
-  //         </div>
-  //       )}
-
-  //       {/* LOGOUT */}
-
-  //       <div className="flex justify-end pt-6 border-t">
-  //         <button
-  //           onClick={handleLogout}
-  //           className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-5 py-2 rounded-lg"
-  //         >
-  //           <LogOut size={16} />
-  //           Logout
-  //         </button>
-  //       </div>
-  //     </div>
-  //   </div>
-  // );
-
-  /**/
-
-  //   return (
-  //   <div className="min-h-screen bg-slate-100">
-  //     <div className="max-w-7xl mx-auto py-8 px-6 space-y-6">
-
-  //       {/* TOP SUMMARY */}
-  //       <div className="grid md:grid-cols-3 gap-4">
-  //         <div className="bg-white p-5 rounded-xl border">
-  //           <p className="text-sm text-slate-500">Application No.</p>
-  //           <p className="font-semibold text-slate-800">
-  //             {application.applicationNumber}
-  //           </p>
-  //         </div>
-
-  //         <div className="bg-white p-5 rounded-xl border">
-  //           <p className="text-sm text-slate-500">Status</p>
-  //           <p className="font-semibold text-indigo-600">
-  //             {application.formStatus}
-  //           </p>
-  //         </div>
-
-  //         <div className="bg-white p-5 rounded-xl border">
-  //           <p className="text-sm text-slate-500">Documents</p>
-  //           <p className="font-semibold text-slate-800">
-  //             {
-  //               DOCUMENT_TYPES.filter(d => getDoc(d.key)).length
-  //             } / {DOCUMENT_TYPES.length}
-  //           </p>
-  //         </div>
-  //       </div>
-
-
-  //       {/* EMAIL WARNING */}
-  //       {!application.isEmailVerified && (
-  //         <div className="bg-yellow-50 border border-yellow-300 rounded-xl p-4 flex justify-between items-center">
-  //           <div>
-  //             <p className="font-semibold text-yellow-900">
-  //               Email not verified
-  //             </p>
-  //             <p className="text-sm text-yellow-700">
-  //               Verify email before uploading documents
-  //             </p>
-  //           </div>
-
-  //           <button
-  //             onClick={sendVerificationEmail}
-  //             className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg"
-  //           >
-  //             Verify Now
-  //           </button>
-  //         </div>
-  //       )}
-
-
-  //       {/* MAIN LAYOUT */}
-  //       <div className="grid md:grid-cols-3 gap-6">
-
-  //         {/* LEFT SIDE */}
-  //         <div className="md:col-span-2 space-y-6">
-
-  //           {/* PERSONAL DETAILS */}
-  //           <div className="bg-white border rounded-xl p-6">
-  //             <h2 className="text-lg font-semibold mb-6">
-  //               Personal Details
-  //             </h2>
-
-  //             <div className="grid md:grid-cols-2 gap-5">
-  //               {[
-  //                 ["fullName", "Full Name"],
-  //                 ["fatherName", "Father Name"],
-  //                 ["motherName", "Mother Name"],
-  //                 ["phone", "Phone"],
-  //                 ["address", "Address"],
-  //                 ["city", "City"],
-  //                 ["state", "State"],
-  //                 ["pincode", "Pincode"]
-  //               ].map(([key, label]) => (
-  //                 <div key={key}>
-  //                   <label className="text-xs text-slate-500">
-  //                     {label}
-  //                   </label>
-
-  //                   <input
-  //                     name={key}
-  //                     value={application[key] || ""}
-  //                     disabled={!isDraft}
-  //                     onChange={handleChange}
-  //                     placeholder={label}
-  //                     className="mt-1 w-full border rounded-lg px-3 py-2 bg-slate-50 focus:ring-2 focus:ring-indigo-500"
-  //                   />
-  //                 </div>
-  //               ))}
-  //             </div>
-
-  //             {isDraft && (
-  //               <button
-  //                 onClick={saveDetails}
-  //                 className="mt-6 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-lg"
-  //               >
-  //                 Save Changes
-  //               </button>
-  //             )}
-  //           </div>
-
-
-  //           {/* DOCUMENTS */}
-  //           {application.isEmailVerified && (
-  //             <div className="bg-white border rounded-xl p-6">
-  //               <h2 className="text-lg font-semibold mb-5">
-  //                 Documents Checklist
-  //               </h2>
-
-  //               <div className="space-y-3">
-  //                 {DOCUMENT_TYPES.map(docType => {
-  //                   const doc = getDoc(docType.key);
-  //                   const status = getStatus(doc);
-
-  //                   return (
-  //                     <div
-  //                       key={docType.key}
-  //                       className="flex justify-between items-center bg-slate-50 p-3 rounded-lg"
-  //                     >
-  //                       <div className="flex items-center gap-3">
-
-  //                         <div className={`w-2.5 h-2.5 rounded-full ${
-  //                           status === "Verified"
-  //                             ? "bg-green-500"
-  //                             : status === "Rejected"
-  //                             ? "bg-red-500"
-  //                             : "bg-gray-300"
-  //                         }`} />
-
-  //                         <div>
-  //                           <p className="text-sm font-medium">
-  //                             {docType.label}
-  //                           </p>
-  //                           <p className="text-xs text-slate-500">
-  //                             {status}
-  //                             {doc?.verifiedPercentage ? ` (${doc.verifiedPercentage}%)` : ""}
-  //                           </p>
-  //                         </div>
-  //                       </div>
-
-  //                       <div className="flex gap-2">
-  //                         {doc && canUpload(doc) && (
-  //                           <button
-  //                             onClick={() => removeDocument(doc)}
-  //                             className="bg-red-500 text-white px-2 py-1 rounded"
-  //                           >
-  //                             <Trash2 size={14} />
-  //                           </button>
-  //                         )}
-
-  //                         {canUpload(doc) && (
-  //                           <label className="bg-indigo-600 text-white px-3 py-1 rounded cursor-pointer flex items-center gap-1">
-  //                             {uploadingDoc === docType.key
-  //                               ? <Loader2 className="animate-spin w-4 h-4" />
-  //                               : <Upload className="w-4 h-4" />}
-
-  //                             <input
-  //                               type="file"
-  //                               hidden
-  //                               accept="application/pdf"
-  //                               onChange={(e) =>
-  //                                 uploadDocument(docType.key, e.target.files[0], doc)
-  //                               }
-  //                             />
-  //                           </label>
-  //                         )}
-  //                       </div>
-  //                     </div>
-  //                   );
-  //                 })}
-  //               </div>
-  //             </div>
-  //           )}
-
-  //         </div>
-
-
-  //         {/* RIGHT SIDEBAR */}
-  //         <div className="space-y-6">
-
-  //           {/* STATUS CARD */}
-  //           <div className="bg-white border rounded-xl p-5">
-  //             <p className="text-sm text-slate-500">Current Status</p>
-  //             <p className="text-lg font-semibold text-indigo-600">
-  //               {application.formStatus}
-  //             </p>
-  //           </div>
-
-  //           {/* SUBMIT */}
-  //           {isDraft && (
-  //             <div className="bg-white border rounded-xl p-5 sticky top-6">
-  //               <p className="text-sm text-slate-500 mb-3">
-  //                 Ready to submit?
-  //               </p>
-
-  //               <button
-  //                 onClick={submitApplication}
-  //                 className="w-full bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-lg flex items-center justify-center gap-2"
-  //               >
-  //                 <Send size={18} />
-  //                 Submit Application
-  //               </button>
-  //             </div>
-  //           )}
-
-  //           {/* LOGOUT */}
-  //           <div className="bg-white border rounded-xl p-5">
-  //             <button
-  //               onClick={handleLogout}
-  //               className="w-full bg-red-500 hover:bg-red-600 text-white py-2 rounded-lg flex items-center justify-center gap-2"
-  //             >
-  //               <LogOut size={16} />
-  //               Logout
-  //             </button>
-  //           </div>
-
-  //         </div>
-  //       </div>
-
-  //     </div>
-  //   </div>
-  // );
-
   return (
     <div className="min-h-screen bg-[#f1f5f9] pt-24 pb-20 px-4 sm:px-6">
       <div className="max-w-5xl mx-auto space-y-8">
@@ -978,7 +597,9 @@ const AdmissionDashboard = () => {
           <div className="mt-4 flex items-center justify-between">
             <p className="text-base text-[#64748b]">Status</p>
             <span className="px-4 py-1.5 text-sm rounded-md bg-[#e0e7ff] text-[#4338ca] font-medium">
-              {application.formStatus}
+              {["AI_APPROVED", "AI_REJECTED"].includes(application.formStatus)
+                ? "SUBMITTED"
+                : application.formStatus}
             </span>
           </div>
         </div>
@@ -1063,12 +684,13 @@ const AdmissionDashboard = () => {
                 const doc = getDoc(docType.key);
                 const status = getStatus(doc);
 
-                const statusStyles =
-                  status === "Verified"
+                const statusStyles = showDocStatus()
+                  ? (status === "VERIFIED"
                     ? "bg-[#dcfce7] text-[#166534]"
-                    : status === "Rejected"
+                    : status === "REJECTED"
                       ? "bg-[#fee2e2] text-[#991b1b]"
-                      : "bg-[#e2e8f0] text-[#334155]";
+                      : "bg-[#e2e8f0] text-[#334155]")
+                  : "";
 
                 return (
                   <div
@@ -1082,9 +704,11 @@ const AdmissionDashboard = () => {
                       </p>
 
                       {/* STATUS BADGE */}
-                      <span className={`inline-block text-xs px-2.5 py-1 rounded-md font-medium ${statusStyles}`}>
-                        {status}
-                      </span>
+                      {showDocStatus() && (
+                        <span className={`inline-block text-xs px-2.5 py-1 rounded-md font-medium ${statusStyles}`}>
+                          {status}
+                        </span>
+                      )}
 
                       {doc?.fileUrl && (
                         <a
@@ -1101,7 +725,7 @@ const AdmissionDashboard = () => {
                     {/* ACTIONS */}
                     <div className="flex items-center gap-2 self-start sm:self-center">
 
-                      {doc && canUpload(doc) && (
+                      {doc && canDelete() && (
                         <button
                           onClick={() => removeDocument(doc)}
                           className="bg-[#ef4444] hover:bg-[#dc2626] text-white px-3 py-2 rounded-md"
@@ -1110,13 +734,34 @@ const AdmissionDashboard = () => {
                         </button>
                       )}
 
-                      {canUpload(doc) && (
+                      {/* UPLOAD NEW */}
+                      {!doc && canUploadNew() && (
                         <label className="bg-[#4f46e5] hover:bg-[#4338ca] text-white px-4 py-2 rounded-md cursor-pointer flex items-center gap-2 text-sm">
                           {uploadingDoc === docType.key
                             ? <Loader2 className="animate-spin w-4 h-4" />
                             : <Upload className="w-4 h-4" />}
 
-                          {doc ? "Replace" : "Upload"}
+                          Upload
+
+                          <input
+                            type="file"
+                            accept="application/pdf"
+                            hidden
+                            onChange={(e) =>
+                              uploadDocument(docType.key, e.target.files[0], null)
+                            }
+                          />
+                        </label>
+                      )}
+
+                      {/* REPLACE */}
+                      {doc && canReplace(doc) && (
+                        <label className="bg-[#4f46e5] hover:bg-[#4338ca] text-white px-4 py-2 rounded-md cursor-pointer flex items-center gap-2 text-sm">
+                          {uploadingDoc === docType.key
+                            ? <Loader2 className="animate-spin w-4 h-4" />
+                            : <Upload className="w-4 h-4" />}
+
+                          Replace
 
                           <input
                             type="file"
@@ -1152,10 +797,16 @@ const AdmissionDashboard = () => {
           {isDraft && (
             <button
               onClick={submitApplication}
-              className="bg-[#4f46e5] hover:bg-[#4338ca] text-white px-6 py-2.5 rounded-md text-sm flex items-center gap-2"
+              disabled={!areRequiredDocsUploaded() || isAIProcessing()}
+              className={`bg-[#4f46e5] text-white px-6 py-2.5 rounded-md text-sm flex items-center gap-2 ${(!areRequiredDocsUploaded() || isAIProcessing())
+                ? "opacity-50 cursor-not-allowed"
+                : "hover:bg-[#4338ca]"
+                }`}
             >
               <Send size={16} />
-              Submit Application
+              {isAIProcessing()
+                ? "Verifying Documents..."
+                : "Submit Application"}
             </button>
           )}
 

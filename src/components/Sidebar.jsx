@@ -150,6 +150,20 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
               },
             ],
           },
+
+          {
+            key: "Admissions",
+            label: "Admissions",
+            icon: BookOpen,
+            items: [
+              {
+                label: "All Applications",
+                to: "/institution/admissions",
+                icon: ListChecks,
+                end: true,
+              },
+            ],
+          },
         ],
 
 
