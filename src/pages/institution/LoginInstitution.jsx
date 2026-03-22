@@ -54,7 +54,7 @@ const LoginInstitution = () => {
       await loginInstitution(payload);
 
       toast.success("Login successful");
-      navigate("/institution/dashboard", { replace: true });
+      navigate("/institution/dashboard");
     } catch (err) {
       toast.error(err.message || "Login failed");
     } finally {

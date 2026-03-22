@@ -11,6 +11,10 @@ import Loader from "./components/Loader.jsx";
 
 import InstitutionRoutes from "./routes/InstitutionRoutes";
 import Admission from "./pages/Admission.jsx";
+import AdmissionsLogin from "./pages/AdmissionLogin.jsx";
+import AdmissionsDashboard from "./pages/AdmissionsDashboard.jsx";
+import ResetAdmissionPassword from "./pages/ResetAdmissionPassword.jsx";
+import VerifyAdmissionEmail from "./pages/VerifyAdmissionEmail.jsx";
 // import UserRoutes from "./routes/UserRoutes";
 
 const App = () => {
@@ -44,7 +48,17 @@ const App = () => {
         />
 
         <Route path="/about" element={<AboutPage />} />
-        <Route path="/admission" element={<Admission />} />
+
+        {/* admission routes */}
+<Route path="/admission">
+  <Route index element={<Admission />} />
+  <Route path="login" element={<AdmissionsLogin />} />
+  <Route path="dashboard" element={<AdmissionsDashboard />} />
+  <Route path="reset-password/:token" element={<ResetAdmissionPassword />} />
+  <Route path="verify-email/:token" element={<VerifyAdmissionEmail />} />
+</Route>
+
+
         <Route path="/contact" element={<ContactPage />} />
 
         <Route path="/institution/*" element={<InstitutionRoutes />} />

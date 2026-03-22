@@ -18,6 +18,7 @@ import Hostel from "./../assets/landingPage/hostel.png";
 import Security from "./../assets/landingPage/security.png";
 import Certificates from "./../assets/landingPage/certificate.png";
 import Admission from "./../assets/landingPage/admission.png";
+import { Link } from "react-router-dom";
 
 const sectionVariants = {
   hidden: { opacity: 0, y: 40 },
@@ -256,12 +257,12 @@ const LandingPage = () => {
             </p>
 
             <div className="mt-10 flex flex-col sm:flex-row gap-4">
-              <a
-                href="/admission"
-                className="px-9 py-4 rounded-xl bg-emerald-600 text-white font-medium shadow-md hover:shadow-xl hover:bg-emerald-700 transition inline-flex items-center justify-center gap-2"
+              <Link
+                to="/admission"
+                className="px-9 py-4 rounded-xl bg-emerald-600 text-white font-medium"
               >
-                Start Admission Process <ArrowRight className="w-5 h-5" />
-              </a>
+                Start Admission Process
+              </Link>
             </div>
 
           </motion.div>
