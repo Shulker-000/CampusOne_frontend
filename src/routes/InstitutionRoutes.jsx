@@ -29,6 +29,7 @@ import CreateFaculty from "../pages/institution/faculties/CreateFaculty";
 import InstitutionAdmissions from "../pages/institution/admissions/InstitutionAdmissions";
 import InstitutionAdmissionApplication from "../pages/institution/admissions/InstitutionAdmissionApplication";
 import CreateStudents from "../pages/institution/students/CreateStudents";
+import InstitutionStudents from "../pages/institution/students/InstitutionStudents";
 
 /* ---------- Guards ---------- */
 
@@ -132,7 +133,7 @@ const InstitutionRoutes = () => {
         <Route path="faculties/profile/:facultyId" element={<InstitutionFacultyProfile />} />
 
         <Route path="students/create" element={<CreateStudents />} />
-        <Route path="students" element={<InstitutionFaculties />} />
+        <Route path="students" element={<InstitutionStudents />} />
         <Route path="students/profile/:studentId" element={<InstitutionFacultyProfile />} />
 
         <Route path="admissions" element={<InstitutionAdmissions />} />
