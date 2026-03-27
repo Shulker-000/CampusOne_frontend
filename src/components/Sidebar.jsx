@@ -151,6 +151,26 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
             ],
           },
 
+                    {
+            key: "students",
+            label: "Students",
+            icon: GraduationCap,
+            items: [
+              {
+                label: "All Students",
+                to: "/institution/students",
+                icon: UserPen,
+                end: true,
+              },
+              {
+                label: "Create Student",
+                to: "/institution/students/create",
+                icon: UserPen,
+                end: true,
+              },
+            ],
+          },
+
           {
             key: "Admissions",
             label: "Admissions",
