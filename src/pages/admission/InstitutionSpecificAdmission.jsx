@@ -48,7 +48,8 @@ const InstitutionSpecificAdmission = () => {
       .then(r => r.json())
       .then(d => {
         if (!d.data?.isAcceptingApplication) {
-          navigate("/admission");
+          toast.info("This Institution is not accepting new applications currently")
+          navigate("/admission/institutions");
         }
       });
   }, [institutionId]);
