@@ -220,272 +220,303 @@ const InstitutionStudentProfile = ({ mode = "institution" }) => {
 
   /* ================= UI ================= */
 
-return (
-  <div className="px-6 py-8 max-w-6xl mx-auto">
+  return (
+    <div className="px-6 py-8 max-w-6xl mx-auto">
 
-    {/* ===== HEADER ===== */}
-    <div className="mb-8 flex justify-between items-center">
-      <div>
-        <h1 className="text-3xl font-bold text-[var(--text)]">
-          {user.name}
-        </h1>
-        <p className="text-sm text-[var(--muted)]">
-          Student Profile
-        </p>
+      {/* ===== HEADER ===== */}
+      <div className="mb-8 flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-[var(--text)]">
+            {user.name}
+          </h1>
+          <p className="text-sm text-[var(--muted)]">
+            Student Profile
+          </p>
+        </div>
+
+        {(isInstitution || mode === "user") && (
+          <button
+            onClick={() => setEditOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg
+          bg-[var(--accent)] text-white hover:opacity-90"
+          >
+            <Pencil size={16} />
+            Edit
+          </button>
+        )}
       </div>
 
-      {(isInstitution || mode === "user") && (
-        <button
-          onClick={() => setEditOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg
-          bg-[var(--accent)] text-white hover:opacity-90"
-        >
-          <Pencil size={16} />
-          Edit
-        </button>
-      )}
-    </div>
+      {/* ===== OVERVIEW ===== */}
+      <section className="border-t border-[var(--border)] pt-8 pb-10">
+        <div className="relative bg-[var(--surface)] border border-[var(--border)] rounded-2xl px-6 py-7">
 
-    {/* ===== OVERVIEW ===== */}
-    <section className="border-t border-[var(--border)] pt-8 pb-10">
-      <div className="relative bg-[var(--surface)] border border-[var(--border)] rounded-2xl px-6 py-7">
+          {/* Accent line */}
+          <div className="absolute left-0 top-0 h-full w-[3px] bg-[var(--accent)] rounded-l-2xl" />
 
-        <div className="absolute left-0 top-0 h-full w-[3px] bg-[var(--accent)] rounded-l-2xl" />
+          <div className="pl-3">
 
-        <div className="pl-3 grid sm:grid-cols-2 gap-x-10 gap-y-4">
+            {/* ===== TOP SECTION (Avatar + Name) ===== */}
+            <div className="flex items-center gap-4 mb-6">
 
-          <Info label="Email" value={user.email} />
-          <Info label="Phone" value={user.phone} />
-          <Info label="Department" value={department.name} />
-          <Info label="Branch" value={student.branchId.name} />
-          <Info label="Semester" value={student.semester} />
+              {/* Avatar */}
+              <div className="relative">
+                <img
+                  src={user.avatar || "/default-avatar.png"}
+                  alt={user.name[0]}
+                  className="h-14 w-14 rounded-full object-cover border border-[var(--border)]"
+                />
 
-          {/* STATUS */}
-          <div>
-            <p className="text-xs uppercase font-semibold text-[var(--muted-text)]">
+                {/* optional online indicator */}
+                <span className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 rounded-full border-2 border-[var(--surface)]" />
+              </div>
+
+              {/* Name + small meta */}
+              <div>
+                <h2 className="text-lg font-semibold text-[var(--text)]">
+                  {user.name}
+                </h2>
+                <p className="text-sm text-[var(--muted-text)]">
+                  {department.name}
+                </p>
+              </div>
+
+            </div>
+
+            {/* ===== INFO GRID ===== */}
+            <div className="grid sm:grid-cols-2 gap-x-10 gap-y-4">
+
+              <Info label="Email" value={user.email} />
+              <Info label="Phone" value={user.phone} />
+              <Info label="Department" value={department.name} />
+              <Info label="Branch" value={student.branchId.name} />
+              <Info label="Semester" value={student.semester} />
+
+              {/* STATUS */}
+              <div>
+                <p className="text-xs uppercase font-semibold text-[var(--muted-text)]">
+                  Status
+                </p>
+
+                <div className="flex items-center gap-3 mt-2">
+                  <button
+                    onClick={() =>
+                      setConfirm({ open: true, type: "toggleStatus" })
+                    }
+                    disabled={statusLoading}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition
+              ${statusLoading ? "opacity-50 cursor-not-allowed" : ""}
+              `}
+                    style={{
+                      background: student.isActive
+                        ? "var(--accent)"
+                        : "var(--surface-2)",
+                    }}
+                  >
+                    <span
+                      className="inline-block h-4 w-4 bg-white rounded-full transition"
+                      style={{
+                        transform: student.isActive
+                          ? "translateX(22px)"
+                          : "translateX(3px)",
+                      }}
+                    />
+                  </button>
+
+                  <span className="text-sm font-semibold text-[var(--text)]">
+                    {student.isActive ? "Active" : "Inactive"}
+                  </span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ===== STATS ===== */}
+      <section className="border-t border-[var(--border)] pt-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+
+          <Stat
+            label="Current Courses"
+            value={student.courseIds.length}
+          />
+
+          <Stat
+            label="Previous Courses"
+            value={(student.prevCourses || []).length}
+          />
+
+          <div className="bg-[var(--surface-2)] border border-[var(--border)] rounded-xl p-4">
+            <p className="text-xs font-semibold text-[var(--muted-text)]">
               Status
             </p>
-
-            <div className="flex items-center gap-3 mt-2">
-              <button
-                onClick={() =>
-                  setConfirm({ open: true, type: "toggleStatus" })
-                }
-                disabled={statusLoading}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition
-                ${statusLoading ? "opacity-50 cursor-not-allowed" : ""}
-                `}
-                style={{
-                  background: student.isActive
-                    ? "var(--accent)"
-                    : "var(--surface-2)",
-                }}
-              >
-                <span
-                  className="inline-block h-4 w-4 bg-white rounded-full transition"
-                  style={{
-                    transform: student.isActive
-                      ? "translateX(22px)"
-                      : "translateX(3px)",
-                  }}
-                />
-              </button>
-
-              <span className="text-sm font-semibold text-[var(--text)]">
-                {student.isActive ? "Active" : "Inactive"}
-              </span>
-            </div>
+            <p className="mt-1 text-xl font-bold">
+              {student.isActive ? "Active" : "Inactive"}
+            </p>
           </div>
 
         </div>
-      </div>
-    </section>
+      </section>
 
-    {/* ===== STATS ===== */}
-    <section className="border-t border-[var(--border)] pt-6">
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-
-        <Stat
-          label="Current Courses"
-          value={student.courseIds.length}
-        />
-
-        <Stat
-          label="Previous Courses"
-          value={(student.prevCourses || []).length}
-        />
-
-        <div className="bg-[var(--surface-2)] border border-[var(--border)] rounded-xl p-4">
-          <p className="text-xs font-semibold text-[var(--muted-text)]">
-            Status
-          </p>
-          <p className="mt-1 text-xl font-bold">
-            {student.isActive ? "Active" : "Inactive"}
-          </p>
+      {/* ===== ACTION ===== */}
+      {isInstitution && (
+        <div className="mt-8 flex justify-end">
+          <button
+            onClick={async () => {
+              await fetchCourses();
+              setShowAdd(true);
+            }}
+            className="px-4 py-2 bg-[var(--accent)] text-white rounded-lg flex items-center gap-2 hover:opacity-90"
+          >
+            <Plus size={16} />
+            Add Course
+          </button>
         </div>
+      )}
+
+      {/* ===== COURSES ===== */}
+      <div className="mt-10 space-y-10">
+
+        <CourseSection
+          title="Current Courses"
+          courses={student.courseIds}
+          mapFn={(c) => mapCourse(c)}
+          isInstitution={isInstitution}
+          onAction={(type, id) =>
+            setConfirm({ open: true, type, id })
+          }
+        />
+
+        <CourseSection
+          title="Previous Courses"
+          courses={student.prevCourses || []}
+          mapFn={(c) => mapCourse(c, true)}
+          prev
+          isInstitution={isInstitution}
+          onAction={(type, id) =>
+            setConfirm({ open: true, type, id })
+          }
+        />
 
       </div>
-    </section>
 
-    {/* ===== ACTION ===== */}
-    {isInstitution && (
-      <div className="mt-8 flex justify-end">
-        <button
-          onClick={async () => {
-            await fetchCourses();
-            setShowAdd(true);
-          }}
-          className="px-4 py-2 bg-[var(--accent)] text-white rounded-lg flex items-center gap-2 hover:opacity-90"
-        >
-          <Plus size={16} />
-          Add Course
-        </button>
-      </div>
-    )}
+      {/* ===== ADD COURSE MODAL ===== */}
+      <ConfirmModal
+        open={showAdd}
+        title="Add Course"
+        onConfirm={addCourse}
+        onClose={() => setShowAdd(false)}
+      >
+        <div className="space-y-3">
 
-    {/* ===== COURSES ===== */}
-    <div className="mt-10 space-y-10">
+          <label className="text-sm text-[var(--muted)]">
+            Select Course
+          </label>
 
-      <CourseSection
-        title="Current Courses"
-        courses={student.courseIds}
-        mapFn={(c) => mapCourse(c)}
-        isInstitution={isInstitution}
-        onAction={(type, id) =>
-          setConfirm({ open: true, type, id })
-        }
-      />
-
-      <CourseSection
-        title="Previous Courses"
-        courses={student.prevCourses || []}
-        mapFn={(c) => mapCourse(c, true)}
-        prev
-        isInstitution={isInstitution}
-        onAction={(type, id) =>
-          setConfirm({ open: true, type, id })
-        }
-      />
-
-    </div>
-
-    {/* ===== ADD COURSE MODAL ===== */}
-    <ConfirmModal
-      open={showAdd}
-      title="Add Course"
-      onConfirm={addCourse}
-      onClose={() => setShowAdd(false)}
-    >
-      <div className="space-y-3">
-
-        <label className="text-sm text-[var(--muted)]">
-          Select Course
-        </label>
-
-        <select
-          className="w-full rounded-lg px-3 py-2
+          <select
+            className="w-full rounded-lg px-3 py-2
           bg-[var(--surface)]
           text-[var(--text)]
           border border-[var(--border)]
           focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
-          value={selectedCourse}
-          onChange={(e) => setSelectedCourse(e.target.value)}
-        >
-          <option value="">Select course</option>
-          {courses.map((c) => (
-            <option key={c._id} value={c._id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
+            value={selectedCourse}
+            onChange={(e) => setSelectedCourse(e.target.value)}
+          >
+            <option value="">Select course</option>
+            {courses.map((c) => (
+              <option key={c._id} value={c._id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
 
-      </div>
-    </ConfirmModal>
+        </div>
+      </ConfirmModal>
 
-    {/* ===== CONFIRM MODAL ===== */}
-    <ConfirmModal
-      open={confirm.open}
-      title={
-        confirm.type === "toggleStatus"
-          ? "Change Status"
-          : confirm.type === "delete"
-            ? "Remove Course"
-            : confirm.type === "deletePrev"
-              ? "Remove Previous Course"
-              : confirm.type === "finish"
-                ? "Finish Course"
-                : "Confirm Action"
-      }
-      message={
-        confirm.type === "toggleStatus"
-          ? `Are you sure you want to ${
-              student.isActive ? "deactivate" : "activate"
+      {/* ===== CONFIRM MODAL ===== */}
+      <ConfirmModal
+        open={confirm.open}
+        title={
+          confirm.type === "toggleStatus"
+            ? "Change Status"
+            : confirm.type === "delete"
+              ? "Remove Course"
+              : confirm.type === "deletePrev"
+                ? "Remove Previous Course"
+                : confirm.type === "finish"
+                  ? "Finish Course"
+                  : "Confirm Action"
+        }
+        message={
+          confirm.type === "toggleStatus"
+            ? `Are you sure you want to ${student.isActive ? "deactivate" : "activate"
             } this student?`
-          : confirm.type === "finish"
-            ? "This will move course to previous courses"
-            : "Are you sure you want to proceed?"
-      }
-      onConfirm={handleAction}
-      onClose={() => setConfirm({ open: false })}
-    />
+            : confirm.type === "finish"
+              ? "This will move course to previous courses"
+              : "Are you sure you want to proceed?"
+        }
+        onConfirm={handleAction}
+        onClose={() => setConfirm({ open: false })}
+      />
 
-    {/* ===== EDIT MODAL ===== */}
-    <ConfirmModal
-      open={editOpen}
-      title="Edit Student"
-      onConfirm={updateStudent}
-      onClose={() => setEditOpen(false)}
-    >
-      <div className="flex flex-col gap-4">
+      {/* ===== EDIT MODAL ===== */}
+      <ConfirmModal
+        open={editOpen}
+        title="Edit Student"
+        onConfirm={updateStudent}
+        onClose={() => setEditOpen(false)}
+      >
+        <div className="flex flex-col gap-4">
 
-        <div>
-          <label className="text-sm text-[var(--muted)]">Full Name</label>
-          <input
-            value={editForm.name}
-            onChange={(e) =>
-              setEditForm({ ...editForm, name: e.target.value })
-            }
-            className="w-full mt-1 rounded-lg px-3 py-2
+          <div>
+            <label className="text-sm text-[var(--muted)]">Full Name</label>
+            <input
+              value={editForm.name}
+              onChange={(e) =>
+                setEditForm({ ...editForm, name: e.target.value })
+              }
+              className="w-full mt-1 rounded-lg px-3 py-2
             bg-[var(--surface)]
             border border-[var(--border)]
             focus:ring-2 focus:ring-[var(--accent)] outline-none"
-          />
-        </div>
+            />
+          </div>
 
-        <div>
-          <label className="text-sm text-[var(--muted)]">Phone</label>
-          <input
-            value={editForm.phone}
-            onChange={(e) =>
-              setEditForm({ ...editForm, phone: e.target.value })
-            }
-            className="w-full mt-1 rounded-lg px-3 py-2
+          <div>
+            <label className="text-sm text-[var(--muted)]">Phone</label>
+            <input
+              value={editForm.phone}
+              onChange={(e) =>
+                setEditForm({ ...editForm, phone: e.target.value })
+              }
+              className="w-full mt-1 rounded-lg px-3 py-2
             bg-[var(--surface)]
             border border-[var(--border)]
             focus:ring-2 focus:ring-[var(--accent)] outline-none"
-          />
-        </div>
+            />
+          </div>
 
-        <div>
-          <label className="text-sm text-[var(--muted)]">Date of Birth</label>
-          <input
-            type="date"
-            value={editForm.dob || ""}
-            onChange={(e) =>
-              setEditForm({ ...editForm, dob: e.target.value })
-            }
-            className="w-full mt-1 rounded-lg px-3 py-2
+          <div>
+            <label className="text-sm text-[var(--muted)]">Date of Birth</label>
+            <input
+              type="date"
+              value={editForm.dob || ""}
+              onChange={(e) =>
+                setEditForm({ ...editForm, dob: e.target.value })
+              }
+              className="w-full mt-1 rounded-lg px-3 py-2
             bg-[var(--surface)]
             border border-[var(--border)]
             focus:ring-2 focus:ring-[var(--accent)] outline-none"
-          />
+            />
+          </div>
+
         </div>
+      </ConfirmModal>
 
-      </div>
-    </ConfirmModal>
-
-  </div>
-);
+    </div>
+  );
 };
 
 /* ================= COURSE SECTION ================= */

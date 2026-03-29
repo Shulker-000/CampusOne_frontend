@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import { Building2, CalendarDays } from "lucide-react";
+import ConfirmModal from "../../../components/ConfirmModal";
 
 const InstitutionStudents = () => {
     const navigate = useNavigate();
@@ -18,6 +19,9 @@ const InstitutionStudents = () => {
 
     const [branchId, setBranchId] = useState("");
     const [admissionYear, setAdmissionYear] = useState("");
+
+    const [showPromoteModal, setShowPromoteModal] = useState(false);
+    const [promoteLoading, setPromoteLoading] = useState(false);
 
     // ================= FETCH BRANCHES =================
     const fetchBranches = async () => {
@@ -72,11 +76,7 @@ const InstitutionStudents = () => {
 
     // ================= FILTER LOGIC =================
     const filteredStudents = useMemo(() => {
-        if (!branchId ||
-    !admissionYear ||
-    String(admissionYear).length !== 4 ||
-    Number(admissionYear) < establishmentYear ||
-    Number(admissionYear) > currentYear) return [];
+        if (!branchId || !admissionYear) return [];
         if (
             Number(admissionYear) < establishmentYear ||
             Number(admissionYear) > currentYear
@@ -146,34 +146,47 @@ const InstitutionStudents = () => {
                         <div className="relative">
                             <CalendarDays className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--muted-text)]" />
 
-                            <input
-                                type="number"
-                                min={establishmentYear}
-                                max={currentYear}
+                            <select
                                 value={admissionYear}
-                                onChange={(e) => {
-    const val = e.target.value;
-
-    // allow empty (so user can delete)
-    if (val === "") {
-        setAdmissionYear("");
-        return;
-    }
-
-    // allow typing up to 4 digits
-    if (val.length > 4) return;
-
-    // always update (no blocking)
-    setAdmissionYear(val);
-}}
-                                placeholder="e.g. 2023"
+                                onChange={(e) => setAdmissionYear(e.target.value)}
                                 className="w-full rounded-xl border border-[var(--border)] pl-10 pr-4 py-2.5 bg-[var(--surface-2)]"
-                            />
+                            >
+                                <option value="">Select Year</option>
+
+                                {Array.from(
+                                    { length: currentYear - establishmentYear + 1 },
+                                    (_, i) => currentYear - i
+                                ).map((year) => (
+                                    <option key={year} value={year}>
+                                        {year}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
                     </div>
                 </div>
             </div>
 
+            {branchId && admissionYear && (
+                <div className="mb-4 text-sm text-[var(--muted-text)]">
+                    Batch:{" "}
+                    <span className="font-semibold text-[var(--text)]">
+                        {
+                            branches.find(b => String(b._id) === String(branchId))?.code
+                        }-{admissionYear}
+                    </span>
+                </div>
+            )}
+
+            <div className="mb-4 flex justify-end">
+                <button
+                    disabled={!branchId || !admissionYear}
+                    onClick={() => setShowPromoteModal(true)}
+                    className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                >
+                    Promote Batch
+                </button>
+            </div>
             {/* RESULTS */}
             <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl overflow-hidden">
 
@@ -236,6 +249,57 @@ const InstitutionStudents = () => {
                     </table>
                 )}
             </div>
+            <ConfirmModal
+                open={showPromoteModal}
+                onClose={() => !promoteLoading && setShowPromoteModal(false)}
+                onConfirm={async () => {
+                    try {
+                        setPromoteLoading(true);
+                        if (filteredStudents.every(s => s.semester >= 8)) {
+                            toast.error("All students already at max semester");
+                            setShowPromoteModal(false);
+                            setPromoteLoading(false);
+                            return;
+                        }
+                        const res = await fetch(
+                            `${import.meta.env.VITE_BACKEND_URL}/api/students/update-semester-bulk`,
+                            {
+                                method: "PUT",
+                                credentials: "include",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ branchId, admissionYear })
+                            }
+                        );
+
+                        const data = await res.json();
+                        if (!res.ok) throw new Error(data.message);
+
+                        toast.success(`Promoted ${data.data.updatedCount} students`);
+
+                        setShowPromoteModal(false);
+                        fetchStudents(); // refresh
+                    } catch (err) {
+                        toast.error(err.message);
+                    } finally {
+                        setPromoteLoading(false);
+                    }
+                }}
+                title="Promote Batch"
+                message="This will move all students to next semester. This action cannot be undone."
+                confirmText="Promote"
+                variant="warning"
+                loading={promoteLoading}
+            >
+                {/* EXTRA CONTEXT - THIS IS IMPORTANT */}
+                <div className="text-sm">
+                    Batch:{" "}
+                    <span className="font-semibold">
+                        {
+                            branches.find(b => String(b._id) === String(branchId))?.code
+                        }-{admissionYear}
+                    </span>
+                </div>
+            </ConfirmModal>
         </div>
     );
 };
