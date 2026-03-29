@@ -10,11 +10,16 @@ import Navbar from "./components/Navbar";
 import Loader from "./components/Loader.jsx";
 
 import InstitutionRoutes from "./routes/InstitutionRoutes";
-import Admission from "./pages/Admission.jsx";
-import AdmissionsLogin from "./pages/AdmissionLogin.jsx";
-import AdmissionsDashboard from "./pages/AdmissionsDashboard.jsx";
-import ResetAdmissionPassword from "./pages/ResetAdmissionPassword.jsx";
-import VerifyAdmissionEmail from "./pages/VerifyAdmissionEmail.jsx";
+
+// Admissions
+import Admission from "./pages/admission/Admission.jsx";
+import AdmissionsLogin from "./pages/admission/AdmissionLogin.jsx";
+import AdmissionsDashboard from "./pages/admission/AdmissionsDashboard.jsx";
+import ResetAdmissionPassword from "./pages/admission/ResetAdmissionPassword.jsx";
+import VerifyAdmissionEmail from "./pages/admission/VerifyAdmissionEmail.jsx";
+import InstitutionSpecificAdmission from "./pages/admission/InstitutionSpecificAdmission.jsx";
+import AdmissionAcceptingInstitutions from "./pages/admission/AdmissionAcceptingInstitutions.jsx";
+
 // import UserRoutes from "./routes/UserRoutes";
 
 const App = () => {
@@ -50,13 +55,15 @@ const App = () => {
         <Route path="/about" element={<AboutPage />} />
 
         {/* admission routes */}
-<Route path="/admission">
-  <Route index element={<Admission />} />
-  <Route path="login" element={<AdmissionsLogin />} />
-  <Route path="dashboard" element={<AdmissionsDashboard />} />
-  <Route path="reset-password/:token" element={<ResetAdmissionPassword />} />
-  <Route path="verify-email/:token" element={<VerifyAdmissionEmail />} />
-</Route>
+        <Route path="/admission">
+          <Route index element={<Admission />} />
+          <Route path="login" element={<AdmissionsLogin />} />
+          <Route path="dashboard" element={<AdmissionsDashboard />} />
+          <Route path="reset-password/:token" element={<ResetAdmissionPassword />} />
+          <Route path="verify-email/:token" element={<VerifyAdmissionEmail />} />
+          <Route path="institutions" element={<AdmissionAcceptingInstitutions />} />
+          <Route path="institutions/:institutionId" element={<InstitutionSpecificAdmission />} />
+        </Route>
 
 
         <Route path="/contact" element={<ContactPage />} />
