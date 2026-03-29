@@ -83,23 +83,29 @@ const PublicNavbar = () => {
   ];
 
   const dropdownItems = [
-    { label: "Student", to: "/student/login" },
-    { label: "Faculty", to: "/faculty/login" },
+    // { label: "Student", to: "/student/login" },
+    // { label: "Faculty", to: "/faculty/login" },
     { label: "Institution", to: "/institution/login" },
   ];
 
   const mobileActions = [
+    // {
+    //   label: "Login as Student",
+    //   to: "/student/login",
+    //   className:
+    //     "block bg-blue-700 text-center text-white px-4 py-3 rounded-lg font-medium hover:scale-101 transition-transform",
+    // },
+    // {
+    //   label: "Login as Faculty",
+    //   to: "/faculty/login",
+    //   className:
+    //     "block text-center px-4 py-3 bg-gray-100 rounded-lg font-medium text-black hover:scale-101 transition-transform",
+    // },
     {
-      label: "Login as Student",
-      to: "/student/login",
+      label: "Login as Institution",
+      to: "/institution/login",
       className:
-        "block bg-blue-700 text-center text-white px-4 py-3 rounded-lg font-medium",
-    },
-    {
-      label: "Login as Faculty",
-      to: "/faculty/login",
-      className:
-        "block text-center px-4 py-3 bg-gray-100 rounded-lg font-medium text-black",
+        "block text-center px-4 py-3 bg-gray-700 rounded-lg font-medium text-white hover:scale-101 transition-transform",
     },
   ];
 

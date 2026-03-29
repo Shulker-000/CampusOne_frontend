@@ -3,7 +3,7 @@ import { Loader2, Upload, Trash2, LogOut, Send } from "lucide-react";
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../providers/AuthProvider";
+import { useAuth } from "../../providers/AuthProvider";
 
 const DOCUMENT_TYPES = [
   { key: "10th_marksheet", label: "10th Marksheet", required: true },

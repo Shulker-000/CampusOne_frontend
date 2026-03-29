@@ -4,8 +4,8 @@ import { toast } from "react-toastify";
 import { GraduationCap, Lock, Hash, Loader2, Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import Loader from "../components/Loader.jsx";
-import { useAuth } from "../providers/AuthProvider.jsx";
+import Loader from "../../components/Loader.jsx";
+import { useAuth } from "../../providers/AuthProvider.jsx";
 
 const AdmissionsLogin = () => {
 
