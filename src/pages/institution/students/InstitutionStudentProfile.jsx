@@ -81,13 +81,13 @@ const InstitutionStudentProfile = ({ mode = "institution" }) => {
           method: "PUT",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ isActive: !student.isActive }),
+          body: JSON.stringify({ active: !student.userId.active }),
         }
       );
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
-
+      console.log(data);
       toast.success(data.message);
       fetchStudent();
     } catch (err) {
@@ -262,7 +262,7 @@ const InstitutionStudentProfile = ({ mode = "institution" }) => {
               <div className="relative">
                 <img
                   src={user.avatar || "/default-avatar.png"}
-                  alt={user.name[0]}
+                  alt={user?.name[0] || "U"}
                   className="h-14 w-14 rounded-full object-cover border border-[var(--border)]"
                 />
 
@@ -307,7 +307,7 @@ const InstitutionStudentProfile = ({ mode = "institution" }) => {
               ${statusLoading ? "opacity-50 cursor-not-allowed" : ""}
               `}
                     style={{
-                      background: student.isActive
+                      background: student.userId.active
                         ? "var(--accent)"
                         : "var(--surface-2)",
                     }}
@@ -315,7 +315,7 @@ const InstitutionStudentProfile = ({ mode = "institution" }) => {
                     <span
                       className="inline-block h-4 w-4 bg-white rounded-full transition"
                       style={{
-                        transform: student.isActive
+                        transform: student.userId.active
                           ? "translateX(22px)"
                           : "translateX(3px)",
                       }}
@@ -323,7 +323,7 @@ const InstitutionStudentProfile = ({ mode = "institution" }) => {
                   </button>
 
                   <span className="text-sm font-semibold text-[var(--text)]">
-                    {student.isActive ? "Active" : "Inactive"}
+                    {student.userId.active ? "Active" : "Inactive"}
                   </span>
                 </div>
               </div>
@@ -352,7 +352,7 @@ const InstitutionStudentProfile = ({ mode = "institution" }) => {
               Status
             </p>
             <p className="mt-1 text-xl font-bold">
-              {student.isActive ? "Active" : "Inactive"}
+              {student.userId.active ? "Active" : "Inactive"}
             </p>
           </div>
 
@@ -450,7 +450,7 @@ const InstitutionStudentProfile = ({ mode = "institution" }) => {
         }
         message={
           confirm.type === "toggleStatus"
-            ? `Are you sure you want to ${student.isActive ? "deactivate" : "activate"
+            ? `Are you sure you want to ${student.userId.active ? "deactivate" : "activate"
             } this student?`
             : confirm.type === "finish"
               ? "This will move course to previous courses"

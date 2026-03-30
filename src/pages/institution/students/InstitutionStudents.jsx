@@ -23,6 +23,14 @@ const InstitutionStudents = () => {
     const [showPromoteModal, setShowPromoteModal] = useState(false);
     const [promoteLoading, setPromoteLoading] = useState(false);
 
+    const [showDeactivateModal, setShowDeactivateModal] = useState(false);
+    const [deactivateLoading, setDeactivateLoading] = useState(false);
+
+    const [courses, setCourses] = useState([]);
+    const [selectedCourses, setSelectedCourses] = useState([]);
+    const [showCourseModal, setShowCourseModal] = useState(false);
+    const [courseLoading, setCourseLoading] = useState(false);
+
     // ================= FETCH BRANCHES =================
     const fetchBranches = async () => {
         if (!institutionId) return;
@@ -69,9 +77,28 @@ const InstitutionStudents = () => {
         }
     };
 
+    const fetchCourses = async () => {
+        try {
+            const res = await fetch(
+                `${import.meta.env.VITE_BACKEND_URL}/api/courses/institution/${institutionId}`,
+                { credentials: "include" }
+            );
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message);
+
+            setCourses(data.data);
+        } catch (err) {
+            toast.error(err.message);
+        }
+    };
+
     useEffect(() => {
         fetchBranches();
         fetchStudents();
+        fetchCourses();
+
+
     }, [institutionId]);
 
     // ================= FILTER LOGIC =================
@@ -178,15 +205,35 @@ const InstitutionStudents = () => {
                 </div>
             )}
 
-            <div className="mb-4 flex justify-end">
+            {branchId && admissionYear && <div className="mb-4 flex justify-end gap-2">
                 <button
                     disabled={!branchId || !admissionYear}
                     onClick={() => setShowPromoteModal(true)}
-                    className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                    className="px-4 py-2 rounded-lg bg-blue-700 text-white hover:bg-blue-800 disabled:opacity-50"
                 >
                     Promote Batch
                 </button>
-            </div>
+
+                <button
+                    disabled={!branchId || !admissionYear}
+                    onClick={() => setShowDeactivateModal(true)}
+                    className="px-4 py-2 rounded-lg bg-blue-700 text-white hover:bg-blue-800 disabled:opacity-50"
+                >
+                    Deactivate Batch
+                </button>
+            </div>}
+
+            {branchId && admissionYear && <div className="mb-4 flex justify-end gap-2">
+
+                <button
+                    disabled={!branchId || !admissionYear}
+                    onClick={() => setShowCourseModal(true)}
+                    className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                    Add Courses
+                </button>
+            </div>}
+
             {/* RESULTS */}
             <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl overflow-hidden">
 
@@ -249,6 +296,8 @@ const InstitutionStudents = () => {
                     </table>
                 )}
             </div>
+
+            {/* Promote */}
             <ConfirmModal
                 open={showPromoteModal}
                 onClose={() => !promoteLoading && setShowPromoteModal(false)}
@@ -262,7 +311,7 @@ const InstitutionStudents = () => {
                             return;
                         }
                         const res = await fetch(
-                            `${import.meta.env.VITE_BACKEND_URL}/api/students/update-semester-bulk`,
+                            `${import.meta.env.VITE_BACKEND_URL}/api/students/updateSemesterByBatch`,
                             {
                                 method: "PUT",
                                 credentials: "include",
@@ -300,6 +349,118 @@ const InstitutionStudents = () => {
                     </span>
                 </div>
             </ConfirmModal>
+
+            {/* Deactivate */}
+
+            <ConfirmModal
+                open={showDeactivateModal}
+                onClose={() => !deactivateLoading && setShowDeactivateModal(false)}
+                onConfirm={async () => {
+                    try {
+                        setDeactivateLoading(true);
+
+                        const res = await fetch(
+                            `${import.meta.env.VITE_BACKEND_URL}/api/students/deactivateBatch`,
+                            {
+                                method: "PUT",
+                                credentials: "include",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ branchId, admissionYear })
+                            }
+                        );
+
+                        const data = await res.json();
+
+                        console.log(data);
+                        console.log(branchId);
+
+                        if (!res.ok) throw new Error(data.message);
+
+                        toast.success(`Deactivated ${data.data.usersDeactivated} users`);
+
+                        setShowDeactivateModal(false);
+                    } catch (err) {
+                        toast.error(err.message);
+                    } finally {
+                        setDeactivateLoading(false);
+                    }
+                }}
+                title="Deactivate Batch"
+                message="This will deactivate ALL students in this batch."
+                confirmText="Deactivate"
+                variant="danger"
+                loading={deactivateLoading}
+            >
+                <div className="text-sm">
+                    Batch: <span className="font-semibold">
+                        {
+                            branches.find(b => String(b._id) === String(branchId))?.code
+                        }-{admissionYear}
+                    </span>
+                </div>
+            </ConfirmModal>
+
+            {/* Add Course */}
+
+            <ConfirmModal
+                open={showCourseModal}
+                onClose={() => !courseLoading && setShowCourseModal(false)}
+                onConfirm={async () => {
+                    try {
+                        setCourseLoading(true);
+
+                        const res = await fetch(
+                            `${import.meta.env.VITE_BACKEND_URL}/api/students/addCoursesByBatch`,
+                            {
+                                method: "PUT",
+                                credentials: "include",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                    branchId,
+                                    admissionYear,
+                                    courseIds: selectedCourses
+                                })
+                            }
+                        );
+
+                        const data = await res.json();
+                        if (!res.ok) throw new Error(data.message);
+
+                        toast.success(`Courses added to ${data.data.modified} students`);
+
+                        setShowCourseModal(false);
+                        setSelectedCourses([]);
+                    } catch (err) {
+                        toast.error(err.message);
+                    } finally {
+                        setCourseLoading(false);
+                    }
+                }}
+                title="Add Courses to Batch"
+                message="This will assign selected courses to all active students."
+                confirmText="Add Courses"
+                loading={courseLoading}
+            >
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                    {courses.map(c => (
+                        <label key={c._id} className="flex items-center gap-2">
+                            <input
+                                type="checkbox"
+                                value={c._id}
+                                onChange={(e) => {
+                                    if (e.target.checked) {
+                                        setSelectedCourses(prev => [...prev, c._id]);
+                                    } else {
+                                        setSelectedCourses(prev => prev.filter(id => id !== c._id));
+                                    }
+                                }}
+                            />
+                            {c.name}
+                        </label>
+                    ))}
+                </div>
+            </ConfirmModal>
+
         </div>
     );
 };
