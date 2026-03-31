@@ -47,9 +47,9 @@ const InstitutionFaculties = () => {
     const [finishLoadingMap, setFinishLoadingMap] = useState({});
 
     // edit designation modal
-const [editFaculty, setEditFaculty] = useState(null);
-const [savingDesignation, setSavingDesignation] = useState(false);
-const [designation, setDesignation] = useState("");
+    const [editFaculty, setEditFaculty] = useState(null);
+    const [savingDesignation, setSavingDesignation] = useState(false);
+    const [designation, setDesignation] = useState("");
 
 
     const closeActionModal = () => {
@@ -199,7 +199,9 @@ const [designation, setDesignation] = useState("");
     };
 
     // ================= Modals =================
-    const openDeleteFacultyModal = (faculty) => {
+    const openDeleteFacultyModal = async (faculty) => {
+        await loadFacultyCoursesImpact(faculty); // 🔥 add this
+
         setActionModal({
             open: true,
             type: "delete",
@@ -210,7 +212,7 @@ const [designation, setDesignation] = useState("");
     };
 
     const openChangeStatusModal = async (faculty) => {
-        const nextIsActive = !faculty.userId.active;        
+        const nextIsActive = !faculty.userId.active;
 
         if (!nextIsActive) {
             await loadFacultyCoursesImpact(faculty);
@@ -229,49 +231,49 @@ const [designation, setDesignation] = useState("");
     };
 
     const openEditDesignation = (faculty) => {
-    setDesignation(faculty.designation || "");
-    setEditFaculty(faculty);
-};
+        setDesignation(faculty.designation || "");
+        setEditFaculty(faculty);
+    };
 
-const saveDesignation = async () => {
-    if (!designation.trim()) {
-        toast.error("Designation is required");
-        return;
-    }
+    const saveDesignation = async () => {
+        if (!designation.trim()) {
+            toast.error("Designation is required");
+            return;
+        }
 
-    try {
-        setSavingDesignation(true);
+        try {
+            setSavingDesignation(true);
 
-        const res = await fetch(
-            `${import.meta.env.VITE_BACKEND_URL}/api/faculties/${editFaculty._id}`,
-            {
-                method: "PUT",
-                credentials: "include",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ designation }),
-            }
-        );
+            const res = await fetch(
+                `${import.meta.env.VITE_BACKEND_URL}/api/faculties/${editFaculty._id}`,
+                {
+                    method: "PUT",
+                    credentials: "include",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ designation }),
+                }
+            );
 
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.message);
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message);
 
-        toast.success("Designation updated");
+            toast.success("Designation updated");
 
-        setFaculties((prev) =>
-            prev.map((f) =>
-                f._id === editFaculty._id
-                    ? { ...f, designation }
-                    : f
-            )
-        );
+            setFaculties((prev) =>
+                prev.map((f) =>
+                    f._id === editFaculty._id
+                        ? { ...f, designation }
+                        : f
+                )
+            );
 
-        setEditFaculty(null);
-    } catch (err) {
-        toast.error(err.message || "Update failed");
-    } finally {
-        setSavingDesignation(false);
-    }
-};
+            setEditFaculty(null);
+        } catch (err) {
+            toast.error(err.message || "Update failed");
+        } finally {
+            setSavingDesignation(false);
+        }
+    };
 
 
     const deleteFaculty = async () => {
@@ -335,7 +337,8 @@ const saveDesignation = async () => {
     };
 
     const requiresFinishing =
-        actionModal.type === "status" && actionModal.nextIsActive === false;
+        actionModal.type === "delete" ||
+        (actionModal.type === "status" && actionModal.nextIsActive === false);
 
     const confirmDisabled =
         requiresFinishing && (isImpactLoading || impactedCourses.length > 0);
@@ -434,7 +437,7 @@ const saveDesignation = async () => {
                                     courseCount={Array.isArray(f.courses) ? f.courses.length : 0}
                                     isStatusUpdating={!!statusUpdatingMap[f._id]}
                                     onToggleStatus={() => openChangeStatusModal(f)}
-                                     onEdit={() => openEditDesignation(f)}
+                                    onEdit={() => openEditDesignation(f)}
                                     onDelete={() => openDeleteFacultyModal(f)}
                                     showEdit
                                     showDelete
@@ -585,8 +588,8 @@ const saveDesignation = async () => {
                                                     }
                                                     disabled={finishing || isModalBusy}
                                                     className={`shrink-0 px-3 py-2 rounded-lg text-xs font-bold border transition ${finishing || isModalBusy
-                                                            ? "opacity-60 cursor-not-allowed"
-                                                            : "hover:opacity-90"
+                                                        ? "opacity-60 cursor-not-allowed"
+                                                        : "hover:opacity-90"
                                                         }`}
                                                     style={{
                                                         background: "var(--surface-2)",
@@ -618,26 +621,26 @@ const saveDesignation = async () => {
                     )}
                 </ConfirmModal>
 
-<EditModal
-    open={!!editFaculty}
-    title="Edit Designation"
-    confirmText="Save Changes"
-    loading={savingDesignation}
-    onClose={() => !savingDesignation && setEditFaculty(null)}
-    onConfirm={saveDesignation}
->
-    <div className="space-y-1">
-        <label className="text-xs font-bold uppercase text-[var(--muted-text)]">
-            Designation
-        </label>
-        <input
-            value={designation}
-            onChange={(e) => setDesignation(e.target.value)}
-            placeholder="e.g. Assistant Professor"
-            className="w-full rounded-xl border px-3 py-3 bg-[var(--surface-2)]"
-        />
-    </div>
-</EditModal>
+                <EditModal
+                    open={!!editFaculty}
+                    title="Edit Designation"
+                    confirmText="Save Changes"
+                    loading={savingDesignation}
+                    onClose={() => !savingDesignation && setEditFaculty(null)}
+                    onConfirm={saveDesignation}
+                >
+                    <div className="space-y-1">
+                        <label className="text-xs font-bold uppercase text-[var(--muted-text)]">
+                            Designation
+                        </label>
+                        <input
+                            value={designation}
+                            onChange={(e) => setDesignation(e.target.value)}
+                            placeholder="e.g. Assistant Professor"
+                            className="w-full rounded-xl border px-3 py-3 bg-[var(--surface-2)]"
+                        />
+                    </div>
+                </EditModal>
 
             </div>
         </div>
