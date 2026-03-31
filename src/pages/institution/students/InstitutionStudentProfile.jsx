@@ -273,7 +273,7 @@ const InstitutionStudentProfile = ({ mode = "institution" }) => {
               {/* Name + small meta */}
               <div>
                 <h2 className="text-lg font-semibold text-[var(--text)]">
-                  {user.name}
+                  {user.name} ({student?.enrollmentNumber})
                 </h2>
                 <p className="text-sm text-[var(--muted-text)]">
                   {department.name}

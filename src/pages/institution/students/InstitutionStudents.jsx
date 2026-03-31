@@ -29,6 +29,9 @@ const InstitutionStudents = () => {
     const [showDeactivateModal, setShowDeactivateModal] = useState(false);
     const [deactivateLoading, setDeactivateLoading] = useState(false);
 
+    const [deactivateType, setDeactivateType] = useState("batch"); // "batch" | "custom"
+    const [deactivateInput, setDeactivateInput] = useState("");
+
     const [courses, setCourses] = useState([]);
     const [selectedCourses, setSelectedCourses] = useState([]);
     const [showCourseModal, setShowCourseModal] = useState(false);
@@ -474,49 +477,117 @@ const InstitutionStudents = () => {
 
             <ConfirmModal
                 open={showDeactivateModal}
-                onClose={() => !deactivateLoading && setShowDeactivateModal(false)}
+                onClose={() => {
+                    if (!deactivateLoading) {
+                        setShowDeactivateModal(false);
+                        setDeactivateInput("");
+                    }
+                }}
                 onConfirm={async () => {
                     try {
                         setDeactivateLoading(true);
 
+                        let payload;
+
+                        if (deactivateType === "batch") {
+                            payload = {
+                                url: "/api/students/deactivateBatch",
+                                body: { branchId, admissionYear }
+                            };
+                        } else {
+                            const enrollmentNumbers = parseInput(deactivateInput);
+
+                            if (enrollmentNumbers.length === 0) {
+                                toast.error("Invalid input");
+                                return;
+                            }
+
+                            payload = {
+                                url: "/api/students/bulkDeactivate",
+                                body: { enrollmentNumbers }
+                            };
+                        }
+
                         const res = await fetch(
-                            `${import.meta.env.VITE_BACKEND_URL}/api/students/deactivateBatch`,
+                            `${import.meta.env.VITE_BACKEND_URL}${payload.url}`,
                             {
                                 method: "PUT",
                                 credentials: "include",
                                 headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ branchId, admissionYear })
+                                body: JSON.stringify(payload.body)
                             }
                         );
 
                         const data = await res.json();
-
-                        console.log(data);
-                        console.log(branchId);
-
                         if (!res.ok) throw new Error(data.message);
 
-                        toast.success(`Deactivated ${data.data.usersDeactivated} users`);
+                        toast.success(
+                            deactivateType === "batch"
+                                ? `Deactivated ${data.data.usersDeactivated} users`
+                                : `Deactivated ${data.data.usersDeactivated} users`
+                        );
 
                         setShowDeactivateModal(false);
+                        setDeactivateInput("");
+                        fetchStudents();
+
                     } catch (err) {
                         toast.error(err.message);
                     } finally {
                         setDeactivateLoading(false);
                     }
                 }}
-                title="Deactivate Batch"
-                message="This will deactivate ALL students in this batch."
+                title="Deactivate Students"
                 confirmText="Deactivate"
                 variant="danger"
                 loading={deactivateLoading}
             >
-                <div className="text-sm">
-                    Batch: <span className="font-semibold">
-                        {
-                            branches.find(b => String(b._id) === String(branchId))?.code
-                        }-{admissionYear}
-                    </span>
+                <div className="space-y-4">
+
+                    {/* TYPE TOGGLE */}
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setDeactivateType("batch")}
+                            className={`px-3 py-1 rounded-lg ${deactivateType === "batch"
+                                    ? "bg-red-600 text-white"
+                                    : "bg-gray-200 text-black"
+                                }`}
+                        >
+                            Whole Batch
+                        </button>
+
+                        <button
+                            onClick={() => setDeactivateType("custom")}
+                            className={`px-3 py-1 rounded-lg ${deactivateType === "custom"
+                                    ? "bg-purple-600 text-white"
+                                    : "bg-gray-200 text-black"
+                                }`}
+                        >
+                            Selected Students
+                        </button>
+                    </div>
+
+                    {/* INPUT */}
+                    {deactivateType === "custom" && (
+                        <textarea
+                            value={deactivateInput}
+                            onChange={(e) => setDeactivateInput(e.target.value)}
+                            placeholder="e.g. 1,2,5-10"
+                            className="w-full p-2 border rounded"
+                        />
+                    )}
+
+                    {/* CONTEXT */}
+                    {deactivateType === "batch" && (
+                        <div className="text-sm">
+                            Batch:{" "}
+                            <span className="font-semibold">
+                                {
+                                    branches.find(b => String(b._id) === String(branchId))?.code
+                                }-{admissionYear}
+                            </span>
+                        </div>
+                    )}
                 </div>
             </ConfirmModal>
 
