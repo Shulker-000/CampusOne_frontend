@@ -37,6 +37,9 @@ const InstitutionStudents = () => {
     const [showCourseModal, setShowCourseModal] = useState(false);
     const [courseLoading, setCourseLoading] = useState(false);
 
+    const [courseType, setCourseType] = useState("batch"); // "batch" | "custom"
+    const [courseInput, setCourseInput] = useState("");
+
     // ================= FETCH BRANCHES =================
     const fetchBranches = async () => {
         if (!institutionId) return;
@@ -549,8 +552,8 @@ const InstitutionStudents = () => {
                         <button
                             onClick={() => setDeactivateType("batch")}
                             className={`px-3 py-1 rounded-lg ${deactivateType === "batch"
-                                    ? "bg-red-600 text-white"
-                                    : "bg-gray-200 text-black"
+                                ? "bg-red-600 text-white"
+                                : "bg-gray-200 text-black"
                                 }`}
                         >
                             Whole Batch
@@ -559,8 +562,8 @@ const InstitutionStudents = () => {
                         <button
                             onClick={() => setDeactivateType("custom")}
                             className={`px-3 py-1 rounded-lg ${deactivateType === "custom"
-                                    ? "bg-purple-600 text-white"
-                                    : "bg-gray-200 text-black"
+                                ? "bg-purple-600 text-white"
+                                : "bg-gray-200 text-black"
                                 }`}
                         >
                             Selected Students
@@ -592,28 +595,62 @@ const InstitutionStudents = () => {
             </ConfirmModal>
 
             {/* Add Course */}
-
             <ConfirmModal
                 open={showCourseModal}
-                onClose={() => !courseLoading && setShowCourseModal(false)}
+                onClose={() => {
+                    if (!courseLoading) {
+                        setShowCourseModal(false);
+                        setSelectedCourses([]);
+                        setCourseInput("");
+                        setCourseType("batch");
+                    }
+                }}
                 onConfirm={async () => {
                     try {
                         setCourseLoading(true);
+
                         if (selectedCourses.length === 0) {
                             toast.error("Select at least one course");
+                            setCourseLoading(false);
                             return;
                         }
+
+                        let payload;
+
+                        if (courseType === "batch") {
+                            payload = {
+                                url: "/api/students/addCoursesByBatch",
+                                body: {
+                                    branchId,
+                                    admissionYear,
+                                    courseIds: selectedCourses
+                                }
+                            };
+                        } else {
+                            const enrollmentNumbers = parseInput(courseInput);
+
+                            if (enrollmentNumbers.length === 0) {
+                                toast.error("Invalid input");
+                                setCourseLoading(false);
+                                return;
+                            }
+
+                            payload = {
+                                url: "/api/students/addCourses",
+                                body: {
+                                    enrollmentNumbers,
+                                    courseIds: selectedCourses
+                                }
+                            };
+                        }
+
                         const res = await fetch(
-                            `${import.meta.env.VITE_BACKEND_URL}/api/students/addCoursesByBatch`,
+                            `${import.meta.env.VITE_BACKEND_URL}${payload.url}`,
                             {
                                 method: "PUT",
                                 credentials: "include",
                                 headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({
-                                    branchId,
-                                    admissionYear,
-                                    courseIds: selectedCourses
-                                })
+                                body: JSON.stringify(payload.body)
                             }
                         );
 
@@ -624,36 +661,91 @@ const InstitutionStudents = () => {
 
                         setShowCourseModal(false);
                         setSelectedCourses([]);
+                        setCourseInput("");
+                        setCourseType("batch");
+
+                        fetchStudents();
+
                     } catch (err) {
                         toast.error(err.message);
                     } finally {
                         setCourseLoading(false);
                     }
                 }}
-                title="Add Courses to Batch"
-                message="This will assign selected courses to all active students."
+                title="Add Courses"
                 confirmText="Add Courses"
                 loading={courseLoading}
             >
-                <div className="space-y-2 max-h-60 overflow-y-auto">
-                    {courses.map(c => (
-                        <label key={c._id} className="flex items-center gap-2">
-                            <input
-                                type="checkbox"
-                                value={c._id}
-                                onChange={(e) => {
-                                    if (e.target.checked) {
-                                        setSelectedCourses(prev =>
-                                            prev.includes(c._id) ? prev : [...prev, c._id]
-                                        );
-                                    } else {
-                                        setSelectedCourses(prev => prev.filter(id => id !== c._id));
-                                    }
-                                }}
-                            />
-                            {c.name}
-                        </label>
-                    ))}
+                <div className="space-y-4">
+
+                    {/* TYPE TOGGLE */}
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setCourseType("batch")}
+                            className={`px-3 py-1 rounded-lg ${courseType === "batch"
+                                    ? "bg-blue-600 text-white"
+                                    : "bg-gray-200 text-black"
+                                }`}
+                        >
+                            Whole Batch
+                        </button>
+
+                        <button
+                            onClick={() => setCourseType("custom")}
+                            className={`px-3 py-1 rounded-lg ${courseType === "custom"
+                                    ? "bg-purple-600 text-white"
+                                    : "bg-gray-200 text-black"
+                                }`}
+                        >
+                            Selected Students
+                        </button>
+                    </div>
+
+                    {/* CUSTOM INPUT */}
+                    {courseType === "custom" && (
+                        <textarea
+                            value={courseInput}
+                            onChange={(e) => setCourseInput(e.target.value)}
+                            placeholder="e.g. 1,2,5-10"
+                            className="w-full p-2 border rounded"
+                        />
+                    )}
+
+                    {/* COURSE LIST */}
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                        {courses.map(c => (
+                            <label key={c._id} className="flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    checked={selectedCourses.includes(c._id)}
+                                    onChange={(e) => {
+                                        if (e.target.checked) {
+                                            setSelectedCourses(prev =>
+                                                prev.includes(c._id) ? prev : [...prev, c._id]
+                                            );
+                                        } else {
+                                            setSelectedCourses(prev =>
+                                                prev.filter(id => id !== c._id)
+                                            );
+                                        }
+                                    }}
+                                />
+                                {c.name}
+                            </label>
+                        ))}
+                    </div>
+
+                    {/* CONTEXT */}
+                    {courseType === "batch" && (
+                        <div className="text-sm">
+                            Batch:{" "}
+                            <span className="font-semibold">
+                                {
+                                    branches.find(b => String(b._id) === String(branchId))?.code
+                                }-{admissionYear}
+                            </span>
+                        </div>
+                    )}
                 </div>
             </ConfirmModal>
 
