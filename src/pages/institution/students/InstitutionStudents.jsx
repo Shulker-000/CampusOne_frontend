@@ -23,6 +23,9 @@ const InstitutionStudents = () => {
     const [showPromoteModal, setShowPromoteModal] = useState(false);
     const [promoteLoading, setPromoteLoading] = useState(false);
 
+    const [promoteType, setPromoteType] = useState("batch"); // "batch" | "custom"
+    const [customInput, setCustomInput] = useState("");
+
     const [showDeactivateModal, setShowDeactivateModal] = useState(false);
     const [deactivateLoading, setDeactivateLoading] = useState(false);
 
@@ -120,6 +123,57 @@ const InstitutionStudents = () => {
             );
         });
     }, [allStudents, branchId, admissionYear]);
+
+    // ================= INPUT PARSER =================
+    const parseInput = (input) => {
+        const parts = input.split(",");
+        const result = new Set();
+
+        for (let part of parts) {
+            part = part.trim();
+
+            // RANGE CASE
+            if (part.includes("-")) {
+                let [start, end] = part.split("-");
+
+                const prefixMatch = start.match(/^[a-zA-Z]+/);
+                const prefix = prefixMatch ? prefixMatch[0] : "";
+
+                const startNum = parseInt(start.replace(/\D/g, ""));
+                const endNum = parseInt(end.replace(/\D/g, ""));
+
+                if (!isNaN(startNum) && !isNaN(endNum) && startNum <= endNum) {
+                    for (let i = startNum; i <= endNum; i++) {
+                        const numStr = String(i);
+                        result.add(numStr);
+
+                        if (prefix) {
+                            result.add(prefix + numStr);
+                        }
+                    }
+                }
+            }
+
+            // SINGLE VALUE CASE
+            else {
+                const prefixMatch = part.match(/^[a-zA-Z]+/);
+                const prefix = prefixMatch ? prefixMatch[0] : "";
+
+                const num = parseInt(part.replace(/\D/g, ""));
+
+                if (!isNaN(num)) {
+                    const numStr = String(num);
+                    result.add(numStr);
+
+                    if (prefix) {
+                        result.add(prefix + numStr);
+                    }
+                }
+            }
+        }
+
+        return Array.from(result);
+    };
 
     // ================= UI =================
     return (
@@ -267,7 +321,7 @@ const InstitutionStudents = () => {
                                 <tr
                                     key={s._id}
                                     onClick={() =>
-                                        navigate(`/institution/students/profile/${s._id}`)
+                                        window.open(`/institution/students/profile/${s._id}`, "_blank")
                                     }
                                     className="border-t hover:bg-[var(--surface-2)] transition cursor-pointer"
                                 >
@@ -304,49 +358,115 @@ const InstitutionStudents = () => {
                 onConfirm={async () => {
                     try {
                         setPromoteLoading(true);
-                        if (filteredStudents.every(s => s.semester >= 8)) {
-                            toast.error("All students already at max semester");
-                            setShowPromoteModal(false);
-                            setPromoteLoading(false);
-                            return;
+
+                        let payload;
+
+                        if (promoteType === "batch") {
+                            // existing logic
+                            if (filteredStudents.every(s => s.semester >= 8)) {
+                                toast.error("All students already at max semester");
+                                return;
+                            }
+
+                            payload = {
+                                url: "/api/students/updateSemesterByBatch",
+                                body: { branchId, admissionYear }
+                            };
+
+                        } else {
+                            // custom logic
+                            const enrollmentNumbers = parseInput(customInput);
+
+                            if (enrollmentNumbers.length === 0) {
+                                toast.error("Invalid input");
+                                return;
+                            }
+
+                            payload = {
+                                url: "/api/students/updateSemester",
+                                body: { enrollmentNumbers }
+                            };
                         }
+
                         const res = await fetch(
-                            `${import.meta.env.VITE_BACKEND_URL}/api/students/updateSemesterByBatch`,
+                            `${import.meta.env.VITE_BACKEND_URL}${payload.url}`,
                             {
                                 method: "PUT",
                                 credentials: "include",
                                 headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ branchId, admissionYear })
+                                body: JSON.stringify(payload.body)
                             }
                         );
 
                         const data = await res.json();
                         if (!res.ok) throw new Error(data.message);
 
-                        toast.success(`Promoted ${data.data.updatedCount} students`);
+                        toast.success(
+                            promoteType === "batch"
+                                ? `Promoted ${data.data.updatedCount} students`
+                                : `Updated ${data.data.updatedCount} students`
+                        );
 
                         setShowPromoteModal(false);
-                        fetchStudents(); // refresh
+                        setCustomInput("");
+                        fetchStudents();
+
                     } catch (err) {
                         toast.error(err.message);
                     } finally {
                         setPromoteLoading(false);
                     }
                 }}
-                title="Promote Batch"
-                message="This will move all students to next semester. This action cannot be undone."
+                title="Promote Students"
                 confirmText="Promote"
-                variant="warning"
                 loading={promoteLoading}
             >
-                {/* EXTRA CONTEXT - THIS IS IMPORTANT */}
-                <div className="text-sm">
-                    Batch:{" "}
-                    <span className="font-semibold">
-                        {
-                            branches.find(b => String(b._id) === String(branchId))?.code
-                        }-{admissionYear}
-                    </span>
+                <div className="space-y-4">
+
+                    {/* TYPE TOGGLE */}
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setPromoteType("batch")}
+                            className={`px-3 py-1 rounded-lg ${promoteType === "batch"
+                                ? "bg-blue-600 text-white"
+                                : "bg-gray-200 text-black"
+                                }`}
+                        >
+                            Whole Batch
+                        </button>
+
+                        <button
+                            onClick={() => setPromoteType("custom")}
+                            className={`px-3 py-1 rounded-lg ${promoteType === "custom"
+                                ? "bg-purple-600 text-white"
+                                : "bg-gray-200 text-black"
+                                }`}
+                        >
+                            Selected Students
+                        </button>
+                    </div>
+
+                    {/* INPUT FIELD */}
+                    {promoteType === "custom" && (
+                        <textarea
+                            value={customInput}
+                            onChange={(e) => setCustomInput(e.target.value)}
+                            placeholder="e.g. 1,2,5-10"
+                            className="w-full p-2 border rounded"
+                        />
+                    )}
+
+                    {/* CONTEXT */}
+                    {promoteType === "batch" && (
+                        <div className="text-sm">
+                            Batch:{" "}
+                            <span className="font-semibold">
+                                {
+                                    branches.find(b => String(b._id) === String(branchId))?.code
+                                }-{admissionYear}
+                            </span>
+                        </div>
+                    )}
                 </div>
             </ConfirmModal>
 
@@ -408,7 +528,10 @@ const InstitutionStudents = () => {
                 onConfirm={async () => {
                     try {
                         setCourseLoading(true);
-
+                        if (selectedCourses.length === 0) {
+                            toast.error("Select at least one course");
+                            return;
+                        }
                         const res = await fetch(
                             `${import.meta.env.VITE_BACKEND_URL}/api/students/addCoursesByBatch`,
                             {
@@ -449,7 +572,9 @@ const InstitutionStudents = () => {
                                 value={c._id}
                                 onChange={(e) => {
                                     if (e.target.checked) {
-                                        setSelectedCourses(prev => [...prev, c._id]);
+                                        setSelectedCourses(prev =>
+                                            prev.includes(c._id) ? prev : [...prev, c._id]
+                                        );
                                     } else {
                                         setSelectedCourses(prev => prev.filter(id => id !== c._id));
                                     }
