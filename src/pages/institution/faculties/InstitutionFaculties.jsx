@@ -210,7 +210,7 @@ const [designation, setDesignation] = useState("");
     };
 
     const openChangeStatusModal = async (faculty) => {
-        const nextIsActive = !faculty.isActive;
+        const nextIsActive = !faculty.userId.active;        
 
         if (!nextIsActive) {
             await loadFacultyCoursesImpact(faculty);
@@ -304,7 +304,7 @@ const saveDesignation = async () => {
                     method: "PUT",
                     credentials: "include",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ isActive: nextIsActive }),
+                    body: JSON.stringify({ active: nextIsActive }),
                 }
             );
             const data = await res.json();
