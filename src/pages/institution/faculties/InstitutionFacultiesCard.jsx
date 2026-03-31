@@ -38,7 +38,7 @@ return (
         className={`bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5
         cursor-pointer transition-transform duration-200
         hover:scale-[1.02] hover:shadow-[var(--shadow)]
-        ${faculty.isActive ? "" : "opacity-60"}`}
+        ${faculty.userId.active ? "" : "opacity-60"}`}
     >
         {/* HEADER */}
         <div className="flex items-start justify-between gap-3">
@@ -84,17 +84,17 @@ return (
                     ${isStatusUpdating ? "opacity-60 cursor-not-allowed" : ""}`}
                     style={{
                         background: "var(--surface-2)",
-                        borderColor: faculty.isActive
+                        borderColor: faculty.userId.active
                             ? "var(--accent)"
                             : "var(--border)",
                     }}
-                    title={faculty.isActive ? "Active" : "Inactive"}
+                    title={faculty.userId.active ? "Active" : "Inactive"}
                 >
                     <span
                         className="inline-block h-4 w-4 rounded-full transition"
                         style={{
                             background: "var(--text)",
-                            transform: faculty.isActive
+                            transform: faculty.userId.active
                                 ? "translateX(22px)"
                                 : "translateX(3px)",
                         }}
@@ -159,13 +159,13 @@ return (
                 text-xs font-bold border"
                 style={{
                     background: "var(--surface-2)",
-                    borderColor: faculty.isActive
+                    borderColor: faculty.userId.active
                         ? "var(--accent)"
                         : "var(--border)",
                 }}
             >
-                {faculty.isActive ? <BadgeCheck size={14} /> : <Ban size={14} />}
-                {faculty.isActive ? "Active" : "Inactive"}
+                {faculty.userId.active ? <BadgeCheck size={14} /> : <Ban size={14} />}
+                {faculty.userId.active ? "Active" : "Inactive"}
             </span>
 
             <span
