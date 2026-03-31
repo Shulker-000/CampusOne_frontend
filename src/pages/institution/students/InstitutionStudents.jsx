@@ -23,6 +23,23 @@ const InstitutionStudents = () => {
     const [showPromoteModal, setShowPromoteModal] = useState(false);
     const [promoteLoading, setPromoteLoading] = useState(false);
 
+    const [promoteType, setPromoteType] = useState("batch"); // "batch" | "custom"
+    const [customInput, setCustomInput] = useState("");
+
+    const [showDeactivateModal, setShowDeactivateModal] = useState(false);
+    const [deactivateLoading, setDeactivateLoading] = useState(false);
+
+    const [deactivateType, setDeactivateType] = useState("batch"); // "batch" | "custom"
+    const [deactivateInput, setDeactivateInput] = useState("");
+
+    const [courses, setCourses] = useState([]);
+    const [selectedCourses, setSelectedCourses] = useState([]);
+    const [showCourseModal, setShowCourseModal] = useState(false);
+    const [courseLoading, setCourseLoading] = useState(false);
+
+    const [courseType, setCourseType] = useState("batch"); // "batch" | "custom"
+    const [courseInput, setCourseInput] = useState("");
+
     // ================= FETCH BRANCHES =================
     const fetchBranches = async () => {
         if (!institutionId) return;
@@ -69,9 +86,28 @@ const InstitutionStudents = () => {
         }
     };
 
+    const fetchCourses = async () => {
+        try {
+            const res = await fetch(
+                `${import.meta.env.VITE_BACKEND_URL}/api/courses/institution/${institutionId}`,
+                { credentials: "include" }
+            );
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message);
+
+            setCourses(data.data);
+        } catch (err) {
+            toast.error(err.message);
+        }
+    };
+
     useEffect(() => {
         fetchBranches();
         fetchStudents();
+        fetchCourses();
+
+
     }, [institutionId]);
 
     // ================= FILTER LOGIC =================
@@ -93,6 +129,57 @@ const InstitutionStudents = () => {
             );
         });
     }, [allStudents, branchId, admissionYear]);
+
+    // ================= INPUT PARSER =================
+    const parseInput = (input) => {
+        const parts = input.split(",");
+        const result = new Set();
+
+        for (let part of parts) {
+            part = part.trim();
+
+            // RANGE CASE
+            if (part.includes("-")) {
+                let [start, end] = part.split("-");
+
+                const prefixMatch = start.match(/^[a-zA-Z]+/);
+                const prefix = prefixMatch ? prefixMatch[0] : "";
+
+                const startNum = parseInt(start.replace(/\D/g, ""));
+                const endNum = parseInt(end.replace(/\D/g, ""));
+
+                if (!isNaN(startNum) && !isNaN(endNum) && startNum <= endNum) {
+                    for (let i = startNum; i <= endNum; i++) {
+                        const numStr = String(i);
+                        result.add(numStr);
+
+                        if (prefix) {
+                            result.add(prefix + numStr);
+                        }
+                    }
+                }
+            }
+
+            // SINGLE VALUE CASE
+            else {
+                const prefixMatch = part.match(/^[a-zA-Z]+/);
+                const prefix = prefixMatch ? prefixMatch[0] : "";
+
+                const num = parseInt(part.replace(/\D/g, ""));
+
+                if (!isNaN(num)) {
+                    const numStr = String(num);
+                    result.add(numStr);
+
+                    if (prefix) {
+                        result.add(prefix + numStr);
+                    }
+                }
+            }
+        }
+
+        return Array.from(result);
+    };
 
     // ================= UI =================
     return (
@@ -178,15 +265,35 @@ const InstitutionStudents = () => {
                 </div>
             )}
 
-            <div className="mb-4 flex justify-end">
+            {branchId && admissionYear && <div className="mb-4 flex justify-end gap-2">
                 <button
                     disabled={!branchId || !admissionYear}
                     onClick={() => setShowPromoteModal(true)}
-                    className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                    className="px-4 py-2 rounded-lg bg-blue-700 text-white hover:bg-blue-800 disabled:opacity-50"
                 >
                     Promote Batch
                 </button>
-            </div>
+
+                <button
+                    disabled={!branchId || !admissionYear}
+                    onClick={() => setShowDeactivateModal(true)}
+                    className="px-4 py-2 rounded-lg bg-blue-700 text-white hover:bg-blue-800 disabled:opacity-50"
+                >
+                    Deactivate Batch
+                </button>
+            </div>}
+
+            {branchId && admissionYear && <div className="mb-4 flex justify-end gap-2">
+
+                <button
+                    disabled={!branchId || !admissionYear}
+                    onClick={() => setShowCourseModal(true)}
+                    className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                    Add Courses
+                </button>
+            </div>}
+
             {/* RESULTS */}
             <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl overflow-hidden">
 
@@ -220,7 +327,7 @@ const InstitutionStudents = () => {
                                 <tr
                                     key={s._id}
                                     onClick={() =>
-                                        navigate(`/institution/students/profile/${s._id}`)
+                                        window.open(`/institution/students/profile/${s._id}`, "_blank")
                                     }
                                     className="border-t hover:bg-[var(--surface-2)] transition cursor-pointer"
                                 >
@@ -249,57 +356,399 @@ const InstitutionStudents = () => {
                     </table>
                 )}
             </div>
+
+            {/* Promote */}
             <ConfirmModal
                 open={showPromoteModal}
                 onClose={() => !promoteLoading && setShowPromoteModal(false)}
                 onConfirm={async () => {
                     try {
                         setPromoteLoading(true);
-                        if (filteredStudents.every(s => s.semester >= 8)) {
-                            toast.error("All students already at max semester");
-                            setShowPromoteModal(false);
-                            setPromoteLoading(false);
-                            return;
+
+                        let payload;
+
+                        if (promoteType === "batch") {
+                            // existing logic
+                            if (filteredStudents.every(s => s.semester >= 8)) {
+                                toast.error("All students already at max semester");
+                                return;
+                            }
+
+                            payload = {
+                                url: "/api/students/updateSemesterByBatch",
+                                body: { branchId, admissionYear }
+                            };
+
+                        } else {
+                            // custom logic
+                            const enrollmentNumbers = parseInput(customInput);
+
+                            if (enrollmentNumbers.length === 0) {
+                                toast.error("Invalid input");
+                                return;
+                            }
+
+                            payload = {
+                                url: "/api/students/updateSemester",
+                                body: { enrollmentNumbers }
+                            };
                         }
+
                         const res = await fetch(
-                            `${import.meta.env.VITE_BACKEND_URL}/api/students/update-semester-bulk`,
+                            `${import.meta.env.VITE_BACKEND_URL}${payload.url}`,
                             {
                                 method: "PUT",
                                 credentials: "include",
                                 headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ branchId, admissionYear })
+                                body: JSON.stringify(payload.body)
                             }
                         );
 
                         const data = await res.json();
                         if (!res.ok) throw new Error(data.message);
 
-                        toast.success(`Promoted ${data.data.updatedCount} students`);
+                        toast.success(
+                            promoteType === "batch"
+                                ? `Promoted ${data.data.updatedCount} students`
+                                : `Updated ${data.data.updatedCount} students`
+                        );
 
                         setShowPromoteModal(false);
-                        fetchStudents(); // refresh
+                        setCustomInput("");
+                        fetchStudents();
+
                     } catch (err) {
                         toast.error(err.message);
                     } finally {
                         setPromoteLoading(false);
                     }
                 }}
-                title="Promote Batch"
-                message="This will move all students to next semester. This action cannot be undone."
+                title="Promote Students"
                 confirmText="Promote"
-                variant="warning"
                 loading={promoteLoading}
             >
-                {/* EXTRA CONTEXT - THIS IS IMPORTANT */}
-                <div className="text-sm">
-                    Batch:{" "}
-                    <span className="font-semibold">
-                        {
-                            branches.find(b => String(b._id) === String(branchId))?.code
-                        }-{admissionYear}
-                    </span>
+                <div className="space-y-4">
+
+                    {/* TYPE TOGGLE */}
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setPromoteType("batch")}
+                            className={`px-3 py-1 rounded-lg ${promoteType === "batch"
+                                ? "bg-blue-600 text-white"
+                                : "bg-gray-200 text-black"
+                                }`}
+                        >
+                            Whole Batch
+                        </button>
+
+                        <button
+                            onClick={() => setPromoteType("custom")}
+                            className={`px-3 py-1 rounded-lg ${promoteType === "custom"
+                                ? "bg-purple-600 text-white"
+                                : "bg-gray-200 text-black"
+                                }`}
+                        >
+                            Selected Students
+                        </button>
+                    </div>
+
+                    {/* INPUT FIELD */}
+                    {promoteType === "custom" && (
+                        <textarea
+                            value={customInput}
+                            onChange={(e) => setCustomInput(e.target.value)}
+                            placeholder="e.g. 1,2,5-10"
+                            className="w-full p-2 border rounded"
+                        />
+                    )}
+
+                    {/* CONTEXT */}
+                    {promoteType === "batch" && (
+                        <div className="text-sm">
+                            Batch:{" "}
+                            <span className="font-semibold">
+                                {
+                                    branches.find(b => String(b._id) === String(branchId))?.code
+                                }-{admissionYear}
+                            </span>
+                        </div>
+                    )}
                 </div>
             </ConfirmModal>
+
+            {/* Deactivate */}
+
+            <ConfirmModal
+                open={showDeactivateModal}
+                onClose={() => {
+                    if (!deactivateLoading) {
+                        setShowDeactivateModal(false);
+                        setDeactivateInput("");
+                    }
+                }}
+                onConfirm={async () => {
+                    try {
+                        setDeactivateLoading(true);
+
+                        let payload;
+
+                        if (deactivateType === "batch") {
+                            payload = {
+                                url: "/api/students/deactivateBatch",
+                                body: { branchId, admissionYear }
+                            };
+                        } else {
+                            const enrollmentNumbers = parseInput(deactivateInput);
+
+                            if (enrollmentNumbers.length === 0) {
+                                toast.error("Invalid input");
+                                return;
+                            }
+
+                            payload = {
+                                url: "/api/students/bulkDeactivate",
+                                body: { enrollmentNumbers }
+                            };
+                        }
+
+                        const res = await fetch(
+                            `${import.meta.env.VITE_BACKEND_URL}${payload.url}`,
+                            {
+                                method: "PUT",
+                                credentials: "include",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify(payload.body)
+                            }
+                        );
+
+                        const data = await res.json();
+                        if (!res.ok) throw new Error(data.message);
+
+                        toast.success(
+                            deactivateType === "batch"
+                                ? `Deactivated ${data.data.usersDeactivated} users`
+                                : `Deactivated ${data.data.usersDeactivated} users`
+                        );
+
+                        setShowDeactivateModal(false);
+                        setDeactivateInput("");
+                        fetchStudents();
+
+                    } catch (err) {
+                        toast.error(err.message);
+                    } finally {
+                        setDeactivateLoading(false);
+                    }
+                }}
+                title="Deactivate Students"
+                confirmText="Deactivate"
+                variant="danger"
+                loading={deactivateLoading}
+            >
+                <div className="space-y-4">
+
+                    {/* TYPE TOGGLE */}
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setDeactivateType("batch")}
+                            className={`px-3 py-1 rounded-lg ${deactivateType === "batch"
+                                ? "bg-red-600 text-white"
+                                : "bg-gray-200 text-black"
+                                }`}
+                        >
+                            Whole Batch
+                        </button>
+
+                        <button
+                            onClick={() => setDeactivateType("custom")}
+                            className={`px-3 py-1 rounded-lg ${deactivateType === "custom"
+                                ? "bg-purple-600 text-white"
+                                : "bg-gray-200 text-black"
+                                }`}
+                        >
+                            Selected Students
+                        </button>
+                    </div>
+
+                    {/* INPUT */}
+                    {deactivateType === "custom" && (
+                        <textarea
+                            value={deactivateInput}
+                            onChange={(e) => setDeactivateInput(e.target.value)}
+                            placeholder="e.g. 1,2,5-10"
+                            className="w-full p-2 border rounded"
+                        />
+                    )}
+
+                    {/* CONTEXT */}
+                    {deactivateType === "batch" && (
+                        <div className="text-sm">
+                            Batch:{" "}
+                            <span className="font-semibold">
+                                {
+                                    branches.find(b => String(b._id) === String(branchId))?.code
+                                }-{admissionYear}
+                            </span>
+                        </div>
+                    )}
+                </div>
+            </ConfirmModal>
+
+            {/* Add Course */}
+            <ConfirmModal
+                open={showCourseModal}
+                onClose={() => {
+                    if (!courseLoading) {
+                        setShowCourseModal(false);
+                        setSelectedCourses([]);
+                        setCourseInput("");
+                        setCourseType("batch");
+                    }
+                }}
+                onConfirm={async () => {
+                    try {
+                        setCourseLoading(true);
+
+                        if (selectedCourses.length === 0) {
+                            toast.error("Select at least one course");
+                            setCourseLoading(false);
+                            return;
+                        }
+
+                        let payload;
+
+                        if (courseType === "batch") {
+                            payload = {
+                                url: "/api/students/addCoursesByBatch",
+                                body: {
+                                    branchId,
+                                    admissionYear,
+                                    courseIds: selectedCourses
+                                }
+                            };
+                        } else {
+                            const enrollmentNumbers = parseInput(courseInput);
+
+                            if (enrollmentNumbers.length === 0) {
+                                toast.error("Invalid input");
+                                setCourseLoading(false);
+                                return;
+                            }
+
+                            payload = {
+                                url: "/api/students/addCourses",
+                                body: {
+                                    enrollmentNumbers,
+                                    courseIds: selectedCourses
+                                }
+                            };
+                        }
+
+                        const res = await fetch(
+                            `${import.meta.env.VITE_BACKEND_URL}${payload.url}`,
+                            {
+                                method: "PUT",
+                                credentials: "include",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify(payload.body)
+                            }
+                        );
+
+                        const data = await res.json();
+                        if (!res.ok) throw new Error(data.message);
+
+                        toast.success(`Courses added to ${data.data.modified} students`);
+
+                        setShowCourseModal(false);
+                        setSelectedCourses([]);
+                        setCourseInput("");
+                        setCourseType("batch");
+
+                        fetchStudents();
+
+                    } catch (err) {
+                        toast.error(err.message);
+                    } finally {
+                        setCourseLoading(false);
+                    }
+                }}
+                title="Add Courses"
+                confirmText="Add Courses"
+                loading={courseLoading}
+            >
+                <div className="space-y-4">
+
+                    {/* TYPE TOGGLE */}
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setCourseType("batch")}
+                            className={`px-3 py-1 rounded-lg ${courseType === "batch"
+                                    ? "bg-blue-600 text-white"
+                                    : "bg-gray-200 text-black"
+                                }`}
+                        >
+                            Whole Batch
+                        </button>
+
+                        <button
+                            onClick={() => setCourseType("custom")}
+                            className={`px-3 py-1 rounded-lg ${courseType === "custom"
+                                    ? "bg-purple-600 text-white"
+                                    : "bg-gray-200 text-black"
+                                }`}
+                        >
+                            Selected Students
+                        </button>
+                    </div>
+
+                    {/* CUSTOM INPUT */}
+                    {courseType === "custom" && (
+                        <textarea
+                            value={courseInput}
+                            onChange={(e) => setCourseInput(e.target.value)}
+                            placeholder="e.g. 1,2,5-10"
+                            className="w-full p-2 border rounded"
+                        />
+                    )}
+
+                    {/* COURSE LIST */}
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                        {courses.map(c => (
+                            <label key={c._id} className="flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    checked={selectedCourses.includes(c._id)}
+                                    onChange={(e) => {
+                                        if (e.target.checked) {
+                                            setSelectedCourses(prev =>
+                                                prev.includes(c._id) ? prev : [...prev, c._id]
+                                            );
+                                        } else {
+                                            setSelectedCourses(prev =>
+                                                prev.filter(id => id !== c._id)
+                                            );
+                                        }
+                                    }}
+                                />
+                                {c.name}
+                            </label>
+                        ))}
+                    </div>
+
+                    {/* CONTEXT */}
+                    {courseType === "batch" && (
+                        <div className="text-sm">
+                            Batch:{" "}
+                            <span className="font-semibold">
+                                {
+                                    branches.find(b => String(b._id) === String(branchId))?.code
+                                }-{admissionYear}
+                            </span>
+                        </div>
+                    )}
+                </div>
+            </ConfirmModal>
+
         </div>
     );
 };
