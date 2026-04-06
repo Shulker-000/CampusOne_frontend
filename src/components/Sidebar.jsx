@@ -184,6 +184,26 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
               },
             ],
           },
+
+          {
+            key: "Timetables",
+            label: "Timetables",
+            icon: BookOpen,
+            items: [
+              {
+                label: "All Timetables",
+                to: "/institution/timetable",
+                icon: ListChecks,
+                end: true,
+              },
+              {
+                label: "Create Timetables",
+                to: "/institution/timetable/create",
+                icon: ListChecks,
+                end: true,
+              },
+            ],
+          },
         ],
 
 

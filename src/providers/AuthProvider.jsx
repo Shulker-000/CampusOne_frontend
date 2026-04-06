@@ -65,22 +65,30 @@ if (!window.__FETCH_INTERCEPTOR__) {
 
     const url = args[0]?.url || args[0];
 
-    if (url?.includes("/api/admissions/reset-password")) return res;
-    if (url?.includes("/api/admissions/verify-email")) return res;
+    if (url?.includes("/refresh")) return res;
+
+    if (
+      url?.includes("/reset-password") ||
+      url?.includes("/verify-email")
+    ) return res;
 
     if (authExcludedRoutes.some((route) => url?.includes(route))) {
       return res;
     }
 
     try {
-
       let refreshUrl = null;
 
-      if (url?.includes("/api/users")) {
+      const base = import.meta.env.VITE_BACKEND_URL;
+
+      if (url?.includes("/api/users/")) {
         refreshUrl = "/api/users/refresh";
       }
-      else if (url?.includes("/api/institutions")) {
+      else if (url?.includes("/api/institutions/")) {
         refreshUrl = "/api/institutions/refresh";
+      }
+      else if (url?.includes("/api/admissions/")) {
+        refreshUrl = "/api/admissions/refresh";
       }
 
       if (!refreshUrl) return res;
@@ -94,31 +102,7 @@ if (!window.__FETCH_INTERCEPTOR__) {
       res = await originalFetch(...args);
       return res;
     } catch {
-      if (!redirecting) {
-        redirecting = true;
-
-        const currentPath = window.location.pathname;
-
-        const publicRoutes = [
-          "/",
-          "/about",
-          "/contact",
-          "/admission/login",
-          "/admission/reset-password",
-          "/admission/verify-email"
-        ];
-
-        const isPublic = publicRoutes.some((route) =>
-          currentPath.startsWith(route)
-        );
-
-        if (!isPublic) {
-          toast.error("Session Expired, login again");
-          window.location.href = "/";
-        }
-      }
-
-      return res;
+      // redirect logic
     }
   };
 };
@@ -324,7 +308,7 @@ export const AuthProvider = ({ children }) => {
       dispatch(admissionAuthChecked());
 
     }
-    
+
   };
 
   /* ================= INITIAL SYNC ================= */

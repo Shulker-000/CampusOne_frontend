@@ -31,6 +31,8 @@ import InstitutionAdmissionApplication from "../pages/institution/admissions/Ins
 import CreateStudents from "../pages/institution/students/CreateStudents";
 import InstitutionStudents from "../pages/institution/students/InstitutionStudents";
 import InstitutionStudentProfile from "../pages/institution/students/InstitutionStudentProfile";
+import InstitutionTimetable from "../pages/institution/timetables/InstitutionTimetable";
+import CreateTimetable from "../pages/institution/timetables/CreateTimetable";
 
 /* ---------- Guards ---------- */
 
@@ -139,6 +141,9 @@ const InstitutionRoutes = () => {
 
         <Route path="admissions" element={<InstitutionAdmissions />} />
         <Route path="applications/:applicationId" element={<InstitutionAdmissionApplication />} />
+
+        <Route path="/timetable" element={<InstitutionTimetable/>} />
+        <Route path="/timetable/create" element={<CreateTimetable/>} />
 
       </Route>
 
