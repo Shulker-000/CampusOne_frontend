@@ -19,7 +19,7 @@
   /* shadows */
   --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
 
-  /* accent (your current indigo vibe) */
+  /* accent */
   --accent: #4f46e5;
   --accent-soft: #eef2ff;
 
@@ -64,4 +64,89 @@
 body {
   background: var(--bg);
   color: var(--text);
+}
+
+
+/* tt */
+
+/* ===== CONTAINER ===== */
+.fc {
+  font-family: inherit;
+}
+
+/* ===== REMOVE OUTER BORDER ===== */
+.fc .fc-scrollgrid {
+  border: none !important;
+}
+
+/* ===== HEADER (DAYS) ===== */
+.fc .fc-col-header-cell {
+  background-color: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.fc .fc-col-header-cell-cushion {
+  color: var(--text);
+  font-weight: 500;
+}
+
+/* ===== GRID LINES (KEEP THEM) ===== */
+.fc-theme-standard td,
+.fc-theme-standard th {
+  border-color: var(--border);
+}
+
+/* ===== TIME COLUMN ===== */
+.fc .fc-timegrid-axis {
+  color: var(--text);
+  background-color: var(--surface-2);
+}
+
+/* ===== TIME SLOT BG ===== */
+.fc .fc-timegrid-slot {
+  background: transparent;
+}
+
+/* ===== TOOLBAR ===== */
+.fc .fc-toolbar-title {
+  color: var(--text);
+}
+
+/* ===== BUTTONS ===== */
+.fc .fc-button {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  box-shadow: none;
+  border-radius: 8px;
+}
+
+.fc .fc-button:hover {
+  background: var(--accent);
+  color: white;
+}
+
+/* ===== REMOVE DEFAULT EVENT STYLE ===== */
+.fc-event,
+.fc-timegrid-event {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* ===== YOUR SLOT STYLE ===== */
+.custom-slot {
+  background: rgba(255,255,255,0.05);
+  border-radius: 6px;
+  padding: 2px 4px;
+}
+
+/* ===== REMOVE FOCUS ===== */
+.fc-event:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.lunch-slot {
+    background-color: rgba(255, 165, 0, 0.15) !important;
 }
