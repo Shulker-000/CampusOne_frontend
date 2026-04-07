@@ -23,6 +23,7 @@ import {
   UserCircle,
   Grid3X3,
   UserPen,
+  Grid,
 } from "lucide-react";
 import { useAuth } from "../providers/AuthProvider.jsx";
 import { toast } from "react-toastify";
@@ -151,7 +152,7 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
             ],
           },
 
-                    {
+          {
             key: "students",
             label: "Students",
             icon: GraduationCap,
@@ -217,7 +218,7 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
 
     // USER
     if (user.isAuthenticated) {
-      const role = user.data?.role?.toLowerCase();
+      const role = user.data.role.toLowerCase();
 
       return {
         title: user.data?.role || "User",
@@ -225,15 +226,15 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
         avatar: user.data?.avatar || null,
 
         items: [
-          { label: "Dashboard", to: `/${role}/dashboard`, icon: LayoutDashboard },
-          { label: "Profile", to: `/${role}/profile`, icon: User2 },
+          { label: "Profile", to: `/user/${role}/profile`, icon: User2 },
+          { label: "Timetable", to: `/user/${role}/timetable`, icon: Grid },
         ],
 
         groups: [],
 
         logout: () => {
           logoutUser();
-          navigate(`/${role}/login`, { replace: true });
+          navigate(`/user/${role}/login`, { replace: true });
         },
       };
     }
