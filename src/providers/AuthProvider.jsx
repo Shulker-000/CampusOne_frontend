@@ -176,13 +176,16 @@ export const AuthProvider = ({ children }) => {
 
   /* ================= USER ================= */
 
-  const loginUser = async (formData) => {
+  const loginUser = async (data) => {
     const res = await fetch(
       `${import.meta.env.VITE_BACKEND_URL}/api/users/login`,
       {
         method: "POST",
         credentials: "include",
-        body: formData,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
       }
     );
 

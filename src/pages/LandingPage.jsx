@@ -299,14 +299,14 @@ const LandingPage = () => {
 
             <div className="mt-10 flex flex-col sm:flex-row gap-4">
               <a
-                href="/student/login"
+                href="/user/student/login"
                 className="px-9 py-4 rounded-xl bg-emerald-600 text-white font-medium shadow-md hover:shadow-xl hover:bg-emerald-700 transition inline-flex items-center justify-center gap-2"
               >
                 Continue as Student <ArrowRight className="w-5 h-5" />
               </a>
 
               <a
-                href="/faculty/login"
+                href="/user/faculty/login"
                 className="px-9 py-4 rounded-xl border border-slate-300 bg-white/60 text-slate-700 font-medium hover:bg-white transition inline-flex items-center justify-center"
               >
                 Continue as Faculty / HOD

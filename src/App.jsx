@@ -20,7 +20,7 @@ import VerifyAdmissionEmail from "./pages/admission/VerifyAdmissionEmail.jsx";
 import InstitutionSpecificAdmission from "./pages/admission/InstitutionSpecificAdmission.jsx";
 import AdmissionAcceptingInstitutions from "./pages/admission/AdmissionAcceptingInstitutions.jsx";
 
-// import UserRoutes from "./routes/UserRoutes";
+import UserRoutes from "./routes/UserRoutes";
 
 const App = () => {
   const institutionAuth = useSelector((s) => s.auth.institution);
@@ -42,7 +42,7 @@ const App = () => {
               <Navigate to="/institution/dashboard" replace />
             ) : userAuth.isAuthenticated ? (
               userAuth.data?.role ? (
-                <Navigate to={`/${userAuth.data.role.toLowerCase()}/dashboard`} replace />
+                <Navigate to={`/user/${userAuth.data.role.toLowerCase()}/dashboard`} replace />
               ) : (
                 <Loader text="Loading user..." />
               )
@@ -69,7 +69,7 @@ const App = () => {
         <Route path="/contact" element={<ContactPage />} />
 
         <Route path="/institution/*" element={<InstitutionRoutes />} />
-        {/* <Route path="/*" element={<UserRoutes />} /> */}
+        <Route path="/user/*" element={<UserRoutes />} />
 
         <Route path="*" element={<NotFound />} />
       </Routes>
