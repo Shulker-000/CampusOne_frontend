@@ -24,6 +24,7 @@ import {
   Grid3X3,
   UserPen,
   Grid,
+  Book,
 } from "lucide-react";
 import { useAuth } from "../providers/AuthProvider.jsx";
 import { toast } from "react-toastify";
@@ -228,6 +229,8 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
         items: [
           { label: "Profile", to: `/user/${role}/profile`, icon: User2 },
           { label: "Timetable", to: `/user/${role}/timetable`, icon: Grid },
+          { label: "Courses", to: `/user/${role}/courses`, icon: BookOpen },
+          { label: "Past Courses", to: `/user/${role}/past-courses`, icon: Book },
         ],
 
         groups: [],

@@ -3,14 +3,17 @@ import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { useSelector } from "react-redux";
 
 // Pages
+// faculties
 import FacultyLogin from "../pages/user/faculty/FacultyLogin";
 import FacultyProfile from "../pages/user/faculty/FacultyProfile";
+import FacultyTimetable from "../pages/user/faculty/FacultyTimetable";
 
+
+// // students
 // import StudentLogin from "../pages/user/student/StudentLogin";
 // import StudentProfile from "../pages/user/student/StudentProfile";
+// import StudentTimetable from "../pages/user/student/StudentTimetable";
 
-// import FacultyDashboard from "../pages/user/faculty/FacultyDashboard";
-// import StudentDashboard from "../pages/user/student/StudentDashboard";
 
 // import UserForgotPassword from "../pages/user/UserForgotPassword";
 // import UserResetPassword from "../pages/user/UserResetPassword";
@@ -19,7 +22,8 @@ import FacultyProfile from "../pages/user/faculty/FacultyProfile";
 import NotFound from "../pages/NotFound";
 import Loader from "../components/Loader";
 import DashboardLayout from "../layouts/DashboardLayout";
-import FacultyTimetable from "../pages/user/faculty/FacultyTimetable";
+import FacultyCourses from "../pages/user/faculty/FacultyCourses";
+import FacultyPrevCourses from "../pages/user/faculty/FacultyPrevCourses";
 
 /* ================= GUARDS ================= */
 
@@ -32,7 +36,7 @@ const UserProtected = () => {
     if (!authChecked) return <Loader />;
 
     if (!isAuthenticated) {
-        return <Navigate to="/user/faculty/login" replace />;
+        return <Navigate to="/" replace />;
     }
 
     return <Outlet />;
@@ -85,11 +89,17 @@ const UserRoutes = () => {
                     {/* PROFILE */}
                     <Route path="faculty/profile" element={<FacultyProfile />} />
 
-                    
+                    {/* Timetable */}
                     <Route path="faculty/timetable" element={<FacultyTimetable />} />
 
-                    {/* FUTURE STUDENT */}
+                    {/* Courses */}
+                    <Route path="faculty/courses" element={<FacultyCourses />} />
+                    <Route path="faculty/prev-courses" element={<FacultyPrevCourses />} />
+
+
+                    {/* STUDENT */}
                     {/* <Route path="student/profile" element={<StudentProfile />} /> */}
+                    {/* <Route path="student/timetable" element={<StudentTimetable />} /> */}
 
                 </Route>
             </Route>
