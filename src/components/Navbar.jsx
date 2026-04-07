@@ -83,9 +83,17 @@ const PublicNavbar = () => {
   ];
 
   const dropdownItems = [
-    // { label: "Student", to: "/student/login" },
-    // { label: "Faculty", to: "/faculty/login" },
-    { label: "Institution", to: "/institution/login" },
+    {
+      label: "Users",
+      children: [
+        { label: "Student", to: "/user/student/login" },
+        { label: "Faculty", to: "/user/faculty/login" },
+      ],
+    },
+    {
+      label: "Institution",
+      to: "/institution/login",
+    },
   ];
 
   const mobileActions = [
@@ -95,12 +103,12 @@ const PublicNavbar = () => {
     //   className:
     //     "block bg-blue-700 text-center text-white px-4 py-3 rounded-lg font-medium hover:scale-101 transition-transform",
     // },
-    // {
-    //   label: "Login as Faculty",
-    //   to: "/faculty/login",
-    //   className:
-    //     "block text-center px-4 py-3 bg-gray-100 rounded-lg font-medium text-black hover:scale-101 transition-transform",
-    // },
+    {
+      label: "Login as Faculty",
+      to: "/user/faculty/login",
+      className:
+        "block text-center px-4 py-3 bg-gray-100 rounded-lg font-medium text-black hover:scale-101 transition-transform",
+    },
     {
       label: "Login as Institution",
       to: "/institution/login",
@@ -191,16 +199,41 @@ const PublicNavbar = () => {
 
             {authOpen && (
               <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-xl shadow-xl overflow-hidden">
-                {dropdownItems.map((i) => (
-                  <Link
-                    key={i.to}
-                    to={i.to}
-                    onClick={() => setAuthOpen(false)}
-                    className="block px-4 py-3 text-sm text-black hover:bg-indigo-50"
-                  >
-                    {i.label}
-                  </Link>
-                ))}
+                {dropdownItems.map((item, idx) => {
+                  // CASE 1: normal link (Institution)
+                  if (!item.children) {
+                    return (
+                      <Link
+                        key={item.to}
+                        to={item.to}
+                        onClick={() => setAuthOpen(false)}
+                        className="block px-4 py-3 text-sm text-black hover:bg-indigo-50"
+                      >
+                        {item.label}
+                      </Link>
+                    );
+                  }
+
+                  // CASE 2: grouped item (Users)
+                  return (
+                    <div key={idx} className="border-t first:border-none">
+                      <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase">
+                        {item.label}
+                      </div>
+
+                      {item.children.map((child) => (
+                        <Link
+                          key={child.to}
+                          to={child.to}
+                          onClick={() => setAuthOpen(false)}
+                          className="block px-6 py-2 text-sm text-black hover:bg-indigo-50"
+                        >
+                          {child.label}
+                        </Link>
+                      ))}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
