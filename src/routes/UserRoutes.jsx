@@ -94,7 +94,7 @@ const UserRoutes = () => {
 
                     {/* Courses */}
                     <Route path="faculty/courses" element={<FacultyCourses />} />
-                    <Route path="faculty/prev-courses" element={<FacultyPrevCourses />} />
+                    <Route path="faculty/past-courses" element={<FacultyPrevCourses />} />
 
 
                     {/* STUDENT */}

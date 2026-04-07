@@ -143,7 +143,7 @@ const FacultyTimetable = () => {
                                     return (
                                         <div className="px-1 py-[2px] leading-tight"
                                             title={`Code: ${courseCode}\nBatch: ${batch}\nRoom No: ${room}`}>
-                                            <div className="font-semibold break-words whitespace-normal">
+                                            <div className="font-semibold break-words whitespace-normal text-(--text)">
                                                 {/* Always visible */}
                                                 <span>{courseCode}</span>
 
